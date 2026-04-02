@@ -18,7 +18,7 @@ export default function Home() {
 
       <section>
         <h2 id="sectionH2">O que fazemos:</h2>
-        {/* cards */}
+      
       </section>
 
       <Footer />
