@@ -3,12 +3,12 @@ import { Routes, Route } from 'react-router-dom'
 import Header from "./Components/Header/Header";
 import Footer from "./Components/Footer/Footer";
 
-import Home from './Pages/Home'
-import SobreNos from './Pages/SobreNos'
-import NossosServicos from './Pages/NossosServicos'
-import FAQ from './Pages/FAQ'
-import FaleConosco from './Pages/FaleConosco'
-import Integrantes from './Pages/Integrantes'
+import Home from './Pages/Home/Home'
+import SobreNos from './Pages/SobreNos/SobreNos'
+import NossosServicos from './Pages/NossosServicos/NossosServicos'
+import FAQ from './Pages/FAQ/FAQ'
+import FaleConosco from './Pages/FaleConosco/FaleConosco'
+import Integrantes from './Pages/Integrantes/Integrantes'
 
 const App = () =>{
 
