@@ -1,5 +1,5 @@
-import Header from '../Components/Header/Header'
-import Footer from '../Components/Footer/Footer'
+//import Header from '../Components/Header/Header'
+//import Footer from '../Components/Footer/Footer'
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -31,7 +31,7 @@ const cards = [
   },
 ]
 
-export default function Home() {
+const Home = () =>{
 
   const [dark, setDark] = useState(false)
 
@@ -86,7 +86,6 @@ export default function Home() {
               <img src={c.img} alt={c.alt} className="w-14 h-14 mb-4" />
               <h3 className="text-primary font-bold text-lg mb-2">{c.title}</h3>
               <p className="text-gray-500 text-sm leading-relaxed">{c.desc}</p>
-              {/* Hover overlay */}
               <div className="absolute inset-0 bg-accent text-white flex flex-col justify-center p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <h3 className="font-bold text-lg mb-2">{c.hoverTitle}</h3>
                 <p className="text-sm leading-relaxed">{c.hoverDesc}</p>
@@ -99,3 +98,4 @@ export default function Home() {
     </>
   )
 }
+export default Home;
