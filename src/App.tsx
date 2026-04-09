@@ -9,8 +9,6 @@ import Integrantes from './Pages/Integrantes/Integrantes'
 import Layout from './Components/Layout/Layout'
 
 const App = () =>{
-
-  
   return(
     <>
       <BrowserRouter>

@@ -29,7 +29,6 @@ const Home = () =>{
 
   const [dark, setDark] = useState(false)
 
-
   return (
     <>
       <div className={dark ? 'bg-gray-950' : 'bg-gray-50'}>
@@ -74,12 +73,12 @@ const Home = () =>{
             O que fazemos:
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {cards.map(c => (
-              <div key={c.title} className="relative group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden">
-                <img src={c.alt} alt={c.alt} className="w-14 h-14 mb-4" />
-                <h3 className="text-primary font-bold text-lg mb-2">{c.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{c.desc}</p>
-                <div className="absolute inset-0 bg-accent text-white flex flex-col justify-center p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {cards.map((c) => (
+              <div key={c.title} className="relative group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden cursor-pointer">
+                <img src={c.alt} alt={c.alt} className="w-14 h-14 mb-4 transition-opacity duration-300 group-hover:opacity-0"/>
+                <h3 className="text-primary font-bold text-lg mb-2 group-hover:opacity-0">{c.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed group-hover:opacity-0">{c.desc}</p>
+                <div className="absolute inset-0 bg-accent text-white flex flex-col justify-center items-center p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:text-white hover:bg-blue-600">
                   <h3 className="font-bold text-lg mb-2">{c.hoverTitle}</h3>
                   <p className="text-sm leading-relaxed">{c.hoverDesc}</p>
                 </div>
