@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 
 const links = [
   { to: "/", label: "Home" },
-  { to: "/NossosServicos", label: "Serviços" },
+  { to: "/NossosServicos", label: "Nossos Serviços" },
   { to: "/Integrantes", label: "Integrantes" },
-  { to: "/SobreNos", label: "Sobre" },
+  { to: "/SobreNos", label: "Sobre nós" },
   { to: "/FAQ", label: "FAQ" }, 
 ];
 

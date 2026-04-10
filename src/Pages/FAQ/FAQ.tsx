@@ -32,7 +32,7 @@ export default function FAQ() {
                 className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer bg-transparent border-none"
               >
                 <h3 className="text-primary font-semibold text-base">{faq.pergunta}</h3>
-                <span className={`text-accent text-2xl font-light ml-4 flex-shrink-0 transition-transform duration-300 ${openId === faq.id ? 'rotate-45' : ''}`}>
+                <span className={`text-accent text-2xl font-light ml-4 shrink-0 transition-transform duration-300 ${openId === faq.id ? 'rotate-45' : ''}`}>
                   +
                 </span>
               </button>
