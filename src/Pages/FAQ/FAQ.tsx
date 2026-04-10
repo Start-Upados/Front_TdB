@@ -14,18 +14,19 @@ const faqs: FAQItem[] = [
 export default function FAQ() {
   const [openId, setOpenId] = useState<number | null>(null)
   const toggle = (id: number) => setOpenId(p => p === id ? null : id)
-
+// não estava indo
   return (
     <>
+    
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4">Perguntas Frequentes:</h2>
-        <p className="text-gray-300 text-lg">Encontre respostas para as dúvidas mais comuns sobre nosso trabalho.</p>
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-21 ml-10">Perguntas Frequentes:</h2>
+        <p className="text-black text-lg text-center">Encontre respostas para as dúvidas mais comuns sobre nosso trabalho.</p>
       </header>
 
       <section className="py-16 px-6 max-w-3xl mx-auto">
         <div className="flex flex-col gap-4">
           {faqs.map(faq => (
-            <div key={faq.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={faq.id} className="bg-white rounded-xl border border-gray-300 shadow-sm overflow-hidden">
               <button
                 onClick={() => toggle(faq.id)}
                 aria-expanded={openId === faq.id}
@@ -37,7 +38,7 @@ export default function FAQ() {
                 </span>
               </button>
               <div className={`overflow-hidden transition-all duration-350 ease-in-out ${openId === faq.id ? 'max-h-48' : 'max-h-0'}`}>
-                <p className="px-6 pb-5 text-gray-500 text-sm leading-relaxed">{faq.resposta}</p>
+                <p className="px-6 pb-5 text-gray-700 text-sm leading-relaxed">{faq.resposta}</p>
               </div>
             </div>
           ))}

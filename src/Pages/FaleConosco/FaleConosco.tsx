@@ -24,8 +24,8 @@ const FaleConosco = () => {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4">Fale Conosco:</h2>
-        <p className="text-black text-lg max-w-xl mx-auto pt-10">
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-21 pl-20">Fale Conosco:</h2>
+        <p className="text-black text-lg max-w-xl mx-auto ">
           Tem alguma dúvida, sugestão ou deseja o desenvolvimento de sua idéia? Entre em contato!
         </p>
       </header>

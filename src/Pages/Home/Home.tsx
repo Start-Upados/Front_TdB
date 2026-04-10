@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const cards = [
@@ -27,21 +26,10 @@ const cards = [
 
 const Home = () =>{
 
-  const [dark, setDark] = useState(false)
-
   return (
     <>
-      <div className={dark ? 'bg-gray-950' : 'bg-gray-50'}>
-        <div className="fixed bottom-20 right-5 z-50">
-          <button onClick={() => setDark(p => !p)} className="bg-primary text-white border border-accent text-sm px-4 py-2 rounded-full cursor-pointer hover:bg-accent transition-colors duration-200">
-            🌓 {dark ? 'Modo Claro' : 'Modo Escuro'}
-          </button>
-        </div>
-
-        <header className={`px-6 py-20 md:py-28 min-h-[80vh] flex items-center ${
-          dark
-          ? 'bg-gradient-to-br from-gray-900 via-gray-950 to-black'
-          : 'bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]'}`}>
+      <div >
+        <header className={`px-6 py-20 md:py-28 min-h-[80vh] flex items-center bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]`}>
           <div className="max-w-6xl mx-auto w-full flex flex-col md:flex-row items-center gap-10">
             <div className="flex-1 text-white">
               <h2 className="text-accent uppercase tracking-[10px] text-sm font-semibold mb-3">
@@ -69,7 +57,7 @@ const Home = () =>{
         </header>
         
         <section className="py-16 px-6 max-w-6xl mx-auto">
-          <h2 className={`text-3xl font-bold text-center mb-10 ${dark ? 'text-white' : 'text-primary'}`}>
+          <h2 className={`text-3xl font-bold text-center mb-10`}>
             O que fazemos:
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
