@@ -19,7 +19,7 @@ export default function FAQ() {
     <>
     
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-21 ml-10">Perguntas Frequentes:</h2>
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-21 text-center">Perguntas Frequentes:</h2>
         <p className="text-black text-lg text-center">Encontre respostas para as dúvidas mais comuns sobre nosso trabalho.</p>
       </header>
 
@@ -30,7 +30,7 @@ export default function FAQ() {
               <button
                 onClick={() => toggle(faq.id)}
                 aria-expanded={openId === faq.id}
-                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer bg-transparent border-none"
+                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer bg-transparent border-none"
               >
                 <h3 className="text-primary font-semibold text-base">{faq.pergunta}</h3>
                 <span className={`text-accent text-2xl font-light ml-4 shrink-0 transition-transform duration-300 ${openId === faq.id ? 'rotate-45' : ''}`}>

@@ -4,7 +4,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 type FormValues ={
   nome: string,
   email:string,
-  telefone:string,
+  telefone:number,
   mensagem:string,
   assunto: string
 }
@@ -24,8 +24,8 @@ const FaleConosco = () => {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-21 pl-20">Fale Conosco:</h2>
-        <p className="text-black text-lg max-w-xl mx-auto ">
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-21 pl-20 text-center">Fale Conosco:</h2>
+        <p className="text-black text-lg max-w-xl mx-auto text-center">
           Tem alguma dúvida, sugestão ou deseja o desenvolvimento de sua idéia? Entre em contato!
         </p>
       </header>
@@ -62,7 +62,13 @@ const FaleConosco = () => {
                 </div>
                 
                 <div>
-                  <input {...register("telefone")}placeholder="Seu telefone (opcional)" className={inputClass} />
+                  <input {...register("telefone", { pattern: { 
+                    value: /^\(?\d{2}\)?[\s-]?[\s9]?\d{4}-?\d{4}$/,
+                    message: "Digite um telefone válido no formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX"
+                  }
+                  })} 
+                  placeholder="Seu telefone (opcional)" className={inputClass} />
+                  {errors.telefone && <span style={{ color:"#f00" }}>{errors.telefone.message} </span>}
                 </div>
                 <div>
                   <select {...register("assunto", {required: true})} className={inputClass}>
