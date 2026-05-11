@@ -6,7 +6,7 @@ const links = [
   { to: "/NossosServicos", label: "Nossos Serviços" },
   { to: "/Integrantes", label: "Integrantes" },
   { to: "/SobreNos", label: "Sobre nós" },
-  { to: "/FAQ", label: "FAQ" }, 
+  { to: "/FAQ", label: "FAQ" },
 ];
 
 export default function Header() {
@@ -18,6 +18,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 w-full h-20 bg-white border-b border-gray-200 shadow-md z-[1000] transition-all duration-300 ease-in-out">
       <nav className="flex items-center justify-between h-full px-[5%]">
+
         {/* Logo */}
         <Link to="/">
           <img src="/logo-250x80.png" className="h-20" alt="Logo" />
@@ -40,11 +41,20 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+
           <Link
             to="/FaleConosco"
             className="text-white bg-blue-600 no-underline text-base px-4 py-2 font-medium rounded transition-all duration-300 ease-in-out hover:bg-amber-400 hover:-translate-y-0.5"
           >
             Fale Conosco
+          </Link>
+
+          {/* Botão de acesso admin */}
+          <Link
+            to="/login"
+            className="text-white bg-blue-600 no-underline text-base px-4 py-2 font-medium rounded transition-all duration-300 ease-in-out hover:bg-amber-400 hover:-translate-y-0.5">
+            <span className="text-[#00D4AA]"></span>
+            Área Admin
           </Link>
         </div>
       </nav>
@@ -70,15 +80,27 @@ export default function Header() {
 
         <nav className="flex flex-col items-center gap-4 mt-4">
           {links.map((link) => (
-            <Link key={link.to} to={link.to} className={linkClasses}>
+            <Link key={link.to} to={link.to} className={linkClasses} onClick={() => setAberto(false)}>
               {link.label}
             </Link>
           ))}
+
           <Link
             to="/FaleConosco"
+            onClick={() => setAberto(false)}
             className="text-white bg-blue-600 no-underline text-base px-4 py-2 font-medium rounded transition-all duration-300 ease-in-out hover:bg-amber-400 hover:-translate-y-0.5"
           >
             Fale Conosco
+          </Link>
+
+          {/* Botão de acesso admin mobile */}
+          <Link
+            to="/login"
+            onClick={() => setAberto(false)}
+            className="text-white bg-blue-600 no-underline text-base px-4 py-2 font-medium rounded transition-all duration-300 ease-in-out hover:bg-amber-400 hover:-translate-y-0.5"
+          >
+            <span className="text-[#00D4AA]"></span>
+            Área Admin
           </Link>
         </nav>
       </div>

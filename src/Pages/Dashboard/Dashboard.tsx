@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import OverviewPage from './pages/OverviewPage';
 import OperationsPage from './pages/OperationsPage';
 import VolunteersPage from './pages/VolunteersPage';
@@ -35,21 +36,22 @@ const SCROLLBAR = `
 
 // ─── SIDEBAR ───────────────────────────────────
 function Sidebar({ activePage, onNavigate }: { activePage: PageId; onNavigate: (id: PageId) => void }) {
+  const navigate = useNavigate();
   return (
     <aside className="w-[220px] bg-[#0F2035] border-r border-[rgba(0,212,170,0.1)] flex flex-col shrink-0 overflow-y-auto px-2.5">
 
       {/* Logo */}
       <div className="px-2 pt-5 pb-4 border-b border-[rgba(0,212,170,0.1)] mb-3">
-        <p className="text-[15px] font-bold text-[#00D4AA]">Turma do Bem</p>
-        <p className="text-[11px] text-[#3D6A85] mt-0.5">Dashboard Executivo</p>
+        <p className="text-[25px] font-bold text-[#8BC34A]">Turma do Bem</p>
+        <p className="text-[15px] text-[#FF9800] mt-0.5">Dashboard Executivo</p>
         <div className="flex items-center gap-1.5 mt-2 text-[11px] text-[#00E676]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse" />
-          Ao vivo · Abr 2025
+          Ao vivo · Mai 2026
         </div>
       </div>
 
       {/* Label */}
-      <p className="text-[9.5px] font-bold text-[#3D6A85] uppercase tracking-[1.1px] px-2 mb-1.5">
+      <p className="text-[12px] font-bold text-[#3D6A85] uppercase tracking-[1.1px] px-2 mb-1.5">
         Páginas
       </p>
 
@@ -60,8 +62,8 @@ function Sidebar({ activePage, onNavigate }: { activePage: PageId; onNavigate: (
           onClick={() => onNavigate(id)}
           className={`flex items-center gap-2.5 w-full text-left px-3 py-2.5 rounded-[9px] text-[13px] transition-all outline-none border-none cursor-pointer font-[inherit] mb-0.5
             ${activePage === id
-              ? 'bg-[rgba(0,212,170,0.15)] text-[#00D4AA] font-medium'
-              : 'bg-transparent text-[#7EB3CE] hover:bg-[#152843] hover:text-[#E8F4FD]'
+              ? 'bg-[rgba(0,212,170,0.15)] text-[#FF9800] font-medium'
+              : 'bg-transparent text-[#7EB3CE] hover:bg-[#8BC34A] hover:text-[#E8F4FD]'
             }`}
         >
           <span className="w-[5px] h-[5px] rounded-full bg-current shrink-0" />
@@ -70,15 +72,27 @@ function Sidebar({ activePage, onNavigate }: { activePage: PageId; onNavigate: (
       ))}
 
       {/* Annual goal */}
-      <div className="mt-auto pt-4 pb-4 px-2 border-t border-[rgba(0,212,170,0.1)]">
-        <p className="text-[10.5px] text-[#3D6A85] mb-1.5">Meta anual 2025</p>
-        <p className="text-[22px] font-bold text-[#E8F4FD] leading-none">82%</p>
-        <p className="text-[11px] text-[#7EB3CE] mt-1 mb-1.5">254.000 de 310.000</p>
-        <div className="h-1 bg-[#0C1B2E] rounded-sm">
-          <div className="h-full w-[82%] bg-[#00D4AA] rounded-sm" />
-        </div>
-      </div>
-    </aside>
+      {/* Annual goal + Logout */}
+          <div className="mt-auto pt-4 pb-4 px-2 border-t border-[rgba(0,212,170,0.1)]">
+            <p className="text-[15px] text-white mb-1.5">Meta anual 2026:</p>
+            <p className="text-[22px] font-bold text-[#E8F4FD] leading-none">82%</p>
+            <p className="text-[11px] text-[#7EB3CE] mt-1 mb-1.5">254.000 de 310.000 atendimentos</p>
+            <div className="h-1 bg-[#0C1B2E] rounded-sm mb-4">
+              <div className="h-full w-[82%] bg-[#00D4AA] rounded-sm" />
+            </div>
+
+            {/* Botão sair */}
+            <button
+              onClick={() => {
+                localStorage.removeItem('tdb_auth');
+                navigate('/login');
+              }}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[9px] text-[15px] font-medium text-[#FF4757] bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.2)] hover:bg-[rgba(255,71,87,0.15)] transition-all cursor-pointer">
+              <span>→</span>
+              Sair
+            </button>
+          </div>
+      </aside>
   );
 }
 
@@ -99,7 +113,7 @@ function TopBar({ activePage }: { activePage: PageId }) {
           Meta 82%
         </span>
         <span className="bg-[#0F2035] border border-[rgba(0,212,170,0.1)] text-[#7EB3CE] text-[12px] px-3 py-1.5 rounded-[9px]">
-          Abr 2025
+          Maio 2026
         </span>
       </div>
     </div>
