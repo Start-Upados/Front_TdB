@@ -2,21 +2,21 @@ import { Link } from 'react-router-dom'
 
 const cards = [
   {
-    alt: '/public/projeto.png',
+    alt: '/projeto.png',
     title: 'Projetos Inovadores',
     desc: 'Desenvolvemos soluções criativas em tecnologia e negócios, sempre com foco em impacto real.',
     hoverTitle: 'Exemplos',
     hoverDesc: 'Aplicativos, plataformas digitais e protótipos de startups.',
   },
   {
-    alt: '/public/colab.png',
+    alt: '/colab.png',
     title: 'Colaboração',
     desc: 'Trabalhamos em equipe para transformar boas ideias em projetos viáveis.',
     hoverTitle: 'Nosso diferencial',
     hoverDesc: 'Integração de diferentes áreas: design, tecnologia e negócios.',
   },
   {
-    alt: '/public/conexao.png',
+    alt: '/conexao.png',
     title: 'Conexões',
     desc: 'Conectamos pessoas, empresas e oportunidades para gerar valor.',
     hoverTitle: 'Impacto',
@@ -51,7 +51,7 @@ const Home = () =>{
               </Link>
             </div>
             <div className="flex-1 hidden md:flex justify-center">
-              <img src="/public/banner-lateral-index.png" alt="Banner" className="max-h-96 object-contain" />
+              <img src="/banner-lateral-index.png" alt="Banner" className="max-h-96 object-contain" />
             </div>
           </div>
         </header>

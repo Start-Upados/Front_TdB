@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 
 const servicos = [
-  { icon: '/public/web.png', alt: 'Web', title: 'Desenvolvimento Web', desc: 'Sites rápidos, modernos, responsivos e com SEO otimizado para impulsionar seu negócio.' },
-  { icon: '/public/e-commerce.jpg', alt: 'E-commerce', title: 'E-commerce', desc: 'Lojas virtuais completas, integradas com pagamento, automação e painel de controle.' },
-  { icon: '/public/apps.jpg', alt: 'Apps', title: 'Aplicativos', desc: 'Aplicativos otimizados ideais para qualquer tipo de negócio e lançamento de produtos.' },
-  { icon: '/public/chatbot.jpg', alt: 'Chatbot', title: 'Chatbots & IA', desc: 'Implementação de chatbots inteligentes integrados ao WhatsApp, Telegram e sites.' },
-  { icon: '/public/automacao.jpg', alt: 'Automação', title: 'Automação de Processos', desc: 'Automatizamos tarefas e fluxos digitais para economia de tempo e produtividade.' },
-  { icon: '/public/consultoria.jpg', alt: 'Consultoria', title: 'Consultoria em Tecnologia', desc: 'Auxiliamos sua empresa a digitalizar, modernizar e estruturar projetos tecnológicos.' },
+  { icon: '/web.png', alt: 'Web', title: 'Desenvolvimento Web', desc: 'Sites rápidos, modernos, responsivos e com SEO otimizado para impulsionar seu negócio.' },
+  { icon: '/e-commerce.jpg', alt: 'E-commerce', title: 'E-commerce', desc: 'Lojas virtuais completas, integradas com pagamento, automação e painel de controle.' },
+  { icon: '/apps.jpg', alt: 'Apps', title: 'Aplicativos', desc: 'Aplicativos otimizados ideais para qualquer tipo de negócio e lançamento de produtos.' },
+  { icon: '/chatbot.jpg', alt: 'Chatbot', title: 'Chatbots & IA', desc: 'Implementação de chatbots inteligentes integrados ao WhatsApp, Telegram e sites.' },
+  { icon: '/automacao.jpg', alt: 'Automação', title: 'Automação de Processos', desc: 'Automatizamos tarefas e fluxos digitais para economia de tempo e produtividade.' },
+  { icon: '/consultoria.jpg', alt: 'Consultoria', title: 'Consultoria em Tecnologia', desc: 'Auxiliamos sua empresa a digitalizar, modernizar e estruturar projetos tecnológicos.' },
 ]
 
 export default function NossosServicos() {
