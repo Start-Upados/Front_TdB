@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { readSheet, appendSheet } from '../../../Services/googleSheets';
+import { readSheet } from '../../../Services/googleSheets';
 
 // ─── TIPOS ────────────────────────────────────
 interface Mensagem {

@@ -125,7 +125,7 @@ export default function HeroCarousel() {
 
       {/* ── Dots de navegação ── */}
       <div className="absolute bottom-5 right-6 flex gap-2">
-        {SLIDES.map((s, i) => (
+        {SLIDES.map((_s, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
