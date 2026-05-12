@@ -7,8 +7,9 @@ import SocialImpactPage from './pages/SocialImpactPage';
 import GeographyPage from './pages/GeographyPage';
 import FinancialPage from './pages/FinancialPage';
 import DataEntryPage from './pages/DataEntryPage';
+import MessagesPage from './pages/MessagesPage';
 
-export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data';
+export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data' | 'messages';
 
 const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'overview', label: 'Visão Geral'    },
@@ -18,6 +19,7 @@ const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'geo',      label: 'Geografia'      },
   { id: 'fin',      label: 'Financeiro'     },
   { id: 'data',     label: 'Inserir Dados'  },
+  { id: 'messages', label: 'Central de Mensagens' }
 ];
 
 const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
@@ -28,6 +30,7 @@ const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
   geo:      { title: 'Geografia',      subtitle: 'Distribuição nacional e cobertura'     },
   fin:      { title: 'Financeiro',     subtitle: 'Doações, custos e empresas parceiras'  },
   data:     { title: 'Inserir Dados',  subtitle: 'Adicionar registros à planilha'        },
+  messages: { title: 'Central de Mensagens', subtitle: 'Atendimento centralizado de todos os canais' },
 };
 
 /* Tiny scrollbar override — pode mover para App.css se preferir */
@@ -133,6 +136,7 @@ function renderPage(page: PageId) {
     case 'geo':      return <GeographyPage />;
     case 'fin':      return <FinancialPage />;
     case 'data':     return <DataEntryPage />;
+    case 'messages': return <MessagesPage />;
   }
 }
 
