@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
 import HeroCarousel from '../../Components/HeroCarousel/HeroCarousel'
+import {
+  StatsSection,
+  ProjectsSection,
+  TechSection,
+  ProcessSection,
+  PartnersSection,
+  CTASection,
+} from '../../Components/HomeSections/HomeSections'
 
 const cards = [
   {
@@ -56,6 +64,14 @@ const Home = () =>{
             </div>
           </div>
         </header>
+
+        {/* ── Novas seções ── */}
+        <StatsSection />
+        <ProjectsSection />
+        <TechSection />
+        <ProcessSection />
+        <PartnersSection />
+        <CTASection />
         
         <section className="py-16 px-6 max-w-6xl mx-auto">
           <h2 className={`text-3xl font-bold text-center mb-10`}>
@@ -63,7 +79,7 @@ const Home = () =>{
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {cards.map((c) => (
-              <div key={c.title} className="relative group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden cursor-pointer">
+              <div key={c.title} className="relative group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden cursor-pointer border border-amber-400">
                 <img src={c.alt} alt={c.alt} className="w-14 h-14 mb-4 transition-opacity duration-300 group-hover:opacity-0"/>
                 <h3 className="text-primary font-bold text-lg mb-2 group-hover:opacity-0">{c.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed group-hover:opacity-0">{c.desc}</p>

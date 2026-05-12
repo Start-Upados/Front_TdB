@@ -9,7 +9,7 @@ const Footer = () =>{
                     <img src="/logo-250x80.png" alt="Logo StartUpados()" className="mx-auto" />
                     </Link>
                     <p className="text-[#077cf0] text-base m-0 opacity-90 mt-4">
-                    Inovação e tecnologia para transformar ideias em realidade 💡
+                    Inovação e tecnologia para transformar idéias em realidade. 💡
                     </p>
                 </div>
             </footer>
