@@ -6,8 +6,9 @@ import VolunteersPage from './pages/VolunteersPage';
 import SocialImpactPage from './pages/SocialImpactPage';
 import GeographyPage from './pages/GeographyPage';
 import FinancialPage from './pages/FinancialPage';
+import DataEntryPage from './pages/DataEntryPage';
 
-export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin';
+export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data';
 
 const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'overview', label: 'Visão Geral'    },
@@ -16,6 +17,7 @@ const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'impact',   label: 'Impacto Social' },
   { id: 'geo',      label: 'Geografia'      },
   { id: 'fin',      label: 'Financeiro'     },
+  { id: 'data',     label: 'Inserir Dados'  },
 ];
 
 const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
@@ -25,6 +27,7 @@ const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
   impact:   { title: 'Impacto Social', subtitle: 'Beneficiários e transformação social'  },
   geo:      { title: 'Geografia',      subtitle: 'Distribuição nacional e cobertura'     },
   fin:      { title: 'Financeiro',     subtitle: 'Doações, custos e empresas parceiras'  },
+  data:     { title: 'Inserir Dados',  subtitle: 'Adicionar registros à planilha'        },
 };
 
 /* Tiny scrollbar override — pode mover para App.css se preferir */
@@ -129,6 +132,7 @@ function renderPage(page: PageId) {
     case 'impact':   return <SocialImpactPage />;
     case 'geo':      return <GeographyPage />;
     case 'fin':      return <FinancialPage />;
+    case 'data':     return <DataEntryPage />;
   }
 }
 
