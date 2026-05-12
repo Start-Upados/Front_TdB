@@ -2,7 +2,7 @@ export default function Sobre() {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 mt-20 text-center">Conheça a StartUpados():</h2>
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 mt-20 pt-14 text-center">Conheça a StartUpados():</h2>
         <p className="text-black-300 text-lg text-center">Inovação e tecnologia para transformar idéias em realidade.</p>
       </header>
 

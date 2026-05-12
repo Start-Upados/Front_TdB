@@ -19,7 +19,7 @@ export default function Integrantes() {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 mt-20 text-center">Nossa Equipe:</h2>
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 mt-20 pt-12 text-center">Nossa Equipe:</h2>
         <p className="text-black text-lg text-center">Conheça os talentosos desenvolvedores por trás da StartUpados()!</p>
       </header>
 

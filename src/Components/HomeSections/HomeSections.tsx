@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom';
 
-// ══════════════════════════════════════════════
-// 1. SEÇÃO DE NÚMEROS / IMPACTO
-// ══════════════════════════════════════════════
+
 export function StatsSection() {
   const stats = [
-    { value: '247.893', label: 'Vidas impactadas',     suffix: '+' },
-    { value: '4.218',   label: 'Voluntários na rede',  suffix: '+'  },
-    { value: '1.847',   label: 'Cidades atendidas',    suffix: '+'  },
+    { value: '50', label: 'Projetos Desenvolvidos',     suffix: '+' },
+    { value: '1000',   label: 'Conexões e Colaborações',  suffix: '+'  },
+    { value: '50',   label: 'Cidades atendidas',    suffix: '+'  },
     { value: '3',       label: 'Países atendidos',     suffix: ''   },
   ];
 
@@ -30,9 +28,7 @@ export function StatsSection() {
   );
 }
 
-// ══════════════════════════════════════════════
-// 2. SEÇÃO DE PROJETOS / CASES
-// ══════════════════════════════════════════════
+
 const PROJECTS = [
   {
     tag:   'ONG · Case de Sucesso',
@@ -69,7 +65,7 @@ export function ProjectsSection() {
       <div className="max-w-[90%] mx-auto">
         {/* Header */}
         <div className="text-center mb-14">
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0f3460]/50">
+          <span className="text-[15px] font-bold uppercase tracking-[0.2em] text-[#0f3460]/50">
             Portfólio
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-[#1a1a2e] mt-2 mb-3">
@@ -126,9 +122,7 @@ export function ProjectsSection() {
   );
 }
 
-// ══════════════════════════════════════════════
-// 3. SEÇÃO DE TECNOLOGIAS
-// ══════════════════════════════════════════════
+
 const TECHS = [
   { name: 'React',       color: '#61DAFB', icon: '⚛' },
   { name: 'TypeScript',  color: '#3178C6', icon: 'TS' },
@@ -179,9 +173,7 @@ export function TechSection() {
   );
 }
 
-// ══════════════════════════════════════════════
-// 4. SEÇÃO COMO TRABALHAMOS
-// ══════════════════════════════════════════════
+
 const STEPS = [
   {
     number: '01',
@@ -211,7 +203,7 @@ const STEPS = [
 
 export function ProcessSection() {
   return (
-    <section className="py-20 px-6 bg-[#1a1a2e]">
+    <section className="relative py-20 px-6 bg-[#1a1a2e] overflow-hidden">
       <div className="max-w-[90%] mx-auto">
         <div className="text-center mb-14">
           <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/30">
@@ -248,24 +240,22 @@ export function ProcessSection() {
   );
 }
 
-// ══════════════════════════════════════════════
-// 5. SEÇÃO DE PARCEIROS
-// ══════════════════════════════════════════════
+
 const PARTNERS = [
   { name: 'Turma do Bem', desc: 'ONG · Saúde bucal'      },
   { name: 'FIAP',         desc: 'Educação · Tecnologia'   },
-  { name: 'Colgate',      desc: 'Patrocinador'            },
-  { name: 'Oral-B',       desc: 'Parceiro estratégico'    },
+  //{ name: 'Colgate',      desc: 'Patrocinador'            },
+  //{ name: 'Oral-B',       desc: 'Parceiro estratégico'    },
 ];
 
 export function PartnersSection() {
   return (
-    <section className="py-16 px-6 bg-white border-t border-gray-100">
+    <section className="py-16 px-10 bg-white border-t border-gray-100">
       <div className="max-w-[90%] mx-auto">
-        <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-10">
+        <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-black mb-10">
           Empresas e organizações que confiam na StartUpados()
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {PARTNERS.map((p, i) => (
             <div
               key={i}
@@ -284,9 +274,7 @@ export function PartnersSection() {
   );
 }
 
-// ══════════════════════════════════════════════
-// 6. CTA FINAL
-// ══════════════════════════════════════════════
+
 export function CTASection() {
   return (
     <section className="py-24 px-6 bg-gradient-to-br from-[#0f3460] via-[#16213e] to-[#1a1a2e] relative overflow-hidden">
@@ -295,14 +283,14 @@ export function CTASection() {
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
 
       <div className="max-w-[90%] mx-auto text-center relative z-10">
-        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#00D4AA]">
+        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-400">
           Vamos conversar?
         </span>
 
         <h2 className="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-5 leading-tight">
           Tem um projeto em mente?
           <br />
-          <span className="text-[#00D4AA]">A gente resolve.</span>
+          <span className="text-amber-400">A gente resolve.</span>
         </h2>
 
         <p className="text-blue-300/70 max-w-xl mx-auto text-[15px] leading-relaxed mb-10">
@@ -313,7 +301,7 @@ export function CTASection() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/FaleConosco"
-            className="inline-flex items-center gap-2 bg-[#00D4AA] text-[#1a1a2e] font-bold px-8 py-4 rounded-xl hover:bg-[#00b891] hover:-translate-y-0.5 transition-all duration-200 text-[15px]"
+            className="inline-flex items-center gap-2 bg-amber-400 text-[#1a1a2e] font-bold px-8 py-4 rounded-xl hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200 text-[15px]"
           >
             Fale conosco agora
             <span>→</span>

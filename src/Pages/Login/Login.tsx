@@ -42,10 +42,10 @@ export default function Login() {
 
           {/* Header do card */}
           <div className="text-center mb-8bg-amber-400">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg- border border-[rgba(0,212,170,0.25)] mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg- border border-amber-400 mb-4">
               <span className="text-[#00D4AA] text-2xl">📊</span>
             </div>
-            <h1 className="text-[22px] font-bold text-[#E8F4FD]">Painel Administrativo</h1>
+            <h1 className="text-[22px] font-bold text-amber-400">Painel Administrativo</h1>
             <p className="text-[13px] text-white mt-1 mb-5">Coloque suas credenciais e acesse seu Dashboard personalizado</p>
           </div>
 

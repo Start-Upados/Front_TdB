@@ -3,13 +3,20 @@ import Header from "../Header/Header"
 import Footer from "../Footer/Footer"
 
 
-const Layout = () =>{
-    return(
-        <>
-            <Header/>
-            <Outlet/>
-            <Footer/>
-        </>
-    )
-}
-export default Layout
+const Layout = () => {
+  return (
+    <div className="min-h-screen flex flex-col">
+      
+      <Header />
+
+      <main className="flex-1">
+        <Outlet />
+      </main>
+
+      <Footer />
+
+    </div>
+  );
+};
+
+export default Layout;
