@@ -55,7 +55,7 @@ const FaleConosco = () => {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-32 pl-20 text-center">
+        <h2 className="text-4xl md:text-5xl font-semibold mb-4 pt-32 pl-20 text-center">
           Fale Conosco:
         </h2>
         <p className="text-black text-lg max-w-xl mx-auto text-center">

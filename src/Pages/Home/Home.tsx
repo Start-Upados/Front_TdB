@@ -9,7 +9,7 @@ import {
   CTASection,
 } from '../../Components/HomeSections/HomeSections'
 
-const cards = [
+{/* const cards = [
   {
     alt: '/projeto.png',
     title: 'Projetos Inovadores',
@@ -31,7 +31,7 @@ const cards = [
     hoverTitle: 'Impacto',
     hoverDesc: 'Ampliamos redes de contato e criamos parcerias estratégicas.',
   },
-]
+] */}
 
 const Home = () =>{
 
@@ -73,6 +73,7 @@ const Home = () =>{
         <PartnersSection />
         <CTASection />
         
+        {/*
         <section className="py-16 px-6 max-w-6xl mx-auto">
           <h2 className={`text-3xl font-bold text-center mb-10`}>
             O que fazemos
@@ -91,6 +92,7 @@ const Home = () =>{
             ))}
           </div>
         </section>
+        */}
       </div> 
     </>
   )

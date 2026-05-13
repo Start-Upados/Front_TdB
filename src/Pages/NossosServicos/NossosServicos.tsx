@@ -13,7 +13,7 @@ export default function NossosServicos() {
   return (
     <>
       <header className="page-header">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-4 pt-32 text-center">Nossos Serviços:</h1>
+        <h1 className="text-4xl md:text-5xl font-semibold mb-4 pt-32 text-center">Nossos Serviços:</h1>
         <p className="text-black text-lg text-center">Transformamos ideias em soluções digitais eficientes e modernas.</p>
       </header>
 

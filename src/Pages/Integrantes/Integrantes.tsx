@@ -19,7 +19,7 @@ export default function Integrantes() {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 mt-20 pt-12 text-center">Nossa Equipe:</h2>
+        <h2 className="text-4xl md:text-5xl font-semibold mb-4 mt-20 pt-12 text-center">Nossa Equipe</h2>
         <p className="text-black text-lg text-center">Conheça os talentosos desenvolvedores por trás da StartUpados()!</p>
       </header>
 
@@ -28,7 +28,7 @@ export default function Integrantes() {
           {integrantes.map(i => (
             <div key={i.rm}
               className="bg-white rounded-2xl p-8 text-center shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
-              <div className="w-28 h-28 rounded-full overflow-hidden mx-auto mb-4 border-4 border-accent">
+              <div className="w-35 h-35 rounded-full overflow-hidden mx-auto mb-4 border-4 border-accent border-gray-200">
                 <img src={i.foto} alt={`Foto de ${i.nome}`} className="w-full h-full object-cover" />
               </div>
               <h3 className="text-primary font-bold text-base mb-1">{i.nome}</h3>
@@ -51,9 +51,9 @@ export default function Integrantes() {
         <div className="bg-gray-100 rounded-2xl p-10 text-center">
           <h3 className="text-primary font-bold text-xl mb-2">Repositório do Grupo:</h3>
           <p className="text-gray-500 mb-6">Confira todos os nossos projetos no GitHub 👇</p>
-          <Link to="https://github.com/Start-Upados/Front_TdB" target="_blank" rel="noopener noreferrer"
+          <Link to="https://github.com/Start-Upados" target="_blank" rel="noopener noreferrer"
             className="inline-block bg-accent text-white bg-blue-600 hover:bg-amber-400 font-bold px-8 py-3 rounded-lg hover:bg-accent-dark hover:-translate-y-0.5 transition-all duration-200">
-            Acesse o GitHub Geral
+            Acesse nosso GitHub e veja alguns de nossos projetos! 
           </Link>
         </div>
       </section>

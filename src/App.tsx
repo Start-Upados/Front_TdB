@@ -10,6 +10,8 @@ import Layout from './Components/Layout/Layout'
 import Login from './Pages/Login/Login'
 import Dashboard from './Pages/Dashboard/Dashboard'
 import ProtectedRoute from './Components/ProtectedRoute/ProtectedRoute'
+import PortalBeneficiario from './Pages/PortalBeneficiario/PortalBeneficiario'
+import ProtectedRoutePaciente from './Components/ProtectedRoutePaciente/ProtectedRoutePaciente'
 
 const App = () => {
   return (
@@ -27,6 +29,16 @@ const App = () => {
 
           {/* Login */}
           <Route path="/login" element={<Login />} />
+
+          {/* Portal do beneficiário */}
+          <Route
+            path="/meu-atendimento"
+            element={
+              <ProtectedRoutePaciente>
+                <PortalBeneficiario />
+              </ProtectedRoutePaciente>
+            }
+          />
 
           {/* Dashboard — protegido, exige login */}
           <Route

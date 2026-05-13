@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 export function StatsSection() {
   const stats = [
     { value: '50', label: 'Projetos Desenvolvidos',     suffix: '+' },
-    { value: '1000',   label: 'Conexões e Colaborações',  suffix: '+'  },
-    { value: '50',   label: 'Cidades atendidas',    suffix: '+'  },
+    { value: '100',   label: 'Conexões e Colaborações',  suffix: '+'  },
+    { value: '15',   label: 'Cidades atendidas',    suffix: '+'  },
     { value: '3',       label: 'Países atendidos',     suffix: ''   },
   ];
 

@@ -54,7 +54,7 @@ export default function Header() {
             to="/login"
             className="text-white bg-blue-600 no-underline text-base px-4 py-2 font-medium rounded transition-all duration-300 ease-in-out hover:bg-amber-400 hover:-translate-y-0.5">
             <span className="text-[#00D4AA]"></span>
-            Área Admin
+            Entrar
           </Link>
         </div>
       </nav>
@@ -100,7 +100,7 @@ export default function Header() {
             className="text-white bg-blue-600 no-underline text-base px-4 py-2 font-medium rounded transition-all duration-300 ease-in-out hover:bg-amber-400 hover:-translate-y-0.5"
           >
             <span className="text-[#00D4AA]"></span>
-            Área Admin
+            Entrar
           </Link>
         </nav>
       </div>
