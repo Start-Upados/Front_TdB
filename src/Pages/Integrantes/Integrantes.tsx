@@ -3,13 +3,13 @@ import { Link } from "react-router-dom"
 const integrantes = [
   {
     nome: 'Pedro Henrique Falchi', rm: '566967', turma: '1TDSPS',
-    foto: '/public/pedro.jpeg',
+    foto: '/pedro.jpeg',
     github: 'https://github.com/PedroFalchi',
     linkedin: 'https://www.linkedin.com/in/pedro-falchi-4ab4b937b/',
   },
   {
     nome: 'Matheus Guimarães Rosa', rm: '567912', turma: '1TDSPS',
-    foto: '/public/matheus.jpeg',
+    foto: '/matheus.jpeg',
     github: 'https://github.com/mathuesguimaraesrosa',
     linkedin: 'https://www.linkedin.com/in/matheus-rosa-04522435b',
   },

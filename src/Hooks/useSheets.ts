@@ -126,8 +126,17 @@ export function useAddPaciente() {
   async function addPaciente(p: Omit<Paciente, 'dataCadastro'>) {
     setSaving(true);
     const data = new Date().toLocaleDateString('pt-BR');
-    await appendSheet('Pacientes!A:F', [[
-      p.nome, p.idade, p.cidade, p.programa, p.status, data,
+    await appendSheet('Pacientes!A:J', [[
+      p.nome,
+      p.idade,
+      p.cidade,
+      p.programa,
+      p.status,
+      data,        // Data Cadastro
+      '',          // CPF (vazio por enquanto)
+      '',          // Dentista (vazio por enquanto)
+      '',          // Próx. Data (vazio)
+      '',          // Próx. Hora (vazio)
     ]]);
     setSaving(false);
   }

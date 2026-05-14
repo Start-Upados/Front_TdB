@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
+import SessionWarning from '../../Components/SessionWarning/SessionWarning'
 
 // ─── TIPOS ────────────────────────────────────
 interface Consulta {
@@ -27,7 +29,7 @@ interface Paciente {
   historico:     Consulta[]
 }
 
-// ─── MOCK DATA ────────────────────────────────
+//  MOCK DATA //
 // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/pacientes/cpf/${cpf}`)
 const MOCK_PACIENTES: Paciente[] = [
   {
@@ -419,17 +421,21 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
   )
 }
 
-// ─── PORTAL DO BENEFICIÁRIO (PRINCIPAL) ───────
+//  PORTAL DO BENEFICIÁRIO (PRINCIPAL) //
 const PortalBeneficiario = () => {
-  const [paciente,  setPaciente]  = useState<Paciente | null>(null)
+  const { showWarning, minutesLeft, resetTimer } = useSessionTimeout({
+    timeoutMinutes: 30,
+    warningMinutes: 1,
+    storageKey: 'tdb_cpf',
+  })
+  const [paciente,   setPaciente]   = useState<Paciente | null>(null)
   const [carregando, setCarregando] = useState(true)
-  const navigate = useNavigate()  // ← adicione esse import no topo
+  const navigate = useNavigate()
 
-  useEffect(() => {  // ← adicione useEffect no import do topo
+  useEffect(() => {
     const cpfSalvo = sessionStorage.getItem('tdb_cpf')
 
     if (!cpfSalvo) {
-      // Se não tem CPF salvo, volta para o login
       navigate('/login')
       return
     }
@@ -460,8 +466,21 @@ const PortalBeneficiario = () => {
 
   if (!paciente) return null
 
-  return <PainelPaciente paciente={paciente} onVoltar={handleVoltar} />
+  return (
+    <>
+      {showWarning && (
+        <SessionWarning
+          minutesLeft={minutesLeft}
+          onContinuar={resetTimer}
+          onSair={() => {
+            sessionStorage.removeItem('tdb_cpf')
+            navigate('/login')
+          }}
+        />
+      )}
+      <PainelPaciente paciente={paciente} onVoltar={handleVoltar} />
+    </>
+  )
 }
-
 
 export default PortalBeneficiario;

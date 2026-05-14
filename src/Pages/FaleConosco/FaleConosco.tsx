@@ -23,6 +23,7 @@ const TIPO_MAP: Record<string, string> = {
 const FaleConosco = () => {
   const [enviado,  setEnviado]  = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [protocolo, setProtocolo] = useState('')
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>()
 
@@ -36,6 +37,7 @@ const FaleConosco = () => {
     const data_ = agora.toLocaleDateString('pt-BR')
     const hora  = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     const id    = `MSG-${Date.now()}`
+    setProtocolo(id)
     const tipo  = TIPO_MAP[data.assunto] ?? 'Geral'
 
     try {
@@ -69,11 +71,39 @@ const FaleConosco = () => {
           {enviado ? (
             <div className="text-center py-8">
               <p className="text-5xl mb-4">✅</p>
-              <h3 className="text-primary font-bold text-2xl mb-3">Mensagem enviada com sucesso!</h3>
-              <p className="text-gray-500 mb-2">Entraremos em contato em breve. Obrigado!</p>
-              <p className="text-gray-400 text-sm mb-8">
-                Sua mensagem foi registrada na nossa Central de Atendimento.
+              <h3 className="text-primary font-bold text-2xl mb-3">
+                Mensagem enviada com sucesso!
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Entraremos em contato em breve. Obrigado!
               </p>
+
+              {/* Protocolo */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-left">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">
+                  Numero do protocolo
+                </p>
+                <p className="text-[18px] font-extrabold text-blue-600">
+                  #{protocolo}
+                </p>
+              </div>
+
+              {/* Informacoes */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-6 py-4 mb-6 text-left">
+                <p className="text-[11px] font-bold text-blue-400 uppercase tracking-wide mb-2">
+                  Informacoes do atendimento
+                </p>
+                <div className="flex flex-col gap-1.5 text-[13px] text-gray-600">
+                  <p>Prazo de resposta: <span className="font-semibold text-gray-800">ate 2 dias uteis</span></p>
+                  <p>Canal: <span className="font-semibold text-gray-800">Site StartUpados()</span></p>
+                  <p>Status: <span className="font-semibold text-green-600">Recebido</span></p>
+                </div>
+              </div>
+
+              <p className="text-gray-400 text-[12px] mb-6">
+                Guarde o numero do protocolo para acompanhar seu atendimento.
+              </p>
+
               <button
                 onClick={() => setEnviado(false)}
                 className="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 cursor-pointer border-none"

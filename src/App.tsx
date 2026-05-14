@@ -14,6 +14,7 @@ import PortalBeneficiario from './Pages/PortalBeneficiario/PortalBeneficiario'
 import ProtectedRoutePaciente from './Components/ProtectedRoutePaciente/ProtectedRoutePaciente'
 import PainelDentistaPage from './Pages/PortalDentista/PortalDentista'
 import ProtectedRouteDentista from './Components/ProtectedRouteDentista/ProtectedRouteDentista'
+import NotFound from './Pages/NotFound/NotFound'
 
 
 const App = () => {
@@ -61,6 +62,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          <Route path="*" element={<NotFound />} />
 
         </Routes>
       </BrowserRouter>
