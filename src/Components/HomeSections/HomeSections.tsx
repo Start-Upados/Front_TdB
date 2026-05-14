@@ -33,7 +33,7 @@ const PROJECTS = [
   {
     tag:   'ONG · Case de Sucesso',
     title: 'Dashboard Turma do Bem',
-    desc:  'Sistema completo de gestão para a ONG, conectando 4.218 dentistas voluntários a adolescentes em todo o Brasil.',
+    desc:  'Sistema completo de gestão para a ONG, conectando +18 mil dentistas voluntários a adolescentes em todo o Brasil.',
     tech:  ['React', 'TypeScript', 'Google Sheets', 'Tailwind'],
     color: '#00D4AA',
     link:  '/dashboard',
@@ -53,7 +53,7 @@ const PROJECTS = [
     title: 'Seu projeto aqui',
     desc:  'Desenvolvemos soluções digitais completas — do planejamento à entrega — para empresas que querem crescer com tecnologia.',
     tech:  ['React', 'Node.js', 'Cloud', 'API'],
-    color: '#B39DDB',
+    color: '#D4AF37',
     link:  '/FaleConosco',
     cta:   'Fale conosco',
   },
@@ -253,7 +253,7 @@ export function PartnersSection() {
     <section className="py-16 px-10 bg-white border-t border-gray-100">
       <div className="max-w-[90%] mx-auto">
         <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-black mb-10">
-          Empresas e organizações que confiam na StartUpados()
+          Empresas e organizações que confiam na StartUpados
         </p>
         <div className="grid grid-cols-2 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {PARTNERS.map((p, i) => (
@@ -265,7 +265,7 @@ export function PartnersSection() {
                 {p.name[0]}
               </div>
               <p className="font-bold text-[#1a1a2e] text-[14px]">{p.name}</p>
-              <p className="text-gray-400 text-[11px] mt-0.5">{p.desc}</p>
+              <p className="text-gray-700 text-[11px] mt-0.5">{p.desc}</p>
             </div>
           ))}
         </div>

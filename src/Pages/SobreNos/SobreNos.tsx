@@ -2,8 +2,8 @@ export default function Sobre() {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-semibold mb-4 mt-20 pt-14 text-center">Conheça a StartUpados():</h2>
-        <p className="text-black-300 text-lg text-center">Inovação e tecnologia para transformar idéias em realidade.</p>
+        <h2 className="text-4xl md:text-5xl font-semibold mb-4 mt-20 pt-14 text-center">Conheça a StartUpados</h2>
+        <p className="text-black-300 text-lg text-center">Inovação e tecnologia para transformar idéias em realidade</p>
       </header>
 
       <section className="py-16 px-6 max-w-3xl mx-auto">
@@ -12,7 +12,7 @@ export default function Sobre() {
           <div>
             <h3 className="text-accent font-bold text-xl mb-3">🏢 Sobre nós:</h3>
             <p className="text-gray-600 leading-relaxed mb-3">
-              A StartUpados() nasceu com o propósito de impulsionar o acesso à tecnologia e criar conexões
+              A StartUpados nasceu com o propósito de impulsionar o acesso à tecnologia e criar conexões
               inteligentes entre pessoas, empresas e oportunidades. Somos uma plataforma digital inovadora,
               desenvolvida para oferecer soluções eficientes, centralizadas e acessíveis.
             </p>

@@ -59,14 +59,14 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl">
+      <div className="bg-[#104772] border border-amber-400 rounded-2xl p-8 shadow-2xl">
 
         {/* Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-amber-400 mb-4 bg-gradient-to-br from-[#0f3460] via-[#16213e] to-[#1a1a2e]">
             <span className="text-2xl">🦷</span>
           </div>
-          <h1 className="text-[25px] font-bold text-amber-400">Solução Turma do Bem</h1>
+          <h1 className="text-[25px] font-bold text-[#FF9800]">Solução Turma do Bem</h1>
           <p className="text-[15px] text-white mt-1">Como deseja acessar o sistema?</p>
         </div>
 
@@ -82,19 +82,25 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
                 {icon}
               </div>
               <div>
-                <p className="font-bold text-amber-400 text-[14px]">{title}</p>
-                <p className="text-white/70 text-[12px] mt-0.5">{desc}</p>
+                <p className="font-bold text-[#FF9800] text-[14px]">{title}</p>
+                <p className="text-white text-[12px] mt-0.5">{desc}</p>
               </div>
             </button>
           ))}
         </div>
 
+        <button
+          onClick={() => window.open('https://paybox.doare.org/paybox?payboxId=83fed202-df0f-4665-9c74-688a834028d4', '_blank')}
+          className="w-full bg-[#8BC34A] text-white font-bold py-3 rounded-lg hover:bg-[#436c13] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px]">
+          Quero fazer uma doação 🤍
+        </button>
+
         {/* Rodape */}
-        <div className="text-center pt-4 border-t border-amber-400/20">
-          <p className="text-[14px] text-white/50">
+        <div className="text-center pt-4 border-t border-white mt-5">
+          <p className="text-[15px] text-white">
             Sistema desenvolvido por{' '}
-            <Link to="/" className="text-amber-400 font-semibold hover:underline">
-              StartUpados()
+            <Link to="/" className="text-amber-400 font-extrabold hover:underline">
+              StartUpados
             </Link>
           </p>
         </div>
@@ -153,22 +159,22 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl">
+      <div className="bg-[#104772] border border-amber-400 rounded-2xl p-8 shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
           <button onClick={onVoltar}
             className="w-8 h-8 rounded-full bg-[#07111E]/40 hover:bg-[#07111E]/70 flex items-center justify-center text-white transition-colors cursor-pointer border-none text-[16px]">
             ←
           </button>
           <div>
-            <h2 className="font-bold text-amber-400 text-[17px]">Sou Dentista Voluntario</h2>
-            <p className="text-white/70 text-[12px]">Digite seu CRO para acessar</p>
+            <h2 className="font-bold text-[#FF9800] text-[17px]">Sou Dentista Voluntario</h2>
+            <p className="text-white text-[12px]">Digite suas credenciais para acessar</p>
           </div>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
             <label className="block text-[11px] text-white font-semibold mb-1.5 uppercase tracking-[0.6px]">
-              Numero do CRO
+              CRO
             </label>
             <input type="text" value={cro}
               onChange={e => { setCro(e.target.value); setErro(false) }}
@@ -202,7 +208,7 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
 
           <button type="submit" disabled={!cro || senha.length < 6 || buscando}
             className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed border-none cursor-pointer">
-            {buscando ? 'Verificando...' : 'Acessar meu painel'}
+            {buscando ? 'Verificando...' : 'Entrar'}
           </button>
         </form>
       </div>
@@ -272,7 +278,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
 }
   return (
     <div className="w-full max-w-md">
-      <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl">
+      <div className="bg-[#104772] border border-amber-400 rounded-2xl p-8 shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
@@ -283,8 +289,8 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
             ←
           </button>
           <div>
-            <h1 className="text-[18px] font-bold text-amber-400">Sou Paciente</h1>
-            <p className="text-[12px] text-white/70">Preencha as credenciais para acessar o Dashboard</p>
+            <h1 className="text-[18px] font-bold text-[#FF9800]">Sou Paciente</h1>
+            <p className="text-[12px] text-white">Digite suas credenciais para acessar</p>
           </div>
         </div>
 
@@ -320,7 +326,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
             disabled={cpf.length < 14 || buscando}
             className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 border-none cursor-pointer"
           >
-            {buscando ? 'Buscando...' : 'Entrar no Dashboard'}
+            {buscando ? 'Buscando...' : 'Entrar'}
           </button>
         </form>
 
@@ -383,7 +389,7 @@ function TelaAdmin({ onVoltar }: { onVoltar: () => void }) {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl">
+      <div className="bg-[#104772] border border-amber-400 rounded-2xl p-8 shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
@@ -394,9 +400,9 @@ function TelaAdmin({ onVoltar }: { onVoltar: () => void }) {
             ←
           </button>
           <div>
-            <h1 className="text-[18px] font-bold text-amber-400">Painel Administrativo</h1>
-            <p className="text-[12px] text-white/70">
-              Preencha as credenciais e acesse seu Dashboard
+            <h1 className="text-[18px] font-bold text-[#FF9800]">Painel Administrativo</h1>
+            <p className="text-[12px] text-white">
+              Preencha as credenciais e acesse o Dashboard
             </p>
           </div>
         </div>
@@ -451,7 +457,7 @@ function TelaAdmin({ onVoltar }: { onVoltar: () => void }) {
             disabled={loading}
             className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 border-none cursor-pointer"
           >
-            {loading ? 'Verificando...' : 'Entrar no Dashboard'}
+            {loading ? 'Verificando...' : 'Entrar'}
           </button>
 
         </form>

@@ -19,8 +19,8 @@ export default function FAQ() {
     <>
     
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-semibold mb-4 pt-32 text-center">Perguntas Frequentes:</h2>
-        <p className="text-black text-lg text-center">Encontre respostas para as dúvidas mais comuns sobre nosso trabalho.</p>
+        <h2 className="text-4xl md:text-5xl font-semibold mb-4 pt-32 text-center">Perguntas Frequentes</h2>
+        <p className="text-black text-lg text-center">Encontre respostas para as dúvidas mais comuns sobre nosso trabalho</p>
       </header>
 
       <section className="py-16 px-6 max-w-3xl mx-auto">

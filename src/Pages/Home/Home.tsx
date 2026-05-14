@@ -48,7 +48,7 @@ const Home = () =>{
                 Transformando Idéias
               </h1>
               <p className="text-gray-300 text-lg leading-relaxed max-w-xl mb-8">
-                A StartUpados() é um grupo voltado para inovação, tecnologia e empreendedorismo.
+                A StartUpados é um grupo voltado para inovação, tecnologia e empreendedorismo.
                 Nosso objetivo é desenvolver soluções criativas e acessíveis que impactem positivamente
                 a sociedade e o mercado.
               </p>

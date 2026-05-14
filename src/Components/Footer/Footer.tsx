@@ -13,7 +13,7 @@ const Footer = () =>{
                     Inovação e tecnologia para transformar idéias em realidade. 💡
                     </p>*/}
                     <p className="text-white text-base m-0 opacity-90 mt-1">
-                     © 2026 StartUpados() — Todos os direitos reservados. Desenvolvido com inovação, tecnologia e criatividade.
+                     © 2026 StartUpados | Todos os direitos reservados. Desenvolvido com inovação, tecnologia, criatividade e responsabilidade.
                     </p>
                 </div>
             </footer>
