@@ -12,6 +12,9 @@ import Dashboard from './Pages/Dashboard/Dashboard'
 import ProtectedRoute from './Components/ProtectedRoute/ProtectedRoute'
 import PortalBeneficiario from './Pages/PortalBeneficiario/PortalBeneficiario'
 import ProtectedRoutePaciente from './Components/ProtectedRoutePaciente/ProtectedRoutePaciente'
+import PainelDentistaPage from './Pages/PortalDentista/PortalDentista'
+import ProtectedRouteDentista from './Components/ProtectedRouteDentista/ProtectedRouteDentista'
+
 
 const App = () => {
   return (
@@ -37,6 +40,15 @@ const App = () => {
               <ProtectedRoutePaciente>
                 <PortalBeneficiario />
               </ProtectedRoutePaciente>
+            }
+          />
+          {/* Portal do Dentista/Voluntário */}
+          <Route
+            path="/meu-painel"
+            element={
+              <ProtectedRouteDentista>
+                <PainelDentistaPage />
+              </ProtectedRouteDentista>
             }
           />
 
