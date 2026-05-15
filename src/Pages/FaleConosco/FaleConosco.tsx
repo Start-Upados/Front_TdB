@@ -57,10 +57,10 @@ const FaleConosco = () => {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-semibold mb-4 pt-32 pl-20 text-center">
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-32 pl-20 text-center">
           Fale Conosco
         </h2>
-        <p className="text-black text-lg max-w-xl mx-auto text-center">
+        <p className="text-black font-semibold text-lg max-w-xl mx-auto text-center">
           Tem alguma dúvida, sugestão ou deseja o desenvolvimento de sua idéia? Entre em contato!
         </p>
       </header>
@@ -143,11 +143,12 @@ const FaleConosco = () => {
                 <div>
                   <select {...register("assunto", { required: "Selecione um assunto" })} className={inputClass}>
                     <option value="">Selecione o assunto</option>
-                    <option value="duvida">Dúvida sobre o programa</option>
+                    <option value="duvida">Dúvida sobre a Empresa</option>
                     <option value="sugestao">Sugestão</option>
                     <option value="parceria">Proposta de Parceria</option>
-                    <option value="trabalho">Quero ser voluntário(a)</option>
-                    <option value="orcamento">Orçamento de projeto</option>
+                    <option value="trabalho">Quero fazer parte do Time</option>
+                    <option value="trabalho">Quero ser Colaborador(a)</option>
+                    <option value="orcamento">Orçamento de Projeto</option>
                     <option value="outro">Outro</option>
                   </select>
                   {errors.assunto && <span className="text-red-500 text-xs mt-1">{errors.assunto.message}</span>}

@@ -4,7 +4,6 @@ import {
   StatsSection,
   ProjectsSection,
   TechSection,
-  ProcessSection,
   PartnersSection,
   CTASection,
 } from '../../Components/HomeSections/HomeSections'
@@ -40,17 +39,17 @@ const Home = () =>{
       <div >
         <header className={`px-6 py-20 md:py-28 min-h-[80vh] flex items-center bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]`}>
           <div className="max-w-[90%] mx-auto w-full flex flex-col md:flex-row items-center gap-10">
-            <div className="flex-1 text-white">
+            <div className="flex-1 text-white text-left">
               <h2 className="text-accent uppercase tracking-[10px] text-sm font-semibold mb-3">
                 Inovação & Tecnologia
               </h2>
-              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
+              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-8">
                 Transformando Idéias
               </h1>
               <p className="text-gray-300 text-lg leading-relaxed max-w-xl mb-8">
-                A StartUpados é um grupo voltado para inovação, tecnologia e empreendedorismo.
-                Nosso objetivo é desenvolver soluções criativas e acessíveis que impactem positivamente
-                a sociedade e o mercado.
+                Nascemos da vontade de usar tecnologia para resolver e solucionar problemas reais.
+                Somos estudantes e desenvolvedores que acreditam que boas ideias,
+                bem executadas, podem transformar empresas e mudar vidas. Vamos juntos fazer a diferença!
               </p>
               <Link
                 to="/SobreNos"
@@ -69,7 +68,7 @@ const Home = () =>{
         <StatsSection />
         <ProjectsSection />
         <TechSection />
-        <ProcessSection />
+        
         <PartnersSection />
         <CTASection />
         

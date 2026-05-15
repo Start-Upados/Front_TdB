@@ -139,7 +139,7 @@ export function TechSection() {
     <section className="py-20 px-6 bg-[#f8fafc]">
       <div className="max-w-[90%] mx-auto">
         <div className="text-center mb-12">
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0f3460]/50">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#0f3460]/50">
             Stack tecnológica
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-[#1a1a2e] mt-2 mb-3">
@@ -252,7 +252,7 @@ export function PartnersSection() {
   return (
     <section className="py-16 px-10 bg-white border-t border-gray-100">
       <div className="max-w-[90%] mx-auto">
-        <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-black mb-10">
+        <p className="text-center text-[17px] font-extrabold uppercase tracking-[0.2em] text-[#1a1a2e] mb-10">
           Empresas e organizações que confiam na StartUpados
         </p>
         <div className="grid grid-cols-2 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
@@ -294,7 +294,7 @@ export function CTASection() {
         </h2>
 
         <p className="text-blue-300/70 max-w-xl mx-auto text-[15px] leading-relaxed mb-10">
-          Da ideia ao produto final — desenvolvemos soluções digitais completas para startups,
+          Da ideia ao produto final! Desenvolvemos soluções digitais completas para startups,
           empresas e ONGs que querem crescer com tecnologia.
         </p>
 

@@ -34,7 +34,7 @@ const SLIDES = [
     image:    '/Banner/SolucaoOng.png',
     tag:      'Case de Sucesso · Turma do Bem',
     title:    'Dashboard que transforma vidas',
-    desc:     'Desenvolvemos o sistema de gestão da ONG Turma do Bem — conectando 4.218 dentistas voluntários a 247.893 adolescentes.',
+    desc:     'Desenvolvemos o sistema de gestão da ONG Turma do Bem. Conectando +18 mil dentistas voluntários a +90 mil jovens atendidos e +1,2 mil mulheres atendidas.',
     color:    '#00E676',
   },
 ];
@@ -47,7 +47,7 @@ export default function HeroCarousel() {
   useEffect(() => {
     const timer = setInterval(() => {
       goTo((current + 1) % SLIDES.length);
-    }, 4000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [current]);
 
@@ -142,14 +142,14 @@ export default function HeroCarousel() {
       {/* ── Setas de navegação ── */}
       <button
         onClick={() => goTo((current - 1 + SLIDES.length) % SLIDES.length)}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
+        className="absolute left-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
         style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' }}
       >
         ‹
       </button>
       <button
         onClick={() => goTo((current + 1) % SLIDES.length)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
+        className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
         style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' }}
       >
         ›
@@ -162,7 +162,7 @@ export default function HeroCarousel() {
           className="h-full rounded-full"
           style={{
             background: slide.color,
-            animation: 'progress 4s linear forwards',
+            animation: 'progress 6s linear forwards',
           }}
         />
       </div>

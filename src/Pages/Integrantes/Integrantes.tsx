@@ -5,11 +5,11 @@ const integrantes = [
     nome: 'Pedro Henrique Falchi', rm: '566967', turma: '1TDSPS',
     foto: '/pedro.jpeg',
     github: 'https://github.com/PedroFalchi',
-    linkedin: 'https://www.linkedin.com/in/pedro-falchi-4ab4b937b/',
+    linkedin: 'https://www.linkedin.com/in/pedro-falchi-4ab4b937b',
   },
   {
     nome: 'Matheus Guimarães Rosa', rm: '567912', turma: '1TDSPS',
-    foto: '/matheus.jpeg',
+    foto: '/fotoMatheus.jpg',
     github: 'https://github.com/mathuesguimaraesrosa',
     linkedin: 'https://www.linkedin.com/in/matheus-rosa-04522435b',
   },
@@ -19,8 +19,8 @@ export default function Integrantes() {
   return (
     <>
       <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-semibold mb-4 mt-20 pt-12 text-center">Nossa Equipe</h2>
-        <p className="text-black text-lg text-center">Conheça os talentosos desenvolvedores por trás da StartUpados()!</p>
+        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 mt-20 pt-12 text-center">Nossa Equipe</h2>
+        <p className="text-black font-semibold text-lg text-center">Conheça os talentosos desenvolvedores por trás da StartUpados</p>
       </header>
 
       <section className="py-16 px-6 max-w-5xl mx-auto">
@@ -28,7 +28,7 @@ export default function Integrantes() {
           {integrantes.map(i => (
             <div key={i.rm}
               className="bg-white rounded-2xl p-8 text-center shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
-              <div className="w-35 h-35 rounded-full overflow-hidden mx-auto mb-4 border-4 border-accent border-gray-200">
+              <div className="w-35 h-35 rounded-full overflow-hidden mx-auto mb-4 border-4 border-accent border-blue-500">
                 <img src={i.foto} alt={`Foto de ${i.nome}`} className="w-full h-full object-cover" />
               </div>
               <h3 className="text-primary font-bold text-base mb-1">{i.nome}</h3>
