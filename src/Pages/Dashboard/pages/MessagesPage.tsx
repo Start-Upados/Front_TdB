@@ -223,7 +223,7 @@ export default function MessagesPage() {
   useEffect(() => {
     async function load() {
       try {
-        const rows = await readSheet('Mensagens!A:K');
+        const rows = await readSheet('Mensagens!A:M');
         if (rows.length > 1) {
           const parsed: Mensagem[] = rows.slice(1).filter(r => r[0]).map((r, i) => ({
             id:       r[0]  ?? '',
@@ -234,7 +234,9 @@ export default function MessagesPage() {
             mensagem: r[5]  ?? '',
             canal:    r[6]  ?? 'Site',
             tipo:     r[7]  ?? 'Geral',
-            status:   (r[8] as Mensagem['status']) ?? 'Nova',
+            status:   (['Nova', 'Em andamento', 'Respondida', 'Fechada'].includes(r[8])
+                        ? r[8]
+                        : 'Nova') as Mensagem['status'],
             data:     r[9]  ?? '',
             hora:     r[10] ?? '',
             row:      i + 2,
