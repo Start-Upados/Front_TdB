@@ -51,6 +51,7 @@ function Input({
 
 //  TELA DE SELEÇÃO //
 function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
+  const navigate = useNavigate()
   const opcoes = [
     { modo: 'paciente' as Modo, icon: '🧑', title: 'Sou Paciente',  desc: 'Acompanhar meu atendimento' },
     { modo: 'dentista' as Modo, icon: '👨‍⚕️', title: 'Sou Dentista',  desc: 'Meus atendimentos'          },
@@ -66,8 +67,21 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-amber-400 mb-4 bg-gradient-to-br from-[#0f3460] via-[#16213e] to-[#1a1a2e]">
             <span className="text-2xl">🦷</span>
           </div>
-          <h1 className="text-[25px] font-bold text-[#FF9800]">Solução Turma do Bem</h1>
+          <h1 className="text-[25px] font-bold text-[#FF9800]">Seja bem vindo à Turma do Bem!</h1>
           <p className="text-[15px] text-white mt-1">Como deseja acessar o sistema?</p>
+        </div>
+
+        <div
+          onClick={() => navigate('/solicitar-atendimento')}
+          className="flex items-center gap-3 w-full p-4 mb-4 rounded-xl bg-amber-400/10 border-2 border-amber-400 hover:bg-amber-400/20 transition-all duration-200 cursor-pointer">
+          <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+            <span className="text-[#07111E] font-bold text-[18px]">+</span>
+          </div>
+          <div>
+            <p className="font-bold text-amber-400 text-[15px]">Solicitar Atendimento</p>
+            <p className="text-white/60 text-[11px] mt-0.5">Cadastro gratuito para tratamento bucal</p>
+          </div>
+          <span className="text-amber-400 ml-auto text-[18px]">→</span>
         </div>
 
         {/* Opcoes — 3 botoes em coluna */}
