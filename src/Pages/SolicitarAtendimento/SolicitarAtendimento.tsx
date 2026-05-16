@@ -102,7 +102,7 @@ function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () 
     <div className="w-full max-w-md">
       <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl text-center">
 
-        <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center mx-auto mb-5">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0f3460] via-[#16213e] to-[#1a1a2e] border border-green-500/40 flex items-center justify-center mx-auto mb-5">
           <span className="text-3xl">✓</span>
         </div>
 
@@ -125,7 +125,7 @@ function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () 
         <div className="flex flex-col items-center mb-6">
           <div className="bg-white p-3 rounded-xl">
             <QRCodeSVG
-              value={`https://www.startupados.com.br/login?protocolo=${protocolo}`}
+              value={`https://www.startupados.com.br/validar-paciente?protocolo=${protocolo}`}
               size={160}
               bgColor="#ffffff"
               fgColor="#07111E"

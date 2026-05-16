@@ -348,6 +348,12 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
 
       <section className="py-10 px-6 max-w-2xl mx-auto">
 
+        <Link
+          to="/validar-paciente"
+          className="w-full flex items-center justify-center gap-2 bg-amber-400 text-[#07111E] font-bold py-3 rounded-xl hover:bg-amber-500 transition-colors mb-5 no-underline text-[14px]">
+          Validar Paciente por QR Code
+        </Link>
+
         {/* Proximos atendimentos */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
           <div className="flex items-center justify-between mb-4">

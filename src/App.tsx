@@ -16,6 +16,7 @@ import PainelDentistaPage from './Pages/PortalDentista/PortalDentista'
 import ProtectedRouteDentista from './Components/ProtectedRouteDentista/ProtectedRouteDentista'
 import NotFound from './Pages/NotFound/NotFound'
 import SolicitarAtendimento from './Pages/SolicitarAtendimento/SolicitarAtendimento'
+import ValidarPaciente from './Pages/ValidarPaciente/ValidarPaciente'
 
 
 const App = () => {
@@ -36,6 +37,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
 
           <Route path="/solicitar-atendimento" element={<SolicitarAtendimento />} />
+
+          <Route path="/validar-paciente" element={<ValidarPaciente />} />
 
           {/* Portal do beneficiário */}
           <Route
