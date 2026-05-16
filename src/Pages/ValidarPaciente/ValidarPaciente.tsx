@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { appendSheet } from '../../Services/googleSheets'
+import { readSheet, appendSheet } from '../../Services/googleSheets'
 
 // ─── TIPOS ────────────────────────────────────
 interface Consulta {
@@ -234,18 +234,52 @@ function TelaBusca({
     setBuscando(true)
     setNaoAchado(false)
 
-    await new Promise(r => setTimeout(r, 600))
+    try {
+        // 1. Busca no Google Sheets primeiro
+        const rows = await readSheet('Pacientes!A:Q')
+        const encontrado = rows.slice(1).find(r => r[16] === protocolo.trim())
 
-    const resultado = buscarPorProtocolo(protocolo.trim())
+        if (encontrado) {
+            onEncontrado({
+            protocolo:    encontrado[16] ?? '',
+            cpf:          encontrado[6]  ?? '',
+            nome:         encontrado[0]  ?? '',
+            idade:        Number(encontrado[1]) || 0,
+            cidade:       encontrado[2]  ?? '',
+            programa:     encontrado[3]  ?? '',
+            dentista:     encontrado[7]  ?? 'A definir',
+            clinica:      encontrado[10] ?? 'A definir',
+            status:       encontrado[4]  ?? 'Aguardando',
+            sessaoAtual:  Number(encontrado[12]) || 0,
+            totalSessoes: Number(encontrado[13]) || 0,
+            procedimento: encontrado[14] ?? '',
+            historico:    [],
+        })
+        return
+        }
 
-    if (resultado) {
-      onEncontrado(resultado)
-    } else {
-      setNaoAchado(true)
-    }
+        // 2. Não achou no Sheets, tenta no MOCK
+        const mock = buscarPorProtocolo(protocolo.trim())
+        if (mock) {
+            onEncontrado(mock)
+            return
+        }
 
+        // 3. Não encontrou em nenhum lugar
+        setNaoAchado(true)
+
+    } catch {
+        // 4. Se Sheets falhar, tenta no MOCK
+        const mock = buscarPorProtocolo(protocolo.trim())
+        if (mock) {
+            onEncontrado(mock)
+        } else {
+            setNaoAchado(true)
+        }
+    } finally {
     setBuscando(false)
   }
+}
 
   return (
     <div className="w-full max-w-md">

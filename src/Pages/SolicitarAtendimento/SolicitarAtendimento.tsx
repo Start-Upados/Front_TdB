@@ -103,7 +103,7 @@ function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () 
       <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl text-center">
 
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0f3460] via-[#16213e] to-[#1a1a2e] border border-green-500/40 flex items-center justify-center mx-auto mb-5">
-          <span className="text-3xl">✓</span>
+          <span className="text-4xl text-white">✓</span>
         </div>
 
         <h2 className="text-[20px] font-bold text-amber-400 mb-2">
@@ -227,6 +227,26 @@ export default function SolicitarAtendimento() {
       horaStr,
       data.cidade,
       data.estado,
+    ]])
+
+    await appendSheet('Pacientes!A:Q', [[
+      data.nomeAdolescente,
+      '',
+      data.cidade,
+      'Dentista do Bem',
+      'Aguardando',
+      dataStr,
+      '',
+      '',
+      '',
+      '',
+      '',
+      data.endereco,
+      '0',
+      '0',
+      data.necessidade,
+      data.observacoes ?? '',
+      prot,
     ]])
 
     setProtocolo(prot)
