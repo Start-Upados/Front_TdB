@@ -224,6 +224,21 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
             className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed border-none cursor-pointer">
             {buscando ? 'Verificando...' : 'Entrar'}
           </button>
+
+          <div className="flex items-center gap-3 my-2">
+            <div className="flex-1 h-px bg-white/20" />
+            <span className="text-white/40 text-[12px]">ou</span>
+            <div className="flex-1 h-px bg-white/20" />
+          </div>
+
+          {/* Botão Fazer Cadastro */}
+          <Link
+            to="/cadastrar-voluntario"
+            className="w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 hover:-translate-y-0.5 transition-all duration-200 text-center text-[14px] no-underline block"
+          >
+            Fazer Cadastro como Voluntário
+          </Link>
+          
         </form>
       </div>
 
