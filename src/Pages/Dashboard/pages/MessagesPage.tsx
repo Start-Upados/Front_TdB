@@ -213,11 +213,11 @@ function MessageDetail({ msg, onStatusChange }: { msg: Mensagem; onStatusChange:
 
 // ─── CENTRAL DE MENSAGENS (PAGE PRINCIPAL) ────
 export default function MessagesPage() {
-  const [mensagens, setMensagens]   = useState<Mensagem[]>(MOCK);
+  const [mensagens, setMensagens]   = useState<Mensagem[]>([]);
   const [loading, setLoading]       = useState(true);
   const [filtro, setFiltro]         = useState('Todas');
   const [search, setSearch]         = useState('');
-  const [selected, setSelected]     = useState<Mensagem | null>(MOCK[0]);
+  const [selected, setSelected]     = useState<Mensagem | null>(null);
 
   // Carrega dados do Google Sheets
   useEffect(() => {
@@ -246,8 +246,8 @@ export default function MessagesPage() {
         }
       } catch {
         // Usa mock data se API falhar
-        setMensagens(MOCK);
-        setSelected(MOCK[0]);
+        setMensagens([]);
+        setSelected(null);
       } finally {
         setLoading(false);
       }
