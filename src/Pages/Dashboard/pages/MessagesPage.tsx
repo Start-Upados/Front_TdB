@@ -227,19 +227,19 @@ export default function MessagesPage() {
         const rows = await readSheet('Mensagens!A:M');
         if (rows.length > 1) {
           const parsed: Mensagem[] = rows.slice(1).filter(r => r[0]).map((r, i) => ({
-            id:       r[0]  ?? '',
-            nome:     r[1]  ?? '',
-            email:    r[2]  ?? '',
-            telefone: r[3]  ?? '',
-            assunto:  r[4]  ?? '',
-            mensagem: r[5]  ?? '',
-            canal:    r[6]  ?? 'Site',
-            tipo:     r[7]  ?? 'Geral',
-            status:   (['Nova', 'Em andamento', 'Respondida', 'Fechada'].includes(r[8])
-                        ? r[8]
-                        : 'Nova') as Mensagem['status'],
-            data:     r[9]  ?? '',
-            hora:     r[10] ?? '',
+            id:       r[0]  ?? '',  
+            nome:     r[1]  ?? '',   
+            email:    r[2]  ?? '',   
+            telefone: r[3]  ?? '',   
+            assunto:  r[5]  ?? '',   
+            mensagem: r[6]  ?? '',   
+            canal:    r[7]  ?? 'Site', 
+            tipo:     r[8]  ?? 'Geral', 
+            status:   (['Nova', 'Em andamento', 'Respondida', 'Fechada'].includes(r[9])
+                        ? r[9]
+                        : 'Nova') as Mensagem['status'], // ← era r[8]
+            data:     r[10] ?? '',   
+            hora:     r[11] ?? '',   
             row:      i + 2,
           }));
           setMensagens(parsed.reverse());
