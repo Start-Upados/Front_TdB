@@ -199,17 +199,22 @@ export default function CadastrarVoluntario() {
     const dataStr = agora.toLocaleDateString('pt-BR')
 
     try {
-      await appendSheet('Funcionarios!A:I', [[
-        data.nome,                        // Nome
-        cpf,                              // CPF
-        `Dentista Voluntario — CRO: ${data.cro}`, // Cargo
-        data.email,                       // Email
-        whatsapp,                         // Telefone
-        dataStr,                          // Data Inicio
-        'Aguardando analise',             // Status
-        dataStr,                          // Data Cadastro
-        prot,                             // Protocolo
-      ]])
+      await appendSheet('Voluntarios!A:N', [[
+        data.nome,              // Nome
+        cpf,                    // CPF
+        data.cro,               // CRO
+        data.especialidade,     // Especialidade
+        data.email,             // Email
+        whatsapp,               // WhatsApp
+        data.cidade,            // Cidade
+        data.estado,            // Estado
+        data.clinica,           // Clinica
+        data.disponibilidade,   // Disponibilidade
+        data.participouAntes,   // Participou Antes
+        'Aguardando analise',   // Status
+        dataStr,                // Data Cadastro
+        prot,                   // Protocolo
+        ]])
 
       setProtocolo(prot)
       setEnviado(true)
