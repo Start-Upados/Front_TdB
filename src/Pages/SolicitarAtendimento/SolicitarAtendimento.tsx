@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { appendSheet } from '../../Services/googleSheets'
+import { QRCodeSVG } from 'qrcode.react'
 
 
 interface FormData {
@@ -120,6 +121,14 @@ function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () 
             #{protocolo}
           </p>
         </div>
+
+        <QRCodeSVG
+          value={`https://www.startupados.com.br/login?protocolo=${protocolo}`}
+          size={160}
+          bgColor="#07111E"
+          fgColor="#F59E0B"
+          level="H"
+        />
 
         <div className="bg-[#07111E]/30 border border-[rgba(0,212,170,0.2)] rounded-xl p-4 mb-6 text-left">
           <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-3">
