@@ -224,7 +224,7 @@ export default function MessagesPage() {
   useEffect(() => {
     async function load() {
       try {
-        const rows = await readSheet('Mensagens!A:M');
+        const rows = await readSheet('Mensagens!A:N');
         if (rows.length > 1) {
           const parsed: Mensagem[] = rows.slice(1).filter(r => r[0]).map((r, i) => ({
             id:       r[0]  ?? '',  
