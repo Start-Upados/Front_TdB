@@ -122,13 +122,19 @@ function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () 
           </p>
         </div>
 
-        <QRCodeSVG
-          value={`https://www.startupados.com.br/login?protocolo=${protocolo}`}
-          size={160}
-          bgColor="#07111E"
-          fgColor="#F59E0B"
-          level="H"
-        />
+        <div className="flex flex-col items-center mb-6">
+          <div className="bg-white p-3 rounded-xl">
+            <QRCodeSVG
+              value={`https://www.startupados.com.br/login?protocolo=${protocolo}`}
+              size={160}
+              bgColor="#ffffff"
+              fgColor="#07111E"
+              level="H"
+            />
+          </div>
+          <p className="text-white/60 text-[12px] mt-3">Escaneie para acessar seu painel</p>
+          <p className="text-white/30 text-[10px] mt-1 font-mono">startupados.com.br/login</p>
+        </div>
 
         <div className="bg-[#07111E]/30 border border-[rgba(0,212,170,0.2)] rounded-xl p-4 mb-6 text-left">
           <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-3">
