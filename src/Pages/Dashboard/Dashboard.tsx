@@ -8,8 +8,9 @@ import GeographyPage from './pages/GeographyPage';
 import FinancialPage from './pages/FinancialPage';
 import DataEntryPage from './pages/DataEntryPage';
 import MessagesPage from './pages/MessagesPage';
+import CadastrarFuncionario from './pages/CadastrarFuncionario';
 
-export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data' | 'messages';
+export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data' | 'funcionarios' | 'messages';
 
 const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'overview', label: 'Visão Geral'    },
@@ -19,6 +20,7 @@ const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'geo',      label: 'Geografia'      },
   { id: 'fin',      label: 'Financeiro'     },
   { id: 'data',     label: 'Inserir Dados'  },
+  { id: 'funcionarios', label: 'Cadastrar Funcionario' },
   { id: 'messages', label: 'Central de Mensagens' }
 ];
 
@@ -30,6 +32,7 @@ const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
   geo:      { title: 'Geografia',      subtitle: 'Distribuição nacional e cobertura'     },
   fin:      { title: 'Financeiro',     subtitle: 'Doações, custos e empresas parceiras'  },
   data:     { title: 'Inserir Dados',  subtitle: 'Adicionar registros à planilha'        },
+  funcionarios: { title: 'Cadastrar Funcionário',  subtitle: 'Registre os funcionários da Turma do Bem' },
   messages: { title: 'Central de Mensagens', subtitle: 'Atendimento centralizado de todos os canais' },
 };
 
@@ -136,6 +139,7 @@ function renderPage(page: PageId) {
     case 'geo':      return <GeographyPage />;
     case 'fin':      return <FinancialPage />;
     case 'data':     return <DataEntryPage />;
+    case 'funcionarios':  return<CadastrarFuncionario />;
     case 'messages': return <MessagesPage />;
   }
 }
