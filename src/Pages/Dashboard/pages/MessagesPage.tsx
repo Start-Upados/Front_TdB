@@ -18,6 +18,7 @@ interface Mensagem {
 }
 
 // ─── MOCK DATA (usado quando API não responde) ─
+{/*
 const MOCK: Mensagem[] = [
   { id: '001', nome: 'João Silva',      email: 'joao@email.com',    telefone: '(11) 99999-1111', assunto: 'Solicitar atendimento',   mensagem: 'Olá, meu filho de 14 anos precisa de atendimento odontológico urgente. Como posso agendar pelo programa?', canal: 'Site', tipo: 'Beneficiário', status: 'Nova',           data: '11/05/2025', hora: '09:14', row: 2 },
   { id: '002', nome: 'Dra. Ana Lima',   email: 'ana@dental.com',    telefone: '(21) 98888-2222', assunto: 'Quero ser voluntária',    mensagem: 'Sou dentista formada há 5 anos e gostaria muito de me cadastrar como voluntária do programa Dentista do Bem. Como faço?', canal: 'Site', tipo: 'Voluntário', status: 'Em atendimento', data: '11/05/2025', hora: '10:32', row: 3 },
@@ -25,7 +26,7 @@ const MOCK: Mensagem[] = [
   { id: '004', nome: 'Maria Santos',    email: 'maria@gmail.com',   telefone: '(31) 97777-3333', assunto: 'Dúvida sobre programa',  mensagem: 'Gostaria de saber se minha filha de 12 anos se enquadra no programa. Ela nunca foi ao dentista e estamos em situação de vulnerabilidade social.', canal: 'Site', tipo: 'Beneficiário', status: 'Resolvida',      data: '09/05/2025', hora: '08:55', row: 5 },
   { id: '005', nome: 'Dr. Carlos Melo', email: 'carlos@clinic.com', telefone: '(41) 96666-4444', assunto: 'Cadastro voluntário',   mensagem: 'Tenho clínica própria em Curitiba e quero disponibilizar horários semanais para o programa. Qual é o processo de cadastramento?', canal: 'Site', tipo: 'Voluntário', status: 'Nova',           data: '09/05/2025', hora: '16:08', row: 6 },
   { id: '006', nome: 'Fundação XYZ',    email: 'contato@fund.org',  telefone: '(11) 5555-6666', assunto: 'Doação corporativa',     mensagem: 'Nossa fundação deseja fazer uma doação destinada ao programa Norte do Brasil, que tem baixa cobertura. Como proceder?', canal: 'Email', tipo: 'Doador',    status: 'Em atendimento', data: '08/05/2025', hora: '11:30', row: 7 },
-];
+]; */}
 
 // ─── CONFIGURAÇÕES ────────────────────────────
 const TIPO_OPTIONS = ['Todas', 'Beneficiário', 'Voluntário', 'Doador', 'Parceiro', 'Geral'];
