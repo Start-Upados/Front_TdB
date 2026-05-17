@@ -9,8 +9,10 @@ import FinancialPage from './pages/FinancialPage';
 import DataEntryPage from './pages/DataEntryPage';
 import MessagesPage from './pages/MessagesPage';
 import CadastrarFuncionario from './pages/CadastrarFuncionario';
+import GerenciarMutiroes from './pages/GerenciarMutiroes';
 
-export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data' | 'funcionarios' | 'messages';
+
+export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data' | 'funcionarios' | 'messages' | 'mutiroes';
 
 const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'overview', label: 'Visão Geral'    },
@@ -21,7 +23,8 @@ const NAV_ITEMS: { id: PageId; label: string }[] = [
   { id: 'fin',      label: 'Financeiro'     },
   { id: 'data',     label: 'Inserir Dados'  },
   { id: 'funcionarios', label: 'Cadastrar Funcionario' },
-  { id: 'messages', label: 'Central de Mensagens' }
+  { id: 'messages', label: 'Central de Mensagens' },
+  { id: 'mutiroes', label: 'Mutirões' },
 ];
 
 const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
@@ -34,6 +37,7 @@ const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
   data:     { title: 'Inserir Dados',  subtitle: 'Adicionar registros à planilha'        },
   funcionarios: { title: 'Cadastrar Funcionário',  subtitle: 'Registre os funcionários da Turma do Bem' },
   messages: { title: 'Central de Mensagens', subtitle: 'Atendimento centralizado de todos os canais' },
+  mutiroes: { title: 'Gerenciar Mutirões', subtitle: 'Cadastre e gerencie os mutirões de atendimento' },
 };
 
 /* Tiny scrollbar override — pode mover para App.css se preferir */
@@ -141,6 +145,7 @@ function renderPage(page: PageId) {
     case 'data':     return <DataEntryPage />;
     case 'funcionarios':  return<CadastrarFuncionario />;
     case 'messages': return <MessagesPage />;
+    case 'mutiroes':  return <GerenciarMutiroes />
   }
 }
 
