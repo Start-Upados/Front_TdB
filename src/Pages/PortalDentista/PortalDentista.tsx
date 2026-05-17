@@ -109,7 +109,7 @@ const MOCK_DENTISTAS: Dentista[] = [
     totalPacientes: 187,
     avaliacao:     4.8,
     status:        'Ativo',
-    programa:      'Apolonas do Bem',
+    programa:      'Apolônias do Bem',
     proximosAtend: [
       { data: '20/05/2025', hora: '08:00', paciente: 'Mateus Oliveira',   idade: 11, procedimento: 'Aplicacao de selante',       status: 'proximo'  },
       { data: '22/05/2025', hora: '09:00', paciente: 'Bianca Ferreira',   idade: 14, procedimento: 'Canal sessao 1',             status: 'agendado' },
@@ -176,7 +176,7 @@ const MOCK_DENTISTAS: Dentista[] = [
     totalPacientes: 143,
     avaliacao:     4.9,
     status:        'Ativo',
-    programa:      'Apolonas do Bem',
+    programa:      'Apolônias do Bem',
     proximosAtend: [
       { data: '22/05/2025', hora: '09:00', paciente: 'Pedro Souza',       idade: 16, procedimento: 'Ortodontia sessao 1',      status: 'proximo'  },
       { data: '25/05/2025', hora: '10:00', paciente: 'Beatriz Cunha',     idade: 14, procedimento: 'Moldagem ortodontica',     status: 'agendado' },

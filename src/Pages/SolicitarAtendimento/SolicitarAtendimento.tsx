@@ -128,7 +128,7 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
         <h2 className="text-[20px] font-bold text-amber-400 mb-2">Solicitacao enviada!</h2>
         <p className="text-white/70 text-[13px] mb-2">
           {isApolonas
-            ? 'Sua solicitacao para o programa Apolonas do Bem foi registrada.'
+            ? 'Sua solicitacao para o programa Apolônias do Bem foi registrada.'
             : 'Sua solicitacao foi registrada com sucesso.'}
         </p>
         <p className="text-white/50 text-[12px] mb-6">Guarde o protocolo para acompanhar seu atendimento.</p>
@@ -137,7 +137,7 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
           <p className="text-[11px] text-white/50 uppercase tracking-wide mb-1">Numero do protocolo</p>
           <p className="text-[24px] font-extrabold text-amber-400">#{protocolo}</p>
           {isApolonas && (
-            <p className="text-[11px] text-[#00D4AA] mt-1">Programa Apolonas do Bem</p>
+            <p className="text-[11px] text-[#00D4AA] mt-1">Programa Apolônias do Bem</p>
           )}
         </div>
 
@@ -160,12 +160,12 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
           <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-3">Proximos passos</p>
           <div className="flex flex-col gap-2">
             {(isApolonas ? [
-              'A equipe da Turma do Bem analisara sua solicitacao',
+              'A equipe da Turma do Bem analisara sua solicitação',
               'Voce sera contatada para uma triagem oral gratuita',
               'Prazo de resposta: ate 5 dias uteis',
               'Guarde o protocolo para consultas futuras',
             ] : [
-              'A equipe da Turma do Bem analisara sua solicitacao',
+              'A equipe da Turma do Bem analisara sua solicitação',
               'Voce sera contatado pelo WhatsApp ou email cadastrado',
               'Prazo de resposta: ate 5 dias uteis',
               'Guarde o protocolo para consultas futuras',
@@ -232,9 +232,9 @@ function TelaSelecao({ onSelect }: { onSelect: (tipo: 'jovem' | 'mulher') => voi
               👩
             </div>
             <div>
-              <p className="font-bold text-pink-400 text-[15px]">Apolonas do Bem</p>
-              <p className="text-white/70 text-[12px] mt-0.5">Para mulheres vitimas de violencia</p>
-              <p className="text-white/40 text-[11px] mt-0.5">Tratamento odontologico gratuito via triagem</p>
+              <p className="font-bold text-pink-400 text-[15px]">Apolônias do Bem</p>
+              <p className="text-white/70 text-[12px] mt-0.5">Para mulheres vítimas de violência</p>
+              <p className="text-white/40 text-[11px] mt-0.5">Tratamento odontológico gratuito via triagem</p>
             </div>
             <span className="text-pink-400 ml-auto text-[18px]">→</span>
           </button>
@@ -524,7 +524,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-pink-400 mb-3 bg-[#07111E]/40">
             <span className="text-xl">👩</span>
           </div>
-          <h1 className="text-[20px] font-bold text-pink-400">Apolonas do Bem</h1>
+          <h1 className="text-[20px] font-bold text-pink-400">Apolônias do Bem</h1>
           <p className="text-white/60 text-[12px] mt-1">Atendimento gratuito para mulheres</p>
         </div>
 
@@ -632,14 +632,14 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
                 <div className="flex flex-col gap-1 text-[12px]">
                   <p className="text-white/60">Nome: <span className="text-white font-semibold">{getValues('nome')}</span></p>
                   <p className="text-white/60">Cidade: <span className="text-white font-semibold">{getValues('cidade')}/{getValues('estado')}</span></p>
-                  <p className="text-white/60">Programa: <span className="text-pink-400 font-semibold">Apolonas do Bem</span></p>
+                  <p className="text-white/60">Programa: <span className="text-pink-400 font-semibold">Apolônias do Bem</span></p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
                 <input type="checkbox" id="termosM" {...register('aceitaTermos', { required: 'Voce precisa aceitar os termos' })} className="mt-1 cursor-pointer" />
                 <label htmlFor="termosM" className="text-[12px] text-white/60 cursor-pointer leading-relaxed">
-                  Concordo que os dados sejam utilizados pela Turma do Bem para fins de triagem e contato para atendimento odontologico gratuito pelo programa Apolonas do Bem.
+                  Concordo que os dados sejam utilizados pela Turma do Bem para fins de triagem e contato para atendimento odontologico gratuito pelo programa Apolônias do Bem.
                 </label>
               </div>
               {errors.aceitaTermos && <p className="text-[11px] text-red-400">{errors.aceitaTermos.message}</p>}

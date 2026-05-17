@@ -55,7 +55,7 @@ const MOCK_PACIENTES: Paciente[] = [
     nome:         'Maria Santos',
     idade:        13,
     cidade:       'Rio de Janeiro, RJ',
-    programa:     'Apolonas do Bem',
+    programa:     'Apolônias do Bem',
     dentista:     'Dra. Ana Paula Santos',
     clinica:      'Clinica Sorria Bem',
     status:       'Ativo',
@@ -173,14 +173,14 @@ function FichaPaciente({
 
           {/* Dentista responsavel */}
           <div className="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-2">Dentista responsavel</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-2">Dentista responsável</p>
             <p className="font-semibold text-gray-800 text-[14px]">{paciente.dentista}</p>
             <p className="text-gray-500 text-[12px]">{paciente.clinica}</p>
           </div>
 
           {/* Historico */}
           <div className="mb-5">
-            <p className="font-bold text-gray-800 text-[14px] mb-3">Historico de consultas</p>
+            <p className="font-bold text-gray-800 text-[14px] mb-3">Histórico de consultas</p>
             {paciente.historico.map((c, i) => (
               <TimelineItem key={i} consulta={c} isLast={i === paciente.historico.length - 1} />
             ))}
@@ -190,7 +190,7 @@ function FichaPaciente({
           {confirmado ? (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center mb-4">
               <p className="text-green-600 font-bold text-[15px] mb-1">Atendimento confirmado!</p>
-              <p className="text-green-500 text-[12px]">Registrado com sucesso no historico da ONG.</p>
+              <p className="text-green-500 text-[12px]">Registrado com sucesso no histórico da ONG.</p>
             </div>
           ) : (
             <button
@@ -315,8 +315,8 @@ function TelaBusca({
             <div className="flex items-start gap-2 bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] text-[#FF4757] text-[12px] px-4 py-3 rounded-lg">
               <span className="shrink-0">!</span>
               <div>
-                <p className="font-semibold">Protocolo nao encontrado</p>
-                <p className="text-[11px] mt-0.5 opacity-80">Verifique o numero e tente novamente.</p>
+                <p className="font-semibold">Protocolo não encontrado</p>
+                <p className="text-[11px] mt-0.5 opacity-80">Verifique o número e tente novamente.</p>
               </div>
             </div>
           )}
@@ -336,8 +336,8 @@ function TelaBusca({
           <p className="text-[11px] text-[#00D4AA] font-bold uppercase tracking-wide mb-2">Como usar</p>
           <div className="flex flex-col gap-1.5 text-[12px] text-white/60">
             <p>1. Escaneie o QR Code da carteirinha do paciente</p>
-            <p>2. O protocolo sera preenchido automaticamente</p>
-            <p>3. Ou digite manualmente o numero do protocolo</p>
+            <p>2. O protocolo será preenchido automaticamente</p>
+            <p>3. Ou digite manualmente o número do protocolo</p>
           </div>
         </div>
 
