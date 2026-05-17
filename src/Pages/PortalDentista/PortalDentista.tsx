@@ -26,8 +26,13 @@ interface Dentista {
   historicoRecente:  Atendimento[]
 }
 
-//  MOCK DATA //
+
 // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/dentistas/${cro}`) -> Back Java + Oracle
+
+
+
+//  MOCK DATA //
+
 const MOCK_DENTISTAS: Dentista[] = [
   {
     cro:           'CRO-SP-12345',

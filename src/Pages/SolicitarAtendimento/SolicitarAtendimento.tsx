@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { appendSheet } from '../../Services/googleSheets'
 import { QRCodeSVG } from 'qrcode.react'
+import { solicitacaoService } from '../../Services/api'
 
 // ─── TIPOS ────────────────────────────────────
 type TipoAtendimento = 'selecao' | 'jovem' | 'mulher'
@@ -40,7 +41,7 @@ interface FormMulher {
   aceitaTermos:     boolean
 }
 
-// ─── UTILITÁRIOS ──────────────────────────────
+
 function gerarProtocolo(tipo: 'jovem' | 'mulher'): string {
   const ano = new Date().getFullYear()
   const num = Math.floor(Math.random() * 9000) + 1000
@@ -279,38 +280,60 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
   }
 
   async function enviar() {
-    const valid = await trigger(['comoSoube', 'aceitaTermos'])
-    if (!valid) return
-    const data  = getValues()
-    setEnviando(true)
-    const prot    = gerarProtocolo('jovem')
-    const agora   = new Date()
-    const dataStr = agora.toLocaleDateString('pt-BR')
-    const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    try {
-      await appendSheet('Mensagens!A:N', [[
-        prot,
-        data.nomeResponsavel,
-        data.email,
-        whatsapp,
-        telefone,
-        'Solicitacao de Atendimento — Dentista do Bem',
-        `Adolescente: ${data.nomeAdolescente} | Nascimento: ${data.dataNascimento} | Cidade: ${data.cidade}/${data.estado} | Renda: ${data.rendaFamiliar} | Necessidade: ${data.necessidade} | Responsavel: ${data.nomeResponsavel} (${data.parentesco}) | Endereco: ${data.endereco} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
-        'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr, data.cidade, data.estado,
-      ]])
-      await appendSheet('Pacientes!A:Q', [[
-        data.nomeAdolescente, '', data.cidade, 'Dentista do Bem', 'Aguardando',
-        dataStr, '', '', '', '', '', data.endereco, '0', '0', data.necessidade,
-        data.observacoes ?? '', prot,
-      ]])
-      onSucesso(prot)
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao enviar. Tente novamente.')
-    } finally {
-      setEnviando(false)
-    }
+  const valid = await trigger(['comoSoube', 'aceitaTermos'])
+  if (!valid) return
+  const data = getValues()
+  setEnviando(true)
+  const prot    = gerarProtocolo('jovem')
+  const agora   = new Date()
+  const dataStr = agora.toLocaleDateString('pt-BR')
+  const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+  try {
+    // 1. Backend Java
+    await solicitacaoService.cadastrar({
+      nome:        data.nomeResponsavel,
+      rgCpf:       prot,                  // protocolo como ID único
+      email:       data.email,
+      senha:       '123456',
+      telefone:    whatsapp || telefone,
+      cep:         '00000000',
+      necessidade: data.necessidade,
+      sexo:        'masculino',
+      descricao:   data.observacoes ?? '',
+      dataNasc:    data.dataNascimento,
+      renda:       data.rendaFamiliar,
+      responsavel: data.nomeResponsavel,
+      comoSoube:   data.comoSoube,
+      parentesco:  data.parentesco,
+    })
+  } catch (err) {
+    console.warn('Backend indisponivel, salvando no Sheets:', err)
   }
+
+  try {
+    // 2. Google Sheets (sempre salva como backup)
+    await appendSheet('Mensagens!A:N', [[
+      prot, data.nomeResponsavel, data.email, whatsapp, telefone,
+      'Solicitacao de Atendimento — Dentista do Bem',
+      `Adolescente: ${data.nomeAdolescente} | Nascimento: ${data.dataNascimento} | Cidade: ${data.cidade}/${data.estado} | Renda: ${data.rendaFamiliar} | Necessidade: ${data.necessidade} | Responsavel: ${data.nomeResponsavel} (${data.parentesco}) | Endereco: ${data.endereco} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
+      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr, data.cidade, data.estado,
+    ]])
+    await appendSheet('Pacientes!A:Q', [[
+      data.nomeAdolescente, '', data.cidade, 'Dentista do Bem', 'Aguardando',
+      dataStr, '', '', '', '', '', data.endereco, '0', '0', data.necessidade,
+      data.observacoes ?? '', prot,
+    ]])
+  } catch (err) {
+    console.error('Erro ao salvar no Sheets:', err)
+    alert('Erro ao enviar. Tente novamente.')
+    setEnviando(false)
+    return
+  }
+
+  onSucesso(prot)
+  setEnviando(false)
+}
 
   return (
     <div className="w-full max-w-lg">
@@ -488,33 +511,57 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
   }
 
   async function enviar() {
-    const valid = await trigger(['foiVitima', 'comoSoube', 'aceitaTermos'])
-    if (!valid) return
-    const data    = getValues()
-    setEnviando(true)
-    const prot    = gerarProtocolo('mulher')
-    const agora   = new Date()
-    const dataStr = agora.toLocaleDateString('pt-BR')
-    const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    try {
-      await appendSheet('Mensagens!A:N', [[
-        prot,
-        data.nome,
-        data.email,
-        whatsapp,
-        telefone,
-        'Solicitacao de Atendimento — Apolonas do Bem',
-        `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cidade: ${data.cidade}/${data.estado} | Endereco: ${data.endereco} | Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
-        'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr, data.cidade, data.estado,
-      ]])
-      onSucesso(prot)
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao enviar. Tente novamente.')
-    } finally {
-      setEnviando(false)
-    }
+  const valid = await trigger(['foiVitima', 'comoSoube', 'aceitaTermos'])
+  if (!valid) return
+  const data = getValues()
+  setEnviando(true)
+  const prot    = gerarProtocolo('mulher')
+  const agora   = new Date()
+  const dataStr = agora.toLocaleDateString('pt-BR')
+  const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+  try {
+    // 1. Backend Java
+    await solicitacaoService.cadastrar({
+      nome:        data.nome,
+      rgCpf:       prot,
+      email:       data.email,
+      senha:       '123456',
+      telefone:    whatsapp || telefone,
+      cep:         '00000000',
+      necessidade: data.foiVitima === 'Sim'
+        ? 'Vitima de violencia com denticao afetada'
+        : 'Triagem odontologica',
+      sexo:        'feminino',
+      descricao:   data.observacoes ?? '',
+      dataNasc:    data.dataNascimento,
+      renda:       '',
+      responsavel: data.nome,
+      comoSoube:   data.comoSoube,
+      parentesco:  '',
+    })
+  } catch (err) {
+    console.warn('Backend indisponivel, salvando no Sheets:', err)
   }
+
+  try {
+    // 2. Google Sheets (sempre salva como backup)
+    await appendSheet('Mensagens!A:N', [[
+      prot, data.nome, data.email, whatsapp, telefone,
+      'Solicitacao de Atendimento — Apolonas do Bem',
+      `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cidade: ${data.cidade}/${data.estado} | Endereco: ${data.endereco} | Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
+      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr, data.cidade, data.estado,
+    ]])
+  } catch (err) {
+    console.error('Erro ao salvar no Sheets:', err)
+    alert('Erro ao enviar. Tente novamente.')
+    setEnviando(false)
+    return
+  }
+
+  onSucesso(prot)
+  setEnviando(false)
+}
 
   return (
     <div className="w-full max-w-lg">
