@@ -291,6 +291,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
 
   try {
     // 1. Backend Java
+    console.log('Tentando backend Java...')
     await solicitacaoService.cadastrar({
       nome:        data.nomeResponsavel,
       rgCpf:       prot,                  // protocolo como ID único
@@ -307,6 +308,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
       comoSoube:   data.comoSoube,
       parentesco:  data.parentesco,
     })
+    console.log('Backend Java: sucesso!')
   } catch (err) {
     console.warn('Backend indisponivel, salvando no Sheets:', err)
   }

@@ -118,7 +118,7 @@ export default function VolunteersPage() {
       </div>
 
       {/* New volunteers chart */}
-      <Card title="Novos voluntários por mês — 2025">
+      <Card title="Novos voluntários por mês — 2026">
         <LegendRow items={[
           { color: '#B39DDB', label: 'Novos cadastros' },
           { color: 'rgba(179,157,219,0.25)', label: 'Mai–Dez: período futuro' },
