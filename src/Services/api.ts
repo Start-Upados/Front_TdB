@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_BACKEND_URL ?? 'https://backend-mjgv.onrender.com'
-console.log('API_URL:', API_URL)
+//console.log('API_URL:', API_URL)
 
 
 // ─── CLASSE BASE (Usuario.java) ───────────────
