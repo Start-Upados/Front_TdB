@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-
+import { dentistaService } from '../../Services/api'
+ 
 interface Atendimento {
   data:         string
   hora:         string
@@ -9,7 +10,7 @@ interface Atendimento {
   procedimento: string
   status:       'agendado' | 'proximo' | 'concluido'
 }
-
+ 
 interface Dentista {
   nome:              string
   //cidade:            string
@@ -32,11 +33,11 @@ interface Dentista {
   proximosAtend:     Atendimento[]
   //historicoRecente:  Atendimento[]
 }
-
-
+ 
+ 
 // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/dentistas/${cro}`) -> Back Java + Oracle
 //  MOCK DATA //
-
+ 
 const MOCK_DENTISTAS: Dentista[] = [
   {
     cro:                'CRO-SP-12345',
@@ -242,24 +243,24 @@ const MOCK_DENTISTAS: Dentista[] = [
     ],
   },
 ]
-
+ 
 //  BUSCA //
 function buscarDentista(cro: string): Dentista | null {
   return MOCK_DENTISTAS.find(d => d.cro === cro) ?? null
 }
-
+ 
 //  ATENDIMENTO ITEM //
 function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' | 'historico' }) {
   const isProximo = tipo === 'proximo'
-
+ 
   const statusConfig = {
     proximo:   { cls: 'bg-blue-100 text-blue-700',   label: 'Proximo'   },
     agendado:  { cls: 'bg-gray-100 text-gray-600',   label: 'Agendado'  },
     concluido: { cls: 'bg-green-100 text-green-700', label: 'Concluido' },
   }
-
+ 
   const sc = statusConfig[atend.status]
-
+ 
   return (
     <div className={`flex items-center gap-3 p-3 rounded-xl mb-2 border ${
       atend.status === 'proximo'
@@ -278,10 +279,10 @@ function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' 
         </p>
         <p className="text-[10px] text-gray-500 mt-0.5">{atend.hora}</p>
       </div>
-
+ 
       {/* Divisor */}
       <div className="w-px h-10 bg-gray-200 shrink-0" />
-
+ 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-gray-800 truncate">
@@ -290,7 +291,7 @@ function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' 
         </p>
         <p className="text-[11px] text-gray-500 mt-0.5 truncate">{atend.procedimento}</p>
       </div>
-
+ 
       {/* Status */}
       <span className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full ${sc.cls}`}>
         {sc.label}
@@ -298,7 +299,7 @@ function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' 
     </div>
   )
 }
-
+ 
 //  PAINEL DO DENTISTA //
 function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () => void }) {
   return (
@@ -311,8 +312,8 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           </div>
           <h1 className="text-3xl font-extrabold text-white mb-1">{dentista.nome}</h1>
           <p className="text-blue-400 text-[15px]">{dentista.especializacao}</p>
-          
-
+         
+ 
           {/* Stats rápidos */}
           <div className="flex items-center justify-center gap-6 mt-5">
             <div className="text-center">
@@ -332,15 +333,15 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           </div>
         </div>
       </header>
-
+ 
       <section className="py-10 px-6 max-w-2xl mx-auto">
-
+ 
         <Link
           to="/validar-paciente"
           className="w-full flex items-center justify-center gap-2 bg-amber-400 text-[#07111E] font-bold py-3 rounded-xl hover:bg-amber-500 transition-colors mb-5 no-underline text-[14px]">
           Validar Paciente por QR Code
         </Link>
-
+ 
         {/* Proximos atendimentos */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
           <div className="flex items-center justify-between mb-4">
@@ -353,15 +354,15 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             <AtendimentoCard key={i} atend={a} tipo="proximo" />
           ))}
         </div>
-
-        {/* Historico recente 
+ 
+        {/* Historico recente
         <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
           <h2 className="font-bold text-gray-800 text-[16px] mb-4">Historico recente</h2>
           {dentista.historicoRecente.map((a, i) => (
             <AtendimentoCard key={i} atend={a} tipo="historico" />
           ))}
         </div> */}
-
+ 
         {/* Minha clinica */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-md p-6 mb-5 text-white">
           <h2 className="font-bold text-[16px] mb-4">Informações Dentista</h2>
@@ -385,7 +386,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             </div>
           </div>
         </div>
-
+ 
         {/* Informacoes do programa */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-100">
           <h2 className="font-bold text-gray-800 text-[14px] mb-3">Informacoes adicionais</h2>
@@ -396,7 +397,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             </div>
           </div>
         </div>
-
+ 
         {/* Botoes */}
         <div className="flex flex-col gap-3">
           <button
@@ -412,12 +413,12 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             Falar com o Suporte
           </Link>
         </div>
-
+ 
       </section>
     </div>
   )
 }
-
+ 
 //  PAINEL DENTISTA (PRINCIPAL) //
 const PainelDentistaPage = () => {
   const [dentista,   setDentista]   = useState<Dentista | null>(null)
@@ -425,22 +426,53 @@ const PainelDentistaPage = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const croSalvo = sessionStorage.getItem('tdb_cro')
+    async function carregarDentista() {
+      const croSalvo = sessionStorage.getItem('tdb_cro')
 
-    if (!croSalvo) {
-      navigate('/login')
-      return
+      if (!croSalvo) {
+        navigate('/login')
+        return
+      }
+
+      try {
+        const resultado = await dentistaService.buscarPorCro(croSalvo)
+
+        if (resultado) {
+          setDentista({
+            nome:               resultado.nome           ?? '',
+            //cidade:             '',
+            rg_cpg:             resultado.rgCpf          ?? '',
+            telefone:           resultado.telefone       ?? '',
+            especializacao:     resultado.especializacao ?? '',
+            email:              resultado.email          ?? '',
+            senha:              resultado.senha          ?? '',
+            cep:                resultado.cep            ?? '',
+            numero_consultorio: String(resultado.nConsultorio ?? 0),
+            cro:                resultado.cro            ?? croSalvo,
+            n_atendimentos:     resultado.nAtendimentos  ?? 0,
+            avaliacao:          resultado.avaliacao      ?? 0,
+            status:             resultado.status         ?? 'Ativo',
+            proximosAtend:      [],
+          })
+          setCarregando(false)
+          return
+        }
+      } catch {
+        console.warn('Backend indisponivel, usando mock...')
+      }
+
+      // Fallback: busca no mock
+      const mock = buscarDentista(croSalvo)
+      if (mock) {
+        setDentista(mock)
+      } else {
+        navigate('/login')
+      }
+
+      setCarregando(false)
     }
 
-    const resultado = buscarDentista(croSalvo)
-
-    if (resultado) {
-      setDentista(resultado)
-    } else {
-      navigate('/login')
-    }
-
-    setCarregando(false)
+    carregarDentista()
   }, [navigate])
 
   function handleSair() {
