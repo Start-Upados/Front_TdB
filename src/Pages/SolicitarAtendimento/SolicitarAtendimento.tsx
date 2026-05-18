@@ -535,22 +535,22 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha:strin
     // 1. Backend Java
     await solicitacaoService.cadastrar({
       nome:        data.nome,
-      rgCpf:       data.rgCpf,
+      rgCpf:       data.rgCpf.replace(/\D/g, ''),
       protocolo:   prot,
       email:       data.email,
       senha:       senha,
-      telefone:    whatsapp || telefone,
-      cep:          data.cep,
+      telefone:    (whatsapp || telefone).replace(/\D/g, ''),
+      cep:          data.cep.replace(/\D/g, ''),
       necessidade: data.foiVitima === 'Sim'
         ? 'Vitima de violencia com denticao afetada'
         : 'Triagem odontologica',
       sexo:        'feminino',
       descricao:   data.observacoes ?? '',
       dataNasc:    data.dataNascimento,
-      renda:       '',
+      renda:       'Nao se aplica',
       responsavel: data.nome,
       comoSoube:   data.comoSoube,
-      parentesco:  '',
+      parentesco:  'Nao se aplica',
     })
   } catch (err) {
     console.warn('Backend indisponivel, salvando no Sheets:', err)
