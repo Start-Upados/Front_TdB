@@ -48,6 +48,14 @@ function gerarProtocolo(tipo: 'jovem' | 'mulher'): string {
   return tipo === 'jovem' ? `TDB-${ano}-${num}` : `APO-${ano}-${num}`
 }
 
+function gerarSenha(nome: string): string {
+  // Ex: "joao123" — primeiros 4 chars do nome + 3 números aleatórios
+  const base = nome.toLowerCase().replace(/\s+/g, '').slice(0, 4)
+  const num  = Math.floor(Math.random() * 900) + 100
+  return `${base}${num}`
+}
+
+
 {/*
 function formatCPF(value: string): string {
   const nums = value.replace(/\D/g, '').slice(0, 11)
@@ -114,8 +122,9 @@ const inputCls  = "w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text
 const selectCls = "w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
 
 // ─── TELA DE SUCESSO ──────────────────────────
-function TelaSucesso({ protocolo, tipo, onVoltar }: {
-  protocolo: string; tipo: 'jovem' | 'mulher'; onVoltar: () => void
+function TelaSucesso({ protocolo, tipo, onVoltar, senha}: {
+  protocolo: string; tipo: 'jovem' | 'mulher'; senha:string; onVoltar: () => void
+
 }) {
   const isApolonas = tipo === 'mulher'
 
@@ -127,7 +136,7 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
           <span className="text-3xl">✓</span>
         </div>
 
-        <h2 className="text-[20px] font-bold text-amber-400 mb-2">Solicitacao enviada!</h2>
+        <h2 className="text-[20px] font-bold text-amber-400 mb-2">Solicitação enviada!</h2>
         <p className="text-white/70 text-[13px] mb-2">
           {isApolonas
             ? 'Sua solicitacao para o programa Apolônias do Bem foi registrada.'
@@ -136,10 +145,13 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
         <p className="text-white/50 text-[12px] mb-6">Guarde o protocolo para acompanhar seu atendimento.</p>
 
         <div className="bg-[#07111E]/40 border border-amber-400/30 rounded-xl p-4 mb-5">
-          <p className="text-[11px] text-white/50 uppercase tracking-wide mb-1">Numero do protocolo</p>
+          <p className="text-[11px] text-white/50 uppercase tracking-wide mb-1">Número do protocolo</p>
           <p className="text-[24px] font-extrabold text-amber-400">#{protocolo}</p>
+          <p className="text-[11px] text-white/50 uppercase tracking-wide mb-1">senha:</p>
+          <p className="text-[24px] font-extrabold text-amber-400">{senha}</p>
+          
           {isApolonas && (
-            <p className="text-[11px] text-[#00D4AA] mt-1">Programa Apolônias do Bem</p>
+            <p className="text-[11px] text-[#b81e96] mt-1">Programa Apolônias do Bem</p>
           )}
         </div>
 
@@ -154,12 +166,13 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
               level="H"
             />
           </div>
-          <p className="text-white/60 text-[12px] mt-3">Escaneie para acessar seu painel</p>
+
+          <p className="text-white/60 text-[12px] mt-3">Escaneie para validar seu atendimento</p>
           <p className="text-white/30 text-[10px] mt-1 font-mono">startupados.com.br/validar-paciente</p>
         </div>
 
         <div className="bg-[#07111E]/30 border border-[rgba(0,212,170,0.2)] rounded-xl p-4 mb-6 text-left">
-          <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-3">Proximos passos</p>
+          <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-3">Próximos passos</p>
           <div className="flex flex-col gap-2">
             {(isApolonas ? [
               'A equipe da Turma do Bem analisara sua solicitação',
@@ -185,7 +198,7 @@ function TelaSucesso({ protocolo, tipo, onVoltar }: {
             Voltar ao inicio
           </Link>
           <button onClick={onVoltar} className="w-full bg-[#07111E]/40 text-white/60 font-semibold py-2.5 rounded-lg hover:bg-[#07111E]/60 transition-colors cursor-pointer border-none text-[13px]">
-            Nova solicitacao
+            Nova solicitação
           </button>
         </div>
       </div>
@@ -204,7 +217,7 @@ function TelaSelecao({ onSelect }: { onSelect: (tipo: 'jovem' | 'mulher') => voi
             <span className="text-2xl">🦷</span>
           </div>
           <h1 className="text-[20px] font-bold text-amber-400">Solicitar Atendimento</h1>
-          <p className="text-white/60 text-[13px] mt-1">Qual tipo de atendimento voce precisa?</p>
+          <p className="text-white/60 text-[13px] mt-1">Qual tipo de atendimento você precisa?</p>
         </div>
 
         <div className="flex flex-col gap-4 mb-6">
@@ -220,7 +233,7 @@ function TelaSelecao({ onSelect }: { onSelect: (tipo: 'jovem' | 'mulher') => voi
             <div>
               <p className="font-bold text-amber-400 text-[15px]">Dentista do Bem</p>
               <p className="text-white/70 text-[12px] mt-0.5">Para jovens de 11 a 17 anos</p>
-              <p className="text-white/40 text-[11px] mt-0.5">Tratamento odontologico gratuito</p>
+              <p className="text-white/40 text-[11px] mt-0.5">Tratamento odontológico gratuito</p>
             </div>
             <span className="text-amber-400 ml-auto text-[18px]">→</span>
           </button>
@@ -259,7 +272,7 @@ function TelaSelecao({ onSelect }: { onSelect: (tipo: 'jovem' | 'mulher') => voi
 }
 
 // ─── FORMULÁRIO DO JOVEM ──────────────────────
-function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
+function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha:string) => void }) {
   const [step,     setStep]     = useState(1)
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
@@ -286,6 +299,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
   const data = getValues()
   setEnviando(true)
   const prot    = gerarProtocolo('jovem')
+  const senha   = gerarSenha(data.nomeAdolescente)
   const agora   = new Date()
   const dataStr = agora.toLocaleDateString('pt-BR')
   const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -294,11 +308,11 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
     // 1. Backend Java
     //console.log('Tentando backend Java...')
     await solicitacaoService.cadastrar({
-      nome:        data.nomeResponsavel,
+      nome:        data.nomeAdolescente,
       rgCpf:       data.rgCpf,                  // protocolo como ID único
       email:       data.email,
       protocolo:   prot,
-      senha:       '123456',
+      senha:       senha,
       telefone:    whatsapp || telefone,
       cep:         data.cep,
       necessidade: data.necessidade,
@@ -335,7 +349,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
     return
   }
 
-  onSucesso(prot)
+  onSucesso(prot,senha)
   setEnviando(false)
 }
 
@@ -370,20 +384,20 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
               <Campo label="Renda familiar" error={errors.rendaFamiliar?.message}>
                 <select {...register('rendaFamiliar', { required: 'Campo obrigatorio' })} className={selectCls}>
                   <option value="">Selecione</option>
-                  <option value="Ate 1 salario minimo">Ate 1 salario minimo</option>
-                  <option value="1 a 2 salarios minimos">1 a 2 salarios minimos</option>
-                  <option value="2 a 3 salarios minimos">2 a 3 salarios minimos</option>
-                  <option value="Acima de 3 salarios minimos">Acima de 3 salarios minimos</option>
+                  <option value="Ate 1 salario minimo">Até 1 salário mínimo</option>
+                  <option value="1 a 2 salarios minimos">1 a 2 salários minimos</option>
+                  <option value="2 a 3 salarios minimos">2 a 3 salários mínimos</option>
+                  <option value="Acima de 3 salarios minimos">Acima de 3 salários mínimos</option>
                 </select>
               </Campo>
               <Campo label="Necessidade odontologica" error={errors.necessidade?.message}>
                 <select {...register('necessidade', { required: 'Campo obrigatorio' })} className={selectCls}>
                   <option value="">Selecione</option>
                   <option value="Tratamento de canal">Tratamento de canal</option>
-                  <option value="Extracao">Extracao</option>
-                  <option value="Restauracao">Restauracao</option>
+                  <option value="Extracao">Extração</option>
+                  <option value="Restauracao">Restauração</option>
                   <option value="Ortodontia (aparelho)">Ortodontia (aparelho)</option>
-                  <option value="Limpeza e prevencao">Limpeza e prevencao</option>
+                  <option value="Limpeza e prevencao">Limpeza e prevenção</option>
                   <option value="Outro">Outro</option>
                 </select>
               <Campo label="RG ou Cpf" error={errors.rgCpf?.message}>
@@ -432,9 +446,9 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
                   <option value="">Selecione</option>
                   <option value="Instagram">Instagram</option>
                   <option value="Facebook">Facebook</option>
-                  <option value="Indicacao de amigo/familiar">Indicacao de amigo/familiar</option>
+                  <option value="Indicacao de amigo/familiar">Indicação de amigo/familiar</option>
                   <option value="Escola">Escola</option>
-                  <option value="Posto de saude">Posto de saude</option>
+                  <option value="Posto de saude">Posto de saúde</option>
                   <option value="Site da Turma do Bem">Site da Turma do Bem</option>
                   <option value="Outro">Outro</option>
                 </select>
@@ -453,7 +467,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
               <div className="flex items-start gap-3">
                 <input type="checkbox" id="termosJ" {...register('aceitaTermos', { required: 'Voce precisa aceitar os termos' })} className="mt-1 cursor-pointer" />
                 <label htmlFor="termosJ" className="text-[12px] text-white/60 cursor-pointer leading-relaxed">
-                  Concordo que os dados sejam utilizados pela Turma do Bem para fins de agendamento e contato para atendimento odontologico gratuito.
+                  Concordo que os dados sejam utilizados pela Turma do Bem para fins de agendamento e contato para atendimento odontológico gratuito.
                 </label>
               </div>
               {errors.aceitaTermos && <p className="text-[11px] text-red-400">{errors.aceitaTermos.message}</p>}
@@ -486,7 +500,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
 }
 
 // ─── FORMULÁRIO DA MULHER ─────────────────────
-function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) {
+function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha:string) => void }) {
   const [step,     setStep]     = useState(1)
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
@@ -512,6 +526,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
   const data = getValues()
   setEnviando(true)
   const prot    = gerarProtocolo('mulher')
+  const senha = gerarSenha(data.nome)
   const agora   = new Date()
   const dataStr = agora.toLocaleDateString('pt-BR')
   const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -523,7 +538,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
       rgCpf:       data.rgCpf,
       protocolo:   prot,
       email:       data.email,
-      senha:       '123456',
+      senha:       senha,
       telefone:    whatsapp || telefone,
       cep:          data.cep,
       necessidade: data.foiVitima === 'Sim'
@@ -556,7 +571,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
     return
   }
 
-  onSucesso(prot)
+  onSucesso(prot,senha)
   setEnviando(false)
 }
 
@@ -575,7 +590,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
         {/* Info sobre triagem */}
         <div className="bg-[#07111E]/30 border border-pink-400/20 rounded-xl p-3 mb-5">
           <p className="text-[12px] text-white/70 leading-relaxed">
-            O programa oferece tratamento odontologico gratuito para mulheres cis e trans que vivenciaram situacoes de violencia. A selecao e feita por triagem oral nao invasiva.
+            O programa oferece tratamento odontológico gratuito para mulheres cis e trans que vivenciaram situações de violência. A seleção é feita por triagem oral não invasiva.
           </p>
         </div>
 
@@ -620,7 +635,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
               {/* Botão de vitima de violencia */}
               <div className="bg-[#07111E]/40 border border-pink-400/30 rounded-xl p-4">
                 <p className="text-[13px] text-white font-semibold mb-3">
-                  Voce foi vitima de violencia e teve a denticao afetada?
+                  Você foi vítima de violência e teve a dentição afetada?
                 </p>
                 <div className="flex gap-3">
                   {['Sim', 'Nao'].map(opcao => (
@@ -651,8 +666,8 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
                   <option value="">Selecione</option>
                   <option value="Instagram">Instagram</option>
                   <option value="Facebook">Facebook</option>
-                  <option value="Indicacao de amigo/familiar">Indicacao de amigo/familiar</option>
-                  <option value="Posto de saude">Posto de saude</option>
+                  <option value="Indicacao de amigo/familiar">Indicação de amigo/familiar</option>
+                  <option value="Posto de saude">Posto de saúde</option>
                   <option value="Delegacia/CREAS">Delegacia/CREAS</option>
                   <option value="Site da Turma do Bem">Site da Turma do Bem</option>
                   <option value="Outro">Outro</option>
@@ -675,7 +690,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
               <div className="flex items-start gap-3">
                 <input type="checkbox" id="termosM" {...register('aceitaTermos', { required: 'Voce precisa aceitar os termos' })} className="mt-1 cursor-pointer" />
                 <label htmlFor="termosM" className="text-[12px] text-white/60 cursor-pointer leading-relaxed">
-                  Concordo que os dados sejam utilizados pela Turma do Bem para fins de triagem e contato para atendimento odontologico gratuito pelo programa Apolônias do Bem.
+                  Concordo que os dados sejam utilizados pela Turma do Bem para fins de triagem e contato para atendimento odontológico gratuito pelo programa Apolônias do Bem.
                 </label>
               </div>
               {errors.aceitaTermos && <p className="text-[11px] text-red-400">{errors.aceitaTermos.message}</p>}
@@ -695,7 +710,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
             </button>
           ) : (
             <button type="button" onClick={enviar} disabled={enviando} className="flex-1 bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-green-500 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] disabled:opacity-60 disabled:cursor-not-allowed">
-              {enviando ? 'Enviando...' : 'Enviar solicitacao'}
+              {enviando ? 'Enviando...' : 'Enviar solicitacao'} 
             </button>
           )}
         </div>
@@ -713,8 +728,10 @@ export default function SolicitarAtendimento() {
   const [enviado,   setEnviado]   = useState(false)
   const [protocolo, setProtocolo] = useState('')
   const [tipoFinal, setTipoFinal] = useState<'jovem' | 'mulher'>('jovem')
+  const [senha, setSenha ] = useState('')
 
-  function handleSucesso(prot: string, t: 'jovem' | 'mulher') {
+  function handleSucesso(prot: string, t: 'jovem' | 'mulher', senha:string) {
+    setSenha(senha)
     setProtocolo(prot)
     setTipoFinal(t)
     setEnviado(true)
@@ -724,6 +741,7 @@ export default function SolicitarAtendimento() {
     return (
       <div className="min-h-screen bg-[#07111E] flex items-center justify-center p-4">
         <TelaSucesso
+          senha={senha}
           protocolo={protocolo}
           tipo={tipoFinal}
           onVoltar={() => { setEnviado(false); setTipo('selecao') }}
@@ -735,8 +753,8 @@ export default function SolicitarAtendimento() {
   return (
     <div className="min-h-screen bg-[#07111E] flex items-center justify-center p-4">
       {tipo === 'selecao' && <TelaSelecao onSelect={setTipo} />}
-      {tipo === 'jovem'   && <FormularioJovem  onSucesso={prot => handleSucesso(prot, 'jovem')} />}
-      {tipo === 'mulher'  && <FormularioMulher onSucesso={prot => handleSucesso(prot, 'mulher')} />}
+      {tipo === 'jovem'   && <FormularioJovem  onSucesso={(prot, senha) => handleSucesso(prot, 'jovem', senha)} />}
+      {tipo === 'mulher'  && <FormularioMulher onSucesso={(prot, senha) => handleSucesso(prot, 'mulher', senha)} />}
     </div>
   )
 }
