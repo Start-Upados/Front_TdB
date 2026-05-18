@@ -111,7 +111,6 @@ export default function CadastrarFuncionario() {
     reset()
     setCpf('')
     setTelefone('')
-    setTimeout(() => setSucesso(false), 4000)
 
   } catch (err) {
     console.error('Erro ao cadastrar:', err)
