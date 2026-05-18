@@ -12,251 +12,234 @@ interface Atendimento {
 }
 
 interface Dentista {
-  cro:               string
   nome:              string
-  cidade:            string
-  clinica:           string
-  endereco:          string
-  especialidade:     string
-  totalPacientes:    number
+  //cidade:            string
+  rg_cpg:            string
+  telefone:          string
+  especializacao:    string
+  email:             string
+  senha:             string
+  cep:               string
+  numero_consultorio: string
+  cro:               string
+  n_atendimentos:    number
   avaliacao:         number
   status:            string
-  programa:          string
+  //cidade:            string
+  //clinica:           string
+  //endereco:          string  
+  //totalPacientes:    number
+  //programa:          string
   proximosAtend:     Atendimento[]
-  historicoRecente:  Atendimento[]
+  //historicoRecente:  Atendimento[]
 }
 
 
 // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/dentistas/${cro}`) -> Back Java + Oracle
-
-
-
 //  MOCK DATA //
 
 const MOCK_DENTISTAS: Dentista[] = [
   {
-    cro:           'CRO-SP-12345',
-    nome:          'Dr. Carlos Mendes',
-    cidade:        'Sao Paulo, SP',
-    clinica:       'Clinica Oral Center',
-    endereco:      'Rua das Flores, 123 - Vila Mariana, Sao Paulo, SP',
-    especialidade: 'Ortodontia e Clinico Geral',
-    totalPacientes: 234,
-    avaliacao:     4.8,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-SP-12345',
+    nome:               'Dr. Carlos Mendes',
+    //cidade:             'Sao Paulo, SP',
+    rg_cpg:             '12.345.678-9',
+    telefone:           '(11) 99999-1111',
+    especializacao:     'Ortodontia e Clinico Geral',
+    email:              'carlos.mendes@email.com',
+    senha:              'carlos123',
+    cep:                '04178000',
+    numero_consultorio: '123',
+    n_atendimentos:     234,
+    avaliacao:          4.8,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '17/05/2025', hora: '09:00', paciente: 'Joao Silva',          idade: 15, procedimento: 'Canal sessao 2',          status: 'proximo'   },
-      { data: '17/05/2025', hora: '10:30', paciente: 'Pedro Souza',         idade: 16, procedimento: 'Ortodontia sessao 1',     status: 'agendado'  },
-      { data: '18/05/2025', hora: '14:00', paciente: 'Gabriel Alves',       idade: 15, procedimento: 'Extracao cirurgica',      status: 'agendado'  },
-      { data: '20/05/2025', hora: '09:00', paciente: 'Lucas Henrique',      idade: 17, procedimento: 'Restauracao dente 46',    status: 'agendado'  },
-      { data: '22/05/2025', hora: '11:00', paciente: 'Julia Caroline',      idade: 16, procedimento: 'Clareamento sessao final',status: 'agendado'  },
-    ],
-    historicoRecente: [
-      { data: '15/05/2025', hora: '10:00', paciente: 'Ana Beatriz',         idade: 14, procedimento: 'Raspagem periodontal',    status: 'concluido' },
-      { data: '14/05/2025', hora: '09:00', paciente: 'Isabela Martins',     idade: 12, procedimento: 'Colocacao do aparelho',   status: 'concluido' },
-      { data: '13/05/2025', hora: '14:00', paciente: 'Sophia Rodrigues',    idade: 13, procedimento: 'Canal sessao 1',          status: 'concluido' },
-      { data: '12/05/2025', hora: '08:00', paciente: 'Mateus Oliveira',     idade: 11, procedimento: 'Avaliacao inicial',       status: 'concluido' },
+      { data: '17/05/2025', hora: '09:00', paciente: 'Joao Silva',           idade: 15, procedimento: 'Canal sessao 2',           status: 'proximo'  },
+      { data: '17/05/2025', hora: '10:30', paciente: 'Pedro Souza',          idade: 16, procedimento: 'Ortodontia sessao 1',      status: 'agendado' },
+      { data: '18/05/2025', hora: '14:00', paciente: 'Gabriel Alves',        idade: 15, procedimento: 'Extracao cirurgica',       status: 'agendado' },
+      { data: '20/05/2025', hora: '09:00', paciente: 'Lucas Henrique',       idade: 17, procedimento: 'Restauracao dente 46',     status: 'agendado' },
+      { data: '22/05/2025', hora: '11:00', paciente: 'Julia Caroline',       idade: 16, procedimento: 'Clareamento sessao final', status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-RJ-67890',
-    nome:          'Dra. Ana Paula Santos',
-    cidade:        'Rio de Janeiro, RJ',
-    clinica:       'Clinica Sorria Bem',
-    endereco:      'Av. Atlantica, 500 - Copacabana, Rio de Janeiro, RJ',
-    especialidade: 'Pediatria e Ortodontia',
-    totalPacientes: 247,
-    avaliacao:     4.9,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-RJ-67890',
+    nome:               'Dra. Ana Paula Santos',
+    //cidade:             'Rio de Janeiro, RJ',
+    rg_cpg:             '98.765.432-1',
+    telefone:           '(21) 99999-2222',
+    especializacao:     'Pediatria e Ortodontia',
+    email:              'ana.paula@email.com',
+    senha:              'ana123',
+    cep:                '22010000',
+    numero_consultorio: '500',
+    n_atendimentos:     247,
+    avaliacao:          4.9,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '20/05/2025', hora: '09:00', paciente: 'Maria Santos',        idade: 13, procedimento: 'Colocacao do aparelho',   status: 'proximo'   },
-      { data: '21/05/2025', hora: '10:00', paciente: 'Sofia Lima',          idade: 14, procedimento: 'Avaliacao inicial',       status: 'agendado'  },
-      { data: '23/05/2025', hora: '14:00', paciente: 'Rafael Costa',        idade: 15, procedimento: 'Restauracao dente 16',   status: 'agendado'  },
-    ],
-    historicoRecente: [
-      { data: '16/05/2025', hora: '09:00', paciente: 'Carla Mendes',        idade: 12, procedimento: 'Selante dental',         status: 'concluido' },
-      { data: '15/05/2025', hora: '11:00', paciente: 'Bruno Alves',         idade: 16, procedimento: 'Extracao de siso',       status: 'concluido' },
-      { data: '14/05/2025', hora: '15:00', paciente: 'Larissa Freitas',     idade: 13, procedimento: 'Limpeza profunda',       status: 'concluido' },
+      { data: '20/05/2025', hora: '09:00', paciente: 'Maria Santos',         idade: 13, procedimento: 'Colocacao do aparelho',    status: 'proximo'  },
+      { data: '21/05/2025', hora: '10:00', paciente: 'Sofia Lima',           idade: 14, procedimento: 'Avaliacao inicial',        status: 'agendado' },
+      { data: '23/05/2025', hora: '14:00', paciente: 'Rafael Costa',         idade: 15, procedimento: 'Restauracao dente 16',    status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-MG-11111',
-    nome:          'Dr. Rafael Oliveira',
-    cidade:        'Belo Horizonte, MG',
-    clinica:       'Clinica Sorriso BH',
-    endereco:      'Av. Afonso Pena, 2000 - Centro, Belo Horizonte, MG',
-    especialidade: 'Periodontia e Clinico Geral',
-    totalPacientes: 198,
-    avaliacao:     4.7,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-MG-11111',
+    nome:               'Dr. Rafael Oliveira',
+    //cidade:             'Belo Horizonte, MG',
+    rg_cpg:             '11.111.111-1',
+    telefone:           '(31) 99999-3333',
+    especializacao:     'Periodontia e Clinico Geral',
+    email:              'rafael.oliveira@email.com',
+    senha:              'rafael123',
+    cep:                '30130010',
+    numero_consultorio: '2000',
+    n_atendimentos:     198,
+    avaliacao:          4.7,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '19/05/2025', hora: '08:00', paciente: 'Isabela Martins',   idade: 12, procedimento: 'Primeiro ajuste ortodontico', status: 'proximo'  },
-      { data: '21/05/2025', hora: '10:00', paciente: 'Thiago Rocha',      idade: 15, procedimento: 'Avaliacao inicial',           status: 'agendado' },
-      { data: '23/05/2025', hora: '14:00', paciente: 'Leticia Alves',     idade: 13, procedimento: 'Restauracao dente 26',        status: 'agendado' },
-      { data: '26/05/2025', hora: '09:00', paciente: 'Vitor Hugo Lima',   idade: 16, procedimento: 'Extracao de siso',            status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '16/05/2025', hora: '08:00', paciente: 'Ana Beatriz',       idade: 14, procedimento: 'Controle de gengivite',      status: 'concluido' },
-      { data: '14/05/2025', hora: '10:00', paciente: 'Felipe Nunes',      idade: 17, procedimento: 'Limpeza e profilaxia',       status: 'concluido' },
-      { data: '12/05/2025', hora: '14:00', paciente: 'Mariana Souza',     idade: 11, procedimento: 'Selante dental',             status: 'concluido' },
+      { data: '19/05/2025', hora: '08:00', paciente: 'Isabela Martins',      idade: 12, procedimento: 'Primeiro ajuste ortodontico', status: 'proximo'  },
+      { data: '21/05/2025', hora: '10:00', paciente: 'Thiago Rocha',         idade: 15, procedimento: 'Avaliacao inicial',           status: 'agendado' },
+      { data: '23/05/2025', hora: '14:00', paciente: 'Leticia Alves',        idade: 13, procedimento: 'Restauracao dente 26',        status: 'agendado' },
+      { data: '26/05/2025', hora: '09:00', paciente: 'Vitor Hugo Lima',      idade: 16, procedimento: 'Extracao de siso',            status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-RS-22222',
-    nome:          'Dra. Juliana Costa',
-    cidade:        'Porto Alegre, RS',
-    clinica:       'Clinica Gaucha Oral',
-    endereco:      'Av. Ipiranga, 1500 - Azenha, Porto Alegre, RS',
-    especialidade: 'Endodontia e Pediatria',
-    totalPacientes: 187,
-    avaliacao:     4.8,
-    status:        'Ativo',
-    programa:      'Apolônias do Bem',
+    cro:                'CRO-RS-22222',
+    nome:               'Dra. Juliana Costa',
+    //cidade:             'Porto Alegre, RS',
+    rg_cpg:             '22.222.222-2',
+    telefone:           '(51) 99999-4444',
+    especializacao:     'Endodontia e Pediatria',
+    email:              'juliana.costa@email.com',
+    senha:              'juliana123',
+    cep:                '90160093',
+    numero_consultorio: '1500',
+    n_atendimentos:     187,
+    avaliacao:          4.8,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '20/05/2025', hora: '08:00', paciente: 'Mateus Oliveira',   idade: 11, procedimento: 'Aplicacao de selante',       status: 'proximo'  },
-      { data: '22/05/2025', hora: '09:00', paciente: 'Bianca Ferreira',   idade: 14, procedimento: 'Canal sessao 1',             status: 'agendado' },
-      { data: '27/05/2025', hora: '10:00', paciente: 'Diego Monteiro',    idade: 13, procedimento: 'Avaliacao inicial',          status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '15/05/2025', hora: '08:00', paciente: 'Larissa Pinto',     idade: 15, procedimento: 'Restauracao dente 36',      status: 'concluido' },
-      { data: '13/05/2025', hora: '09:00', paciente: 'Eduardo Lima',      idade: 12, procedimento: 'Extracao simples',          status: 'concluido' },
-      { data: '11/05/2025', hora: '14:00', paciente: 'Camila Souza',      idade: 16, procedimento: 'Clareamento sessao 2',      status: 'concluido' },
-      { data: '09/05/2025', hora: '10:00', paciente: 'Andre Rocha',       idade: 17, procedimento: 'Canal sessao final',        status: 'concluido' },
+      { data: '20/05/2025', hora: '08:00', paciente: 'Mateus Oliveira',      idade: 11, procedimento: 'Aplicacao de selante',       status: 'proximo'  },
+      { data: '22/05/2025', hora: '09:00', paciente: 'Bianca Ferreira',      idade: 14, procedimento: 'Canal sessao 1',             status: 'agendado' },
+      { data: '27/05/2025', hora: '10:00', paciente: 'Diego Monteiro',       idade: 13, procedimento: 'Avaliacao inicial',          status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-BA-33333',
-    nome:          'Dr. Marcelo Pereira',
-    cidade:        'Salvador, BA',
-    clinica:       'Clinica Oral Bahia',
-    endereco:      'Av. Tancredo Neves, 1000 - Caminho das Arvores, Salvador, BA',
-    especialidade: 'Cirurgia Buco-Maxilo-Facial',
-    totalPacientes: 176,
-    avaliacao:     4.6,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-BA-33333',
+    nome:               'Dr. Marcelo Pereira',
+    //cidade:             'Salvador, BA',
+    rg_cpg:             '33.333.333-3',
+    telefone:           '(71) 99999-5555',
+    especializacao:     'Cirurgia Buco-Maxilo-Facial',
+    email:              'marcelo.pereira@email.com',
+    senha:              'marcelo123',
+    cep:                '41820021',
+    numero_consultorio: '1000',
+    n_atendimentos:     176,
+    avaliacao:          4.6,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '21/05/2025', hora: '07:00', paciente: 'Ana Beatriz',       idade: 14, procedimento: 'Alta periodontal',          status: 'proximo'  },
-      { data: '23/05/2025', hora: '08:00', paciente: 'Rodrigo Santos',    idade: 16, procedimento: 'Extracao de siso superior', status: 'agendado' },
-      { data: '28/05/2025', hora: '07:00', paciente: 'Patricia Lima',     idade: 15, procedimento: 'Cirurgia de frenulo',       status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '14/05/2025', hora: '07:00', paciente: 'Caio Mendes',       idade: 17, procedimento: 'Extracao de siso duplo',   status: 'concluido' },
-      { data: '12/05/2025', hora: '08:00', paciente: 'Natalia Freitas',   idade: 13, procedimento: 'Avaliacao cirurgica',      status: 'concluido' },
-      { data: '10/05/2025', hora: '07:00', paciente: 'Henrique Alves',    idade: 16, procedimento: 'Cirurgia de frenulo',      status: 'concluido' },
+      { data: '21/05/2025', hora: '07:00', paciente: 'Ana Beatriz',          idade: 14, procedimento: 'Alta periodontal',           status: 'proximo'  },
+      { data: '23/05/2025', hora: '08:00', paciente: 'Rodrigo Santos',       idade: 16, procedimento: 'Extracao de siso superior',  status: 'agendado' },
+      { data: '28/05/2025', hora: '07:00', paciente: 'Patricia Lima',        idade: 15, procedimento: 'Cirurgia de frenulo',        status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-CE-44444',
-    nome:          'Dra. Camila Souza',
-    cidade:        'Fortaleza, CE',
-    clinica:       'Clinica Dente Sadio',
-    endereco:      'Rua Monsenhor Tabosa, 300 - Meireles, Fortaleza, CE',
-    especialidade: 'Dentistica e Estetica',
-    totalPacientes: 165,
-    avaliacao:     4.7,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-CE-44444',
+    nome:               'Dra. Camila Souza',
+    //cidade:             'Fortaleza, CE',
+    rg_cpg:             '44.444.444-4',
+    telefone:           '(85) 99999-6666',
+    especializacao:     'Dentistica e Estetica',
+    email:              'camila.souza@email.com',
+    senha:              'camila123',
+    cep:                '60160110',
+    numero_consultorio: '300',
+    n_atendimentos:     165,
+    avaliacao:          4.7,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '21/05/2025', hora: '15:00', paciente: 'Julia Caroline',    idade: 16, procedimento: 'Clareamento sessao final',  status: 'proximo'  },
-      { data: '24/05/2025', hora: '14:00', paciente: 'Aline Barbosa',     idade: 14, procedimento: 'Restauracao estetica',      status: 'agendado' },
-      { data: '28/05/2025', hora: '15:00', paciente: 'Gustavo Campos',    idade: 15, procedimento: 'Avaliacao estetica',        status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '17/05/2025', hora: '15:00', paciente: 'Lucas Henrique',    idade: 17, procedimento: 'Acabamento e polimento',   status: 'concluido' },
-      { data: '15/05/2025', hora: '14:00', paciente: 'Renata Costa',      idade: 13, procedimento: 'Clareamento sessao 2',     status: 'concluido' },
-      { data: '13/05/2025', hora: '15:00', paciente: 'Igor Martins',      idade: 12, procedimento: 'Restauracao dente 11',     status: 'concluido' },
+      { data: '21/05/2025', hora: '15:00', paciente: 'Julia Caroline',       idade: 16, procedimento: 'Clareamento sessao final',   status: 'proximo'  },
+      { data: '24/05/2025', hora: '14:00', paciente: 'Aline Barbosa',        idade: 14, procedimento: 'Restauracao estetica',       status: 'agendado' },
+      { data: '28/05/2025', hora: '15:00', paciente: 'Gustavo Campos',       idade: 15, procedimento: 'Avaliacao estetica',         status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-PR-55555',
-    nome:          'Dr. Fernando Gomes',
-    cidade:        'Curitiba, PR',
-    clinica:       'Clinica Sorriso Curitiba',
-    endereco:      'Rua XV de Novembro, 800 - Centro, Curitiba, PR',
-    especialidade: 'Ortodontia e Implantodontia',
-    totalPacientes: 143,
-    avaliacao:     4.9,
-    status:        'Ativo',
-    programa:      'Apolônias do Bem',
+    cro:                'CRO-PR-55555',
+    nome:               'Dr. Fernando Gomes',
+    //cidade:             'Curitiba, PR',
+    rg_cpg:             '55.555.555-5',
+    telefone:           '(41) 99999-7777',
+    especializacao:     'Ortodontia e Implantodontia',
+    email:              'fernando.gomes@email.com',
+    senha:              'fernando123',
+    cep:                '80020080',
+    numero_consultorio: '800',
+    n_atendimentos:     143,
+    avaliacao:          4.9,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '22/05/2025', hora: '09:00', paciente: 'Pedro Souza',       idade: 16, procedimento: 'Ortodontia sessao 1',      status: 'proximo'  },
-      { data: '25/05/2025', hora: '10:00', paciente: 'Beatriz Cunha',     idade: 14, procedimento: 'Moldagem ortodontica',     status: 'agendado' },
-      { data: '29/05/2025', hora: '09:00', paciente: 'Samuel Rocha',      idade: 13, procedimento: 'Avaliacao para aparelho',  status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '16/05/2025', hora: '09:00', paciente: 'Isabela Martins',   idade: 12, procedimento: 'Colocacao do aparelho',   status: 'concluido' },
-      { data: '14/05/2025', hora: '10:00', paciente: 'Thais Oliveira',    idade: 15, procedimento: 'Ajuste ortodontico',      status: 'concluido' },
-      { data: '12/05/2025', hora: '09:00', paciente: 'Bruno Carvalho',    idade: 16, procedimento: 'Retirada do aparelho',    status: 'concluido' },
+      { data: '22/05/2025', hora: '09:00', paciente: 'Pedro Souza',          idade: 16, procedimento: 'Ortodontia sessao 1',        status: 'proximo'  },
+      { data: '25/05/2025', hora: '10:00', paciente: 'Beatriz Cunha',        idade: 14, procedimento: 'Moldagem ortodontica',       status: 'agendado' },
+      { data: '29/05/2025', hora: '09:00', paciente: 'Samuel Rocha',         idade: 13, procedimento: 'Avaliacao para aparelho',    status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-PE-66666',
-    nome:          'Dra. Patricia Nunes',
-    cidade:        'Recife, PE',
-    clinica:       'Clinica Oral Recife',
-    endereco:      'Rua da Aurora, 700 - Boa Vista, Recife, PE',
-    especialidade: 'Cirurgia e Traumatologia',
-    totalPacientes: 134,
-    avaliacao:     4.7,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-PE-66666',
+    nome:               'Dra. Patricia Nunes',
+    //cidade:             'Recife, PE',
+    rg_cpg:             '66.666.666-6',
+    telefone:           '(81) 99999-8888',
+    especializacao:     'Cirurgia e Traumatologia',
+    email:              'patricia.nunes@email.com',
+    senha:              'patricia123',
+    cep:                '50050540',
+    numero_consultorio: '700',
+    n_atendimentos:     134,
+    avaliacao:          4.7,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '20/05/2025', hora: '11:00', paciente: 'Gabriel Alves',     idade: 15, procedimento: 'Extracao cirurgica',      status: 'proximo'  },
-      { data: '24/05/2025', hora: '10:00', paciente: 'Vanessa Lima',      idade: 14, procedimento: 'Avaliacao cirurgica',     status: 'agendado' },
-      { data: '27/05/2025', hora: '11:00', paciente: 'Davi Santos',       idade: 16, procedimento: 'Extracao de siso',        status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '15/05/2025', hora: '11:00', paciente: 'Marcos Vinicius',   idade: 17, procedimento: 'Extracao simples',        status: 'concluido' },
-      { data: '13/05/2025', hora: '10:00', paciente: 'Amanda Ferreira',   idade: 13, procedimento: 'Drenagem de abscesso',   status: 'concluido' },
-      { data: '11/05/2025', hora: '11:00', paciente: 'Cauê Barbosa',      idade: 15, procedimento: 'Cirurgia de frenulo',    status: 'concluido' },
+      { data: '20/05/2025', hora: '11:00', paciente: 'Gabriel Alves',        idade: 15, procedimento: 'Extracao cirurgica',         status: 'proximo'  },
+      { data: '24/05/2025', hora: '10:00', paciente: 'Vanessa Lima',         idade: 14, procedimento: 'Avaliacao cirurgica',        status: 'agendado' },
+      { data: '27/05/2025', hora: '11:00', paciente: 'Davi Santos',          idade: 16, procedimento: 'Extracao de siso',           status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-AM-77777',
-    nome:          'Dr. Eduardo Castro',
-    cidade:        'Manaus, AM',
-    clinica:       'Clinica Amazonia Oral',
-    endereco:      'Av. Eduardo Ribeiro, 520 - Centro, Manaus, AM',
-    especialidade: 'Endodontia Avancada',
-    totalPacientes: 112,
-    avaliacao:     4.6,
-    status:        'Ativo',
-    programa:      'Dentista do Bem',
+    cro:                'CRO-AM-77777',
+    nome:               'Dr. Eduardo Castro',
+    //cidade:             'Manaus, AM',
+    rg_cpg:             '77.777.777-7',
+    telefone:           '(92) 99999-9999',
+    especializacao:     'Endodontia Avancada',
+    email:              'eduardo.castro@email.com',
+    senha:              'eduardo123',
+    cep:                '69010060',
+    numero_consultorio: '520',
+    n_atendimentos:     112,
+    avaliacao:          4.6,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '23/05/2025', hora: '09:30', paciente: 'Sophia Rodrigues',  idade: 13, procedimento: 'Canal sessao 2',          status: 'proximo'  },
-      { data: '26/05/2025', hora: '10:00', paciente: 'Emilly Fonseca',    idade: 14, procedimento: 'Avaliacao endodontica',   status: 'agendado' },
-      { data: '30/05/2025', hora: '09:30', paciente: 'Sophia Rodrigues',  idade: 13, procedimento: 'Restauracao final',       status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '16/05/2025', hora: '09:30', paciente: 'Sophia Rodrigues',  idade: 13, procedimento: 'Canal sessao 1',         status: 'concluido' },
-      { data: '14/05/2025', hora: '10:00', paciente: 'Kaua Melo',         idade: 15, procedimento: 'Diagnostico endodontico',status: 'concluido' },
-      { data: '12/05/2025', hora: '09:30', paciente: 'Yasmin Costa',      idade: 12, procedimento: 'Avaliacao inicial',      status: 'concluido' },
+      { data: '23/05/2025', hora: '09:30', paciente: 'Sophia Rodrigues',     idade: 13, procedimento: 'Canal sessao 2',             status: 'proximo'  },
+      { data: '26/05/2025', hora: '10:00', paciente: 'Emilly Fonseca',       idade: 14, procedimento: 'Avaliacao endodontica',      status: 'agendado' },
+      { data: '30/05/2025', hora: '09:30', paciente: 'Sophia Rodrigues',     idade: 13, procedimento: 'Restauracao final',          status: 'agendado' },
     ],
   },
   {
-    cro:           'CRO-GO-88888',
-    nome:          'Dr. Bruno Carvalho',
-    cidade:        'Goiania, GO',
-    clinica:       'Clinica Central Goias',
-    endereco:      'Av. Goias, 900 - Setor Central, Goiania, GO',
-    especialidade: 'Dentistica e Clinico Geral',
-    totalPacientes: 98,
-    avaliacao:     4.8,
-    status:        'Ativo',
-    programa:      'Apolonas do Bem',
+    cro:                'CRO-GO-88888',
+    nome:               'Dr. Bruno Carvalho',
+    //cidade:             'Goiania, GO',
+    rg_cpg:             '88.888.888-8',
+    telefone:           '(62) 99999-0000',
+    especializacao:     'Dentistica e Clinico Geral',
+    email:              'bruno.carvalho@email.com',
+    senha:              'bruno123',
+    cep:                '74015010',
+    numero_consultorio: '900',
+    n_atendimentos:     98,
+    avaliacao:          4.8,
+    status:             'Ativo',
     proximosAtend: [
-      { data: '21/05/2025', hora: '15:00', paciente: 'Julia Caroline',    idade: 16, procedimento: 'Clareamento sessao final', status: 'proximo'  },
-      { data: '25/05/2025', hora: '14:00', paciente: 'Nicolas Alves',     idade: 15, procedimento: 'Restauracao multipla',    status: 'agendado' },
-      { data: '28/05/2025', hora: '15:00', paciente: 'Heloisa Barros',    idade: 11, procedimento: 'Avaliacao inicial',       status: 'agendado' },
-    ],
-    historicoRecente: [
-      { data: '17/05/2025', hora: '15:00', paciente: 'Julia Caroline',    idade: 16, procedimento: 'Clareamento sessao 2',   status: 'concluido' },
-      { data: '15/05/2025', hora: '14:00', paciente: 'Artur Mendes',      idade: 13, procedimento: 'Restauracao dente 21',   status: 'concluido' },
-      { data: '13/05/2025', hora: '15:00', paciente: 'Luana Barbosa',     idade: 14, procedimento: 'Limpeza e profilaxia',   status: 'concluido' },
+      { data: '21/05/2025', hora: '15:00', paciente: 'Julia Caroline',       idade: 16, procedimento: 'Clareamento sessao final',   status: 'proximo'  },
+      { data: '25/05/2025', hora: '14:00', paciente: 'Nicolas Alves',        idade: 15, procedimento: 'Restauracao multipla',      status: 'agendado' },
+      { data: '28/05/2025', hora: '15:00', paciente: 'Heloisa Barros',       idade: 11, procedimento: 'Avaliacao inicial',         status: 'agendado' },
     ],
   },
 ]
@@ -328,13 +311,13 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             {dentista.nome.split(' ').find(p => !['Dr.', 'Dra.'].includes(p))?.charAt(0) ?? 'D'}
           </div>
           <h1 className="text-3xl font-extrabold text-white mb-1">{dentista.nome}</h1>
-          <p className="text-blue-300 text-[15px]">{dentista.especialidade}</p>
-          <p className="text-blue-400 text-[13px] mt-1">{dentista.programa} · {dentista.cidade}</p>
+          <p className="text-blue-400 text-[15px]">{dentista.especializacao}</p>
+          
 
           {/* Stats rápidos */}
           <div className="flex items-center justify-center gap-6 mt-5">
             <div className="text-center">
-              <p className="text-[22px] font-bold text-white">{dentista.totalPacientes}</p>
+              <p className="text-[22px] font-bold text-white">{dentista.n_atendimentos}</p>
               <p className="text-[11px] text-blue-300">Pacientes</p>
             </div>
             <div className="w-px h-8 bg-blue-700" />
@@ -372,52 +355,45 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           ))}
         </div>
 
-        {/* Historico recente */}
+        {/* Historico recente 
         <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
           <h2 className="font-bold text-gray-800 text-[16px] mb-4">Historico recente</h2>
           {dentista.historicoRecente.map((a, i) => (
             <AtendimentoCard key={i} atend={a} tipo="historico" />
           ))}
-        </div>
+        </div> */}
 
         {/* Minha clinica */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-md p-6 mb-5 text-white">
-          <h2 className="font-bold text-[16px] mb-4">Minha clinica</h2>
+          <h2 className="font-bold text-[16px] mb-4">Informações Dentista</h2>
           <div className="grid grid-cols-1 gap-3">
             <div>
               <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">Nome</p>
-              <p className="font-semibold text-[14px]">{dentista.clinica}</p>
+              <p className="font-semibold text-[14px]">{dentista.nome}</p>
             </div>
-            <div>
-              <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">Endereco</p>
-              <p className="font-semibold text-[14px]">{dentista.endereco}</p>
-            </div>
+           
             <div>
               <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">CRO</p>
               <p className="font-semibold text-[14px]">{dentista.cro}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Status</p>
+              <p className="font-semibold text-gray-700">{dentista.status}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Especialidade</p>
+              <p className="font-semibold text-gray-700">{dentista.especializacao}</p>
             </div>
           </div>
         </div>
 
         {/* Informacoes do programa */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-100">
-          <h2 className="font-bold text-gray-800 text-[14px] mb-3">Informacoes do programa</h2>
+          <h2 className="font-bold text-gray-800 text-[14px] mb-3">Informacoes adicionais</h2>
           <div className="grid grid-cols-2 gap-3 text-[13px]">
             <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Programa</p>
-              <p className="font-semibold text-gray-700">{dentista.programa}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Especialidade</p>
-              <p className="font-semibold text-gray-700">{dentista.especialidade}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Cidade</p>
-              <p className="font-semibold text-gray-700">{dentista.cidade}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Total de pacientes</p>
-              <p className="font-semibold text-gray-700">{dentista.totalPacientes}</p>
+              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Total de pacientes atendidos</p>
+              <p className="font-semibold text-gray-700">{dentista.n_atendimentos}</p>
             </div>
           </div>
         </div>
