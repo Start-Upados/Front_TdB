@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { funcionarioService } from '../../../Services/api';
 import { appendSheet } from '../../../Services/googleSheets';
 
 
 interface FuncionarioForm {
   nome:        string
-  cpf:         string
-  cargo:       string
-  email:       string
+  rgCpf:       string
   telefone:    string
+  email:       string  
+  senha:       string
+  cargo:       string  
   dataInicio:  string
   status:      string
 }
@@ -60,38 +62,55 @@ export default function CadastrarFuncionario() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FuncionarioForm>()
 
   async function onSubmit(data: FuncionarioForm) {
-    setSalvando(true)
-    setSucesso(false)
+  setSalvando(true)
+  setSucesso(false)
 
-    const agora   = new Date()
-    const dataStr = agora.toLocaleDateString('pt-BR')
+  const agora   = new Date()
+  const dataStr = agora.toLocaleDateString('pt-BR')
 
-    try {
-      await appendSheet('Funcionarios!A:H', [[
-        data.nome,        // Nome
-        cpf,              // CPF
-        data.cargo,       // Cargo
-        data.email,       // Email
-        telefone,         // Telefone
-        data.dataInicio,  // Data Inicio
-        data.status,      // Status
-        dataStr,          // Data Cadastro
-      ]])
-
-      setSucesso(true)
-      reset()
-      setCpf('')
-      setTelefone('')
-
-      setTimeout(() => setSucesso(false), 4000)
-
-    } catch (err) {
-      console.error('Erro ao cadastrar:', err)
-      alert('Erro ao cadastrar. Tente novamente.')
-    } finally {
-      setSalvando(false)
-    }
+  try {
+    // 1. Backend Java
+    await funcionarioService.cadastrar({
+      nome:       data.nome,
+      rgCpf:      cpf,
+      email:      data.email,
+      senha:      '123456',
+      telefone:   telefone,
+      cep:        '00000000',
+      cargo:      data.cargo,
+      dataInicio: data.dataInicio,
+      status:     data.status,
+    })
+  } catch (err) {
+    console.warn('Backend indisponivel, salvando no Sheets:', err)
   }
+
+  try {
+    // 2. Google Sheets (sempre salva como backup)
+    await appendSheet('Funcionarios!A:H', [[
+      data.nome,
+      cpf,
+      data.cargo,
+      data.email,
+      telefone,
+      data.dataInicio,
+      data.status,
+      dataStr,
+    ]])
+
+    setSucesso(true)
+    reset()
+    setCpf('')
+    setTelefone('')
+    setTimeout(() => setSucesso(false), 4000)
+
+  } catch (err) {
+    console.error('Erro ao cadastrar:', err)
+    alert('Erro ao cadastrar. Tente novamente.')
+  } finally {
+    setSalvando(false)
+  }
+}
 
   return (
     <div className="p-6 max-w-2xl">

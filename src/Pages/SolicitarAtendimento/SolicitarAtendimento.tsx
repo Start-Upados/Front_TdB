@@ -331,7 +331,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha:string
 
   try {
     // 2. Google Sheets (sempre salva como backup)
-    await appendSheet('Mensagens!A:N', [[
+    await appendSheet('Mensagens!A:Q', [[
       prot, data.nomeResponsavel, data.email, whatsapp, telefone,
       'Solicitacao de Atendimento — Dentista do Bem',
       `Adolescente: ${data.nomeAdolescente} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep} | Renda: ${data.rendaFamiliar} | Necessidade: ${data.necessidade} | Responsavel: ${data.nomeResponsavel} (${data.parentesco}) | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
