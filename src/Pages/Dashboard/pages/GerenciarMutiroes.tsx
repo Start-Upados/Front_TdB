@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { campanhaService } from '../../../Services/api';
 import { appendSheet } from '../../../Services/googleSheets';
 
+ 
 // ─── TIPOS ────────────────────────────────────
 interface MutiraoForm {
   nome:             string
   descricao:        string
   metaAtendidos:    number
-  numAtendimentos:  number
-  numDentistas:     number
+  nAtendimentos:    number
+  nDentistas:       number
   rua:              string
   bairro:           string
   cidade:           string
   estado:           string
-  uf:               string
+  numeroRua:        number
 }
-
+ 
 // ─── CAMPO REUTILIZÁVEL ───────────────────────
 function Campo({
   label, error, required = true, children
@@ -32,50 +34,69 @@ function Campo({
     </div>
   )
 }
-
+ 
 const inputCls  = "w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] placeholder-[#3D6A85] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
+/*
 const selectCls = "w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
-
+ 
+ 
 // ─── UFs DO BRASIL ────────────────────────────
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
   'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
   'RO','RR','RS','SC','SE','SP','TO'
 ]
-
+*/
 // ─── GERENCIAR MUTIRÕES ───────────────────────
 export default function GerenciarMutiroes() {
   const [salvando, setSalvando] = useState(false)
   const [sucesso,  setSucesso]  = useState(false)
-
+ 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<MutiraoForm>()
-
+ 
   async function onSubmit(data: MutiraoForm) {
     setSalvando(true)
     setSucesso(false)
-
+ 
     const agora   = new Date()
     const dataStr = agora.toLocaleDateString('pt-BR')
-
+ 
+    try {
+        // 1. Backend Java
+        await campanhaService.cadastrar({
+          nome:             data.nome,
+          descricao:        data.descricao,
+          metaAtendidos:    data.metaAtendidos,
+          nAtendidos:       data.nAtendimentos,
+          nDentistas:       data.nDentistas,
+          logradouro:       data.rua,
+          cidade:           data.cidade,
+          bairro:           data.bairro,
+          estado:           data.estado,
+          numeroLogradouro: data.numeroRua  
+          })
+      } catch (err) {
+        console.warn('Backend indisponivel, salvando no Sheets:', err)
+      }
+ 
     try {
       await appendSheet('Mutiroes!A:K', [[
         data.nome,                        // Nome
         data.descricao,                   // Descricao
         String(data.metaAtendidos),       // Meta Atendidos
-        String(data.numAtendimentos),     // Num Atendimentos
-        String(data.numDentistas),        // Num Dentistas
+        String(data.nAtendimentos),     // Num Atendimentos
+        String(data.nDentistas),        // Num Dentistas
         data.rua,                         // Rua
         data.bairro,                      // Bairro
         data.cidade,                      // Cidade
         data.estado,                      // Estado
-        data.uf,                          // UF
         dataStr,                          // Data Cadastro
       ]]);
-
+ 
       setSucesso(true)
       reset()
       setTimeout(() => setSucesso(false), 4000)
-
+ 
     } catch (err) {
       console.error('Erro ao cadastrar mutirao:', err)
       alert('Erro ao cadastrar. Tente novamente.')
@@ -83,10 +104,10 @@ export default function GerenciarMutiroes() {
       setSalvando(false)
     }
   }
-
+ 
   return (
     <div className="p-6 max-w-2xl">
-
+ 
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-[#E8F4FD] mb-1">
@@ -96,7 +117,7 @@ export default function GerenciarMutiroes() {
           Cadastre os mutirões de atendimento da Turma do Bem
         </p>
       </div>
-
+ 
       {/* Alerta de sucesso */}
       {sucesso && (
         <div className="flex items-center gap-3 bg-[rgba(0,230,118,0.08)] border border-[rgba(0,230,118,0.25)] text-[#00E676] px-4 py-3 rounded-xl mb-6 text-[13px]">
@@ -107,17 +128,17 @@ export default function GerenciarMutiroes() {
           </div>
         </div>
       )}
-
+ 
       <form onSubmit={handleSubmit(onSubmit)}>
-
+ 
         {/* Dados gerais */}
         <div className="bg-[#0F2035] border border-[rgba(0,212,170,0.1)] rounded-2xl p-6 mb-5">
           <h2 className="text-[14px] font-bold text-[#00D4AA] uppercase tracking-wide mb-5">
             Dados do Mutirão
           </h2>
-
+ 
           <div className="flex flex-col gap-4">
-
+ 
             <Campo label="Nome do mutirão" error={errors.nome?.message}>
               <input
                 {...register('nome', { required: 'Campo obrigatorio' })}
@@ -125,7 +146,7 @@ export default function GerenciarMutiroes() {
                 className={inputCls}
               />
             </Campo>
-
+ 
             <Campo label="Descricao" error={errors.descricao?.message}>
               <textarea
                 {...register('descricao', { required: 'Campo obrigatorio' })}
@@ -134,7 +155,7 @@ export default function GerenciarMutiroes() {
                 className={`${inputCls} resize-none`}
               />
             </Campo>
-
+ 
             <div className="grid grid-cols-3 gap-3">
               <Campo label="Meta de atendidos" error={errors.metaAtendidos?.message}>
                 <input
@@ -145,37 +166,39 @@ export default function GerenciarMutiroes() {
                   className={inputCls}
                 />
               </Campo>
-              <Campo label="Num. atendimentos" error={errors.numAtendimentos?.message}>
+              <Campo label="Num. atendimentos" error={errors.nAtendimentos?.message}>
                 <input
                   type="number"
                   min={0}
-                  {...register('numAtendimentos', { required: 'Obrigatorio' })}
+                  {...register('nAtendimentos', { required: 'Obrigatorio' })}
                   placeholder="0"
                   className={inputCls}
                 />
               </Campo>
-              <Campo label="Num. dentistas" error={errors.numDentistas?.message}>
+              <Campo label="Num. dentistas" error={errors.nDentistas?.message}>
                 <input
                   type="number"
                   min={1}
-                  {...register('numDentistas', { required: 'Obrigatorio', min: { value: 1, message: 'Minimo 1' } })}
+                  {...register('nDentistas', { required: 'Obrigatorio', min: { value: 1, message: 'Minimo 1' } })}
                   placeholder="10"
                   className={inputCls}
                 />
               </Campo>
+ 
+ 
             </div>
-
+ 
           </div>
         </div>
-
+ 
         {/* Localização */}
         <div className="bg-[#0F2035] border border-[rgba(0,212,170,0.1)] rounded-2xl p-6 mb-5">
           <h2 className="text-[14px] font-bold text-[#00D4AA] uppercase tracking-wide mb-5">
             Localização
           </h2>
-
+ 
           <div className="flex flex-col gap-4">
-
+ 
             <Campo label="Rua / Logradouro" error={errors.rua?.message}>
               <input
                 {...register('rua', { required: 'Campo obrigatorio' })}
@@ -183,7 +206,7 @@ export default function GerenciarMutiroes() {
                 className={inputCls}
               />
             </Campo>
-
+ 
             <Campo label="Bairro" error={errors.bairro?.message}>
               <input
                 {...register('bairro', { required: 'Campo obrigatorio' })}
@@ -191,7 +214,7 @@ export default function GerenciarMutiroes() {
                 className={inputCls}
               />
             </Campo>
-
+ 
             <div className="grid grid-cols-2 gap-3">
               <Campo label="Cidade" error={errors.cidade?.message}>
                 <input
@@ -208,19 +231,18 @@ export default function GerenciarMutiroes() {
                 />
               </Campo>
             </div>
-
-            <Campo label="UF" error={errors.uf?.message}>
-              <select {...register('uf', { required: 'Campo obrigatorio' })} className={selectCls}>
-                <option value="">Selecione a UF</option>
-                {UFS.map(uf => (
-                  <option key={uf} value={uf}>{uf}</option>
-                ))}
-              </select>
-            </Campo>
-
+            <Campo label="Num. da Propriedade" error={errors.numeroRua?.message}>
+                <input
+                  type="number"
+                  {...register('numeroRua', { required: 'Campo obrigatorio' })}
+                  placeholder="Ex: 165"
+                  maxLength={4}
+                  className={inputCls}
+                />
+              </Campo>
           </div>
         </div>
-
+ 
         {/* Botões */}
         <div className="flex gap-3">
           <button
@@ -238,9 +260,9 @@ export default function GerenciarMutiroes() {
             Limpar
           </button>
         </div>
-
+ 
       </form>
-
+ 
       {/* Info */}
       <div className="mt-6 p-4 bg-[#0F2035] border border-[rgba(0,212,170,0.1)] rounded-xl">
         <p className="text-[11px] text-[#00D4AA] font-bold uppercase tracking-wide mb-2">
@@ -250,7 +272,7 @@ export default function GerenciarMutiroes() {
           Os dados serao salvos na aba <span className="text-[#00D4AA] font-semibold">Mutiroes</span> da planilha Turma_Do_Bem no Google Sheets.
         </p>
       </div>
-
+ 
     </div>
   )
 }
