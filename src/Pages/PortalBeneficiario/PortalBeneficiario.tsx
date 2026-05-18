@@ -341,7 +341,7 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
             to="/FaleConosco"
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200 text-center text-[14px] no-underline"
           >
-            Falar com a Turma do Bem
+            Falar com o Suporte
           </Link>
         </div>
 

@@ -377,12 +377,12 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
               <p className="font-semibold text-[14px]">{dentista.cro}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Status</p>
+              <p className="text-blue-200 text-[11px] uppercase tracking-wide">Status</p>
               <p className="font-semibold text-gray-700">{dentista.status}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Especialidade</p>
-              <p className="font-semibold text-gray-700">{dentista.especializacao}</p>
+              <p className="text-blue-200 text-[11px] uppercase tracking-wide">Especialidade</p>
+              <p className="font-semibold text-white">{dentista.especializacao}</p>
             </div>
           </div>
         </div>
@@ -392,8 +392,8 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           <h2 className="font-bold text-gray-800 text-[14px] mb-3">Informacoes adicionais</h2>
           <div className="grid grid-cols-2 gap-3 text-[13px]">
             <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Total de pacientes atendidos</p>
-              <p className="font-semibold text-gray-700">{dentista.n_atendimentos}</p>
+              <p className="text-gray-500 text-[11px] uppercase tracking-wide">Total de pacientes atendidos</p>
+              <p className="font-extrabold text-gray-700">{dentista.n_atendimentos}</p>
             </div>
           </div>
         </div>
@@ -410,7 +410,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             to="/FaleConosco"
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200 text-center text-[14px] no-underline"
           >
-            Falar com a Turma do Bem
+            Falar com o Suporte
           </Link>
         </div>
 
