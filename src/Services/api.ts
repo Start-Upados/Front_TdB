@@ -34,6 +34,7 @@ export interface SolicitacaoBody extends UsuarioBase {
 
 // ─── DENTISTA (Dentista.java) ─────────────────
 export interface DentistaBody extends UsuarioBase {
+  cep:            string
   nConsultorio:   number
   cro:            string
   nAtendimentos:  number

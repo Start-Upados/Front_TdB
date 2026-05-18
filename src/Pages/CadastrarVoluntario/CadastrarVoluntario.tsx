@@ -8,19 +8,19 @@ import { appendSheet } from '../../Services/googleSheets'
 interface FormData {
   // Pessoais
   nome:             string
-  cpf:              string
-  dataNascimento:   string
+  rgCpf:            string
   email:            string
-  // Profissionais
+  telefone:         string
   cro:              string
   especializacao:    string
+  cep:              string
+  nConsultorio:     number
   // Atuação
-  cidade:           string
-  estado:           string
-  clinica:          string
+  //cidade:           string
+  //estado:           string
+  //clinica:          string
   disponibilidade:  string
   participouAntes:  string
-  // Termos
   aceitaTermos:     boolean
 }
 
@@ -54,12 +54,13 @@ function gerarSenha(nome: string): string {
   return `${base}${num}`
 }
 
+/*
 // ─── ESTADOS DO BRASIL ────────────────────────
 const ESTADOS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
   'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
   'RO','RR','RS','SC','SE','SP','TO'
-]
+] */
 
 // ─── STEP INDICATOR ───────────────────────────
 function StepIndicator({ step, total }: { step: number; total: number }) {
@@ -189,16 +190,16 @@ export default function CadastrarVoluntario() {
 
   async function nextStep() {
     const fieldsPerStep: (keyof FormData)[][] = [
-      ['nome', 'dataNascimento', 'email'],
-      ['cro', 'especializacao'],
-      ['cidade', 'estado', 'clinica', 'disponibilidade', 'participouAntes', 'aceitaTermos'],
+      ['nome', 'rgCpf', 'email', 'telefone', ],
+      ['cro', 'especializacao', 'cep', 'nConsultorio'],
+      ['disponibilidade', 'aceitaTermos'],
     ]
     const valid = await trigger(fieldsPerStep[step - 1])
     if (valid) setStep(s => s + 1)
   }
 
   async function enviarFormulario() {
-  const valid = await trigger(['cidade', 'estado', 'clinica', 'disponibilidade', 'participouAntes', 'aceitaTermos'])
+  const valid = await trigger(['cep', 'disponibilidade', 'aceitaTermos'])
   if (!valid) return
 
   const data       = getValues()
@@ -213,16 +214,16 @@ export default function CadastrarVoluntario() {
     // 1. Backend Java
     await dentistaService.cadastrar({
       nome:           data.nome,
-      rgCpf:          prot,
+      rgCpf:          cpf,
       email:          data.email,
       senha:          senhaGerada,
       telefone:       whatsapp,
-      cep:            '00000000',
-      nConsultorio:   0,
+      cep:            data.cep,
+      nConsultorio:   data.nConsultorio,
       cro:            data.cro,
       nAtendimentos:  0,
       especializacao: data.especializacao,
-      status:         'Aguardando analise',
+      status:         'Aguardando análise',
       avaliacao:      0,
       })
   } catch (err) {
@@ -238,9 +239,6 @@ export default function CadastrarVoluntario() {
       data.especializacao,
       data.email,
       whatsapp,
-      data.cidade,
-      data.estado,
-      data.clinica,
       data.disponibilidade,
       data.participouAntes,
       'Aguardando analise',
@@ -324,14 +322,6 @@ export default function CadastrarVoluntario() {
                   />
                 </Campo>
 
-                <Campo label="Data de nascimento" error={errors.dataNascimento?.message}>
-                  <input
-                    type="date"
-                    {...register('dataNascimento', { required: 'Campo obrigatorio' })}
-                    className={inputCls}
-                  />
-                </Campo>
-
                 <Campo label="Email" error={errors.email?.message}>
                   <input
                     type="email"
@@ -368,6 +358,26 @@ export default function CadastrarVoluntario() {
                   />
                 </Campo>
 
+                
+                  <Campo label="Cep" error={errors.cep?.message}>
+                    <input
+                      {...register('cep', { required: 'Obrigatorio' })}
+                      placeholder="Digite seu CEP"
+                      className={inputCls}
+                    />
+                  </Campo>      
+                
+
+                
+                  <Campo label="Número do Consultorio" error={errors.nConsultorio?.message}>
+                    <input
+                      {...register('nConsultorio', { required: 'Obrigatorio' })}
+                      placeholder="Digite o número do seu Consultório"
+                      className={inputCls}
+                    />
+                  </Campo>      
+                               
+
                 <Campo label="Especialidade" error={errors.especializacao?.message}>
                   <select {...register('especializacao', { required: 'Campo obrigatorio' })} className={selectCls}>
                     <option value="">Selecione</option>
@@ -385,35 +395,10 @@ export default function CadastrarVoluntario() {
               </>
             )}
 
-            {/* STEP 3 — Dados de Atuação */}
+            {/* CEP */}
             {step === 3 && (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <Campo label="Cidade" error={errors.cidade?.message}>
-                    <input
-                      {...register('cidade', { required: 'Obrigatorio' })}
-                      placeholder="Sua cidade"
-                      className={inputCls}
-                    />
-                  </Campo>
-                  <Campo label="Estado" error={errors.estado?.message}>
-                    <select {...register('estado', { required: 'Obrigatorio' })} className={selectCls}>
-                      <option value="">UF</option>
-                      {ESTADOS.map(uf => (
-                        <option key={uf} value={uf}>{uf}</option>
-                      ))}
-                    </select>
-                  </Campo>
-                </div>
-
-                <Campo label="Nome da clinica" error={errors.clinica?.message}>
-                  <input
-                    {...register('clinica', { required: 'Campo obrigatorio' })}
-                    placeholder="Nome da sua clinica"
-                    className={inputCls}
-                  />
-                </Campo>
-
+                
                 <Campo label="Disponibilidade" error={errors.disponibilidade?.message}>
                   <select {...register('disponibilidade', { required: 'Campo obrigatorio' })} className={selectCls}>
                     <option value="">Selecione</option>
