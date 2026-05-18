@@ -11,8 +11,9 @@ type TipoAtendimento = 'selecao' | 'jovem' | 'mulher'
 interface FormJovem {
   nomeAdolescente:  string
   dataNascimento:   string
-  cidade:           string
-  estado:           string
+  cep:              string
+  rgCpf:            string
+  protocolo:        string
   rendaFamiliar:    string
   necessidade:      string
   nomeResponsavel:  string
@@ -20,7 +21,6 @@ interface FormJovem {
   whatsapp:         string
   telefone:         string
   email:            string
-  endereco:         string
   comoSoube:        string
   observacoes:      string
   aceitaTermos:     boolean
@@ -28,10 +28,10 @@ interface FormJovem {
 
 interface FormMulher {
   nome:             string
+  cep:              string
+  rgCpf:            string
+  protocolo:        string
   dataNascimento:   string
-  cidade:           string
-  estado:           string
-  endereco:         string
   whatsapp:         string
   telefone:         string
   email:            string
@@ -66,12 +66,13 @@ function formatTelefone(value: string): string {
 }
 
 // ─── ESTADOS DO BRASIL ────────────────────────
+/*
 const ESTADOS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
   'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
   'RO','RR','RS','SC','SE','SP','TO'
 ]
-
+*/
 // ─── STEP INDICATOR ───────────────────────────
 function StepIndicator({ step, total }: { step: number; total: number }) {
   return (
@@ -271,8 +272,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
 
   async function nextStep() {
     const fieldsPerStep: (keyof FormJovem)[][] = [
-      ['nomeAdolescente', 'dataNascimento', 'cidade', 'estado', 'rendaFamiliar', 'necessidade'],
-      ['nomeResponsavel', 'parentesco', 'email', 'endereco'],
+      ['nomeAdolescente', 'dataNascimento','rgCpf' , 'rendaFamiliar', 'necessidade'],
+      ['nomeResponsavel', 'parentesco', 'email','cep'],
       ['comoSoube', 'aceitaTermos'],
     ]
     const valid = await trigger(fieldsPerStep[step - 1])
@@ -294,11 +295,12 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
     //console.log('Tentando backend Java...')
     await solicitacaoService.cadastrar({
       nome:        data.nomeResponsavel,
-      rgCpf:       prot,                  // protocolo como ID único
+      rgCpf:       data.rgCpf,                  // protocolo como ID único
       email:       data.email,
+      protocolo:   prot,
       senha:       '123456',
       telefone:    whatsapp || telefone,
-      cep:         '00000000',
+      cep:         data.cep,
       necessidade: data.necessidade,
       sexo:        'masculino',
       descricao:   data.observacoes ?? '',
@@ -318,12 +320,12 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
     await appendSheet('Mensagens!A:N', [[
       prot, data.nomeResponsavel, data.email, whatsapp, telefone,
       'Solicitacao de Atendimento — Dentista do Bem',
-      `Adolescente: ${data.nomeAdolescente} | Nascimento: ${data.dataNascimento} | Cidade: ${data.cidade}/${data.estado} | Renda: ${data.rendaFamiliar} | Necessidade: ${data.necessidade} | Responsavel: ${data.nomeResponsavel} (${data.parentesco}) | Endereco: ${data.endereco} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
-      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr, data.cidade, data.estado,
+      `Adolescente: ${data.nomeAdolescente} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep} | Renda: ${data.rendaFamiliar} | Necessidade: ${data.necessidade} | Responsavel: ${data.nomeResponsavel} (${data.parentesco}) | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
+      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
     ]])
     await appendSheet('Pacientes!A:Q', [[
-      data.nomeAdolescente, '', data.cidade, 'Dentista do Bem', 'Aguardando',
-      dataStr, '', '', '', '', '', data.endereco, '0', '0', data.necessidade,
+      data.nomeAdolescente, '', 'Dentista do Bem', 'Aguardando',
+      dataStr, '', '', '', '', '',  '0', '0', data.necessidade,
       data.observacoes ?? '', prot,
     ]])
   } catch (err) {
@@ -365,17 +367,6 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
               <Campo label="Data de nascimento" error={errors.dataNascimento?.message}>
                 <input type="date" {...register('dataNascimento', { required: 'Campo obrigatorio' })} className={inputCls} />
               </Campo>
-              <div className="grid grid-cols-2 gap-3">
-                <Campo label="Cidade" error={errors.cidade?.message}>
-                  <input {...register('cidade', { required: 'Obrigatorio' })} placeholder="Sua cidade" className={inputCls} />
-                </Campo>
-                <Campo label="Estado" error={errors.estado?.message}>
-                  <select {...register('estado', { required: 'Obrigatorio' })} className={selectCls}>
-                    <option value="">UF</option>
-                    {ESTADOS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                  </select>
-                </Campo>
-              </div>
               <Campo label="Renda familiar" error={errors.rendaFamiliar?.message}>
                 <select {...register('rendaFamiliar', { required: 'Campo obrigatorio' })} className={selectCls}>
                   <option value="">Selecione</option>
@@ -395,6 +386,9 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
                   <option value="Limpeza e prevencao">Limpeza e prevencao</option>
                   <option value="Outro">Outro</option>
                 </select>
+              <Campo label="RG ou Cpf" error={errors.rgCpf?.message}>
+                <input {...register('rgCpf', { required: 'Campo obrigatorio' })} placeholder="12345678900" className={inputCls} />
+              </Campo>
               </Campo>
             </>
           )}
@@ -425,8 +419,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
               <Campo label="Email" error={errors.email?.message}>
                 <input type="email" {...register('email', { required: 'Campo obrigatorio', pattern: { value: /^\S+@\S+$/i, message: 'Email invalido' } })} placeholder="seu@email.com" className={inputCls} />
               </Campo>
-              <Campo label="Endereco completo" error={errors.endereco?.message}>
-                <input {...register('endereco', { required: 'Campo obrigatorio' })} placeholder="Rua, numero, bairro, cidade" className={inputCls} />
+              <Campo label="cep" error={errors.cep?.message}>
+                <input {...register('cep', { required: 'Campo obrigatorio' })} placeholder="12345678" className={inputCls} />
               </Campo>
             </>
           )}
@@ -452,7 +446,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string) => void }) {
                 <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-2">Resumo</p>
                 <div className="flex flex-col gap-1 text-[12px]">
                   <p className="text-white/60">Adolescente: <span className="text-white font-semibold">{getValues('nomeAdolescente')}</span></p>
-                  <p className="text-white/60">Cidade: <span className="text-white font-semibold">{getValues('cidade')}/{getValues('estado')}</span></p>
+                  <p className="text-white/60">Cep: <span className="text-white font-semibold">{getValues('cep')}</span></p>
                   <p className="text-white/60">Necessidade: <span className="text-white font-semibold">{getValues('necessidade')}</span></p>
                 </div>
               </div>
@@ -505,7 +499,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
 
   async function nextStep() {
     const fieldsPerStep: (keyof FormMulher)[][] = [
-      ['nome', 'dataNascimento', 'cidade', 'estado', 'endereco', 'email'],
+      ['nome', 'dataNascimento', 'rgCpf', 'email', 'cep'],
       ['foiVitima', 'comoSoube', 'aceitaTermos'],
     ]
     const valid = await trigger(fieldsPerStep[step - 1])
@@ -526,11 +520,12 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
     // 1. Backend Java
     await solicitacaoService.cadastrar({
       nome:        data.nome,
-      rgCpf:       prot,
+      rgCpf:       data.rgCpf,
+      protocolo:   prot,
       email:       data.email,
       senha:       '123456',
       telefone:    whatsapp || telefone,
-      cep:         '00000000',
+      cep:          data.cep,
       necessidade: data.foiVitima === 'Sim'
         ? 'Vitima de violencia com denticao afetada'
         : 'Triagem odontologica',
@@ -551,8 +546,8 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
     await appendSheet('Mensagens!A:N', [[
       prot, data.nome, data.email, whatsapp, telefone,
       'Solicitacao de Atendimento — Apolonas do Bem',
-      `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cidade: ${data.cidade}/${data.estado} | Endereco: ${data.endereco} | Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
-      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr, data.cidade, data.estado,
+      `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep}/| Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
+      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
     ]])
   } catch (err) {
     console.error('Erro ao salvar no Sheets:', err)
@@ -601,20 +596,6 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
                 <input type="date" {...register('dataNascimento', { required: 'Campo obrigatorio' })} className={inputCls} />
               </Campo>
               <div className="grid grid-cols-2 gap-3">
-                <Campo label="Cidade" error={errors.cidade?.message}>
-                  <input {...register('cidade', { required: 'Obrigatorio' })} placeholder="Sua cidade" className={inputCls} />
-                </Campo>
-                <Campo label="Estado" error={errors.estado?.message}>
-                  <select {...register('estado', { required: 'Obrigatorio' })} className={selectCls}>
-                    <option value="">UF</option>
-                    {ESTADOS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                  </select>
-                </Campo>
-              </div>
-              <Campo label="Endereco completo" error={errors.endereco?.message}>
-                <input {...register('endereco', { required: 'Campo obrigatorio' })} placeholder="Rua, numero, bairro, cidade" className={inputCls} />
-              </Campo>
-              <div className="grid grid-cols-2 gap-3">
                 <Campo label="WhatsApp" required={false}>
                   <input type="tel" value={whatsapp} onChange={e => setWhatsapp(formatTelefone(e.target.value))} placeholder="(11) 99999-9999" maxLength={15} className={inputCls} />
                 </Campo>
@@ -622,8 +603,14 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
                   <input type="tel" value={telefone} onChange={e => setTelefone(formatTelefone(e.target.value))} placeholder="(11) 99999-9999" maxLength={15} className={inputCls} />
                 </Campo>
               </div>
+              <Campo label="Rg ou CPF" error={errors.rgCpf?.message}>
+                <input {...register('rgCpf', { required: 'Campo obrigatorio' })} placeholder="12345678900" className={inputCls} />
+              </Campo>
               <Campo label="Email" error={errors.email?.message}>
                 <input type="email" {...register('email', { required: 'Campo obrigatorio', pattern: { value: /^\S+@\S+$/i, message: 'Email invalido' } })} placeholder="seu@email.com" className={inputCls} />
+              </Campo>
+              <Campo label="Cep" error={errors.cep?.message}>
+                <input {...register('cep', { required: 'Campo obrigatorio' })} placeholder="12345678" className={inputCls} />
               </Campo>
             </>
           )}
@@ -680,7 +667,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string) => void }) 
                 <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-2">Resumo</p>
                 <div className="flex flex-col gap-1 text-[12px]">
                   <p className="text-white/60">Nome: <span className="text-white font-semibold">{getValues('nome')}</span></p>
-                  <p className="text-white/60">Cidade: <span className="text-white font-semibold">{getValues('cidade')}/{getValues('estado')}</span></p>
+                  <p className="text-white/60">Cidade: <span className="text-white font-semibold">{getValues('cep')}</span></p>
                   <p className="text-white/60">Programa: <span className="text-pink-400 font-semibold">Apolônias do Bem</span></p>
                 </div>
               </div>

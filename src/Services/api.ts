@@ -22,6 +22,7 @@ export interface BeneficiarioBody extends UsuarioBase {
 // ─── SOLICITAÇÃO (Solicitacao.java) ───────────
 export interface SolicitacaoBody extends UsuarioBase {
   necessidade: string
+  protocolo:   string
   sexo:        string
   descricao:   string
   dataNasc:    string
