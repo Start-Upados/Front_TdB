@@ -254,9 +254,8 @@ export default function CadastrarFuncionario() {
           </button>
           <button
             type="button"
-            onClick={() => { reset(); setCpf(''); setTelefone('') }}
-            className="px-6 bg-[#0F2035] text-[#7EB3CE] font-semibold py-3 rounded-xl hover:bg-[#162d4a] transition-colors cursor-pointer border border-[rgba(0,212,170,0.15)] text-[14px]"
-          >
+            onClick={() => { reset(); setCpf(''); setTelefone(''); setSucesso(false); setSenha('') }}
+            className="px-6 bg-[#0F2035] text-[#7EB3CE] font-semibold py-3 rounded-xl hover:bg-[#162d4a] transition-colors cursor-pointer border border-[rgba(0,212,170,0.15)] text-[14px]">
             Limpar
           </button>
         </div>
