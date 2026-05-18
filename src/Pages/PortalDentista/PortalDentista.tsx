@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { dentistaService } from '../../Services/api'
+import { dentistaService, type DentistaBody } from '../../Services/api'
  
+/*
 interface Atendimento {
   data:         string
   hora:         string
@@ -10,11 +11,11 @@ interface Atendimento {
   procedimento: string
   status:       'agendado' | 'proximo' | 'concluido'
 }
- 
+ */
 interface Dentista {
   nome:              string
   //cidade:            string
-  rg_cpg:            string
+  rgCpf:            string
   telefone:          string
   especializacao:    string
   email:             string
@@ -30,14 +31,14 @@ interface Dentista {
   //endereco:          string  
   //totalPacientes:    number
   //programa:          string
-  proximosAtend:     Atendimento[]
+  //proximosAtend:     Atendimento[]
   //historicoRecente:  Atendimento[]
 }
  
  
 // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/dentistas/${cro}`) -> Back Java + Oracle
 //  MOCK DATA //
- 
+ /*
 const MOCK_DENTISTAS: Dentista[] = [
   {
     cro:                'CRO-SP-12345',
@@ -245,11 +246,13 @@ const MOCK_DENTISTAS: Dentista[] = [
 ]
  
 //  BUSCA //
+ 
 function buscarDentista(cro: string): Dentista | null {
   return MOCK_DENTISTAS.find(d => d.cro === cro) ?? null
 }
- 
+ */
 //  ATENDIMENTO ITEM //
+/*
 function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' | 'historico' }) {
   const isProximo = tipo === 'proximo'
  
@@ -269,7 +272,7 @@ function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' 
         ? 'bg-gray-50 border-gray-200'
         : 'bg-white border-gray-100'
     }`}>
-      {/* Data/hora */}
+      {/* Data/hora
       <div className="text-center min-w-[48px] shrink-0">
         <p className="text-[15px] font-bold text-gray-800 leading-none">
           {atend.data.split('/')[0]}
@@ -280,10 +283,10 @@ function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' 
         <p className="text-[10px] text-gray-500 mt-0.5">{atend.hora}</p>
       </div>
  
-      {/* Divisor */}
+      {/* Divisor }
       <div className="w-px h-10 bg-gray-200 shrink-0" />
  
-      {/* Info */}
+      {/* Info }
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-gray-800 truncate">
           {atend.paciente}
@@ -292,14 +295,14 @@ function AtendimentoCard({ atend, tipo }: { atend: Atendimento; tipo: 'proximo' 
         <p className="text-[11px] text-gray-500 mt-0.5 truncate">{atend.procedimento}</p>
       </div>
  
-      {/* Status */}
+      {/* Status }
       <span className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full ${sc.cls}`}>
         {sc.label}
       </span>
     </div>
   )
 }
- 
+ */
 //  PAINEL DO DENTISTA //
 function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () => void }) {
   return (
@@ -342,26 +345,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           Validar Paciente por QR Code
         </Link>
  
-        {/* Proximos atendimentos */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-gray-800 text-[16px]">Proximos atendimentos</h2>
-            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-              {dentista.proximosAtend.length} agendados
-            </span>
-          </div>
-          {dentista.proximosAtend.map((a, i) => (
-            <AtendimentoCard key={i} atend={a} tipo="proximo" />
-          ))}
-        </div>
- 
-        {/* Historico recente
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
-          <h2 className="font-bold text-gray-800 text-[16px] mb-4">Historico recente</h2>
-          {dentista.historicoRecente.map((a, i) => (
-            <AtendimentoCard key={i} atend={a} tipo="historico" />
-          ))}
-        </div> */}
+       
  
         {/* Minha clinica */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-md p-6 mb-5 text-white">
@@ -424,62 +408,54 @@ const PainelDentistaPage = () => {
   const [dentista,   setDentista]   = useState<Dentista | null>(null)
   const [carregando, setCarregando] = useState(true)
   const navigate = useNavigate()
-
+ 
   useEffect(() => {
-    async function carregarDentista() {
-      const croSalvo = sessionStorage.getItem('tdb_cro')
-
-      if (!croSalvo) {
-        navigate('/login')
-        return
-      }
-
-      try {
-        const resultado = await dentistaService.buscarPorCro(croSalvo)
-
-        if (resultado) {
-          setDentista({
-            nome:               resultado.nome           ?? '',
-            //cidade:             '',
-            rg_cpg:             resultado.rgCpf          ?? '',
-            telefone:           resultado.telefone       ?? '',
-            especializacao:     resultado.especializacao ?? '',
-            email:              resultado.email          ?? '',
-            senha:              resultado.senha          ?? '',
-            cep:                resultado.cep            ?? '',
-            numero_consultorio: String(resultado.nConsultorio ?? 0),
-            cro:                resultado.cro            ?? croSalvo,
-            n_atendimentos:     resultado.nAtendimentos  ?? 0,
-            avaliacao:          resultado.avaliacao      ?? 0,
-            status:             resultado.status         ?? 'Ativo',
-            proximosAtend:      [],
-          })
-          setCarregando(false)
-          return
-        }
-      } catch {
-        console.warn('Backend indisponivel, usando mock...')
-      }
-
-      // Fallback: busca no mock
-      const mock = buscarDentista(croSalvo)
-      if (mock) {
-        setDentista(mock)
-      } else {
-        navigate('/login')
-      }
-
+  async function carregarDentista() {
+    const rgCpfSalvo = sessionStorage.getItem('tdb_rgCpf')
+ 
+    if (!rgCpfSalvo) {
+      navigate('/login')
+      return
+    }
+ 
+    try {
+      const resultado: DentistaBody = await dentistaService.buscar(rgCpfSalvo)
+      console.log('RESULTADO DENTISTA:', resultado)
+ 
+      setDentista({
+        nome: resultado.nome ?? '',
+        rgCpf: resultado.rgCpf ?? '',
+        telefone: resultado.telefone ?? '',
+        especializacao: resultado.especializacao ?? '',
+        email: resultado.email ?? '',
+        senha: resultado.senha ?? '',
+        cep: resultado.cep ?? '',
+        numero_consultorio: String(resultado.nConsultorio ?? ''),
+        cro: resultado.cro ?? '',
+        n_atendimentos: resultado.nAtendimentos ?? 0,
+        avaliacao: resultado.avaliacao ?? 0,
+        status: resultado.status ?? 'Ativo',
+ 
+        // enquanto não existir endpoint de atendimentos
+        //proximosAtend: [],
+      })
+ 
+    } catch (erro) {
+      console.error('Erro ao buscar dentista:', erro)
+      navigate('/login')
+    } finally {
       setCarregando(false)
     }
-
-    carregarDentista()
-  }, [navigate])
-
+  }
+ 
+  carregarDentista()
+}, [navigate])
+ 
   function handleSair() {
-    sessionStorage.removeItem('tdb_cro')
+    sessionStorage.removeItem('tdb_rgCpf')
     navigate('/login')
   }
-
+ 
   if (carregando) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center">
@@ -487,10 +463,10 @@ const PainelDentistaPage = () => {
       </div>
     )
   }
-
+ 
   if (!dentista) return null
-
+ 
   return <PainelDentista dentista={dentista} onSair={handleSair} />
 }
-
+ 
 export default PainelDentistaPage;

@@ -139,7 +139,7 @@ const DENTISTAS_VALIDOS = [
 */
  
 function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
-  const [cro,      setCro]      = useState('')
+  const [rgCpf,      setRgCpf]      = useState('')
   const [senha,    setSenha]    = useState('')
   const [showPass, setShowPass] = useState(false)
   const [erro,     setErro]     = useState(false)
@@ -149,17 +149,17 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
   async function handleLogin(e: React.FormEvent) {
   e.preventDefault()
  
-  if (!cro || senha.length < 6) return
+  if (!rgCpf || senha.length < 6) return
  
   setBuscando(true)
   setErro(false)
  
   try {
  
-    const ok = await authService.loginDentista(cro, senha)
+    const ok = await authService.loginDentista(rgCpf, senha)
     console.log(ok)
     if (ok) {
-      sessionStorage.setItem('tdb_cro', cro)
+      sessionStorage.setItem('tdb_rgCpf', rgCpf)
       navigate('/meu-painel')
     }
  
@@ -191,11 +191,11 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
             <label className="block text-[11px] text-white font-semibold mb-1.5 uppercase tracking-[0.6px]">
-              CRO
+              Rg ou Cpf
             </label>
-            <input type="text" value={cro}
-              onChange={e => { setCro(e.target.value); setErro(false) }}
-              placeholder="CRO-SP-12345"
+            <input type="text" value={rgCpf}
+              onChange={e => setRgCpf(formatCPF(e.target.value))}
+              placeholder="123.456.789-00"
               className="w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] placeholder-[#3D6A85] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
             />
           </div>
@@ -223,7 +223,7 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
             </div>
           )}
  
-          <button type="submit" disabled={!cro || senha.length < 6 || buscando}
+          <button type="submit" disabled={!rgCpf || senha.length < 6 || buscando}
             className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed border-none cursor-pointer">
             {buscando ? 'Verificando...' : 'Entrar'}
           </button>
@@ -258,14 +258,15 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
  
 // TELA DE PACIENTE //
 function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
-  const [cpf,       setCpf]       = useState('');
+  const [rgCpf,       setRgCpf]       = useState('');
   const [buscando,  setBuscando]  = useState(false);
-  const [naoAchado, setNaoAchado] = useState(false);
+  const [showPass, setShowPass] = useState(false)
+  const [erro,     setErro]     = useState(false)
   const navigate = useNavigate();
  
   const [senha, setSenha] = useState('');
   //const [showPass, setShowPass] = useState('');
- 
+ /*
   const PACIENTES_VALIDOS = [
   { cpf: '123.456.789-00', senha: 'paciente123' },
   { cpf: '000.000.000-00', senha: '0' },
@@ -280,33 +281,36 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
 ];
  
   function handleCPFChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setCpf(formatCPF(e.target.value));
-    setNaoAchado(false);
+    setRgCpf(formatCPF(e.target.value));
+    setErro(false);
   }
+ */
+  async function handleLogin(e: React.FormEvent) {
+  e.preventDefault()
  
-  async function handleBuscar(e: React.FormEvent) {
-  e.preventDefault();
-  if (cpf.length < 14 || senha.length < 6) return;
-  setBuscando(true);
-  setNaoAchado(false);
-  await new Promise(r => setTimeout(r, 800));
+  if (!rgCpf || senha.length < 6) return
  
-  // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/pacientes/cpf/${cpf}`) -> Back Java + Oracle
-  const encontrado = PACIENTES_VALIDOS.find(
-    p => p.cpf === cpf && p.senha === senha
-  );
-    // TESTE CONSOLE F12
-    //console.log('CPF digitado:', cpf)
-    //console.log('Senha digitada:', senha)
-    //console.log('Encontrado:', encontrado)
+  setBuscando(true)
+  setErro(false)
  
-  if (encontrado) {
-    sessionStorage.setItem('tdb_cpf', cpf);
-    navigate('/meu-atendimento');
-  } else {
-    setNaoAchado(true);
+  try {
+ 
+    const ok = await authService.loginDentista(rgCpf, senha)
+    console.log(ok)
+    if (ok) {
+      sessionStorage.setItem('tdb_rgCpf', rgCpf)
+      navigate('/meu-painel')
+    }
+ 
+  } catch (error) {
+    console.log(error)
+    setErro(true)
+ 
+  } finally {
+ 
+    setBuscando(false)
+ 
   }
-  setBuscando(false);
 }
   return (
     <div className="w-full max-w-md">
@@ -326,39 +330,44 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
           </div>
         </div>
  
-        <form onSubmit={handleBuscar} className="flex flex-col gap-4">
-          <Input
-            label="CPF"
-            value={cpf}
-            onChange={handleCPFChange}
-            placeholder="000.000.000-00"
-          />
-          <Input
-            label="Senha"
-            value={senha}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSenha(e.target.value)}
-            placeholder="••••••••••"
-          />
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-[11px] text-white font-semibold mb-1.5 uppercase tracking-[0.6px]">
+              Rg ou Cpf
+            </label>
+            <input type="text" value={rgCpf}
+              onChange={e => setRgCpf(formatCPF(e.target.value))}
+              placeholder="123.456.789-00"
+              className="w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] placeholder-[#3D6A85] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
+            />
+          </div>
  
-          {naoAchado && (
-            <div className="flex items-start gap-2 bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] text-[#FF4757] text-[12px] px-4 py-2.5 rounded-lg">
-              <span>⚠</span>
-              <div>
-                <p className="font-semibold">CPF não encontrado</p>
-                <p className="text-[11px] mt-0.5 opacity-80">
-                  Verifique o CPF ou{' '}
-                  <Link to="/FaleConosco" className="underline">entre em contato</Link>.
-                </p>
-              </div>
+          <div>
+            <label className="block text-[11px] text-white font-semibold mb-1.5 uppercase tracking-[0.6px]">
+              Senha
+            </label>
+            <div className="relative">
+              <input type={showPass ? 'text' : 'password'} value={senha}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSenha(e.target.value)}
+                placeholder="••••••••••"
+                className="w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] placeholder-[#3D6A85] rounded-lg px-4 py-3 pr-11 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
+              />
+              <button type="button" onClick={() => setShowPass(!showPass)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3D6A85] hover:text-[#7EB3CE] transition-colors border-none bg-transparent cursor-pointer text-[16px]">
+                {showPass ? '🙈' : '👁'}
+              </button>
+            </div>
+          </div>
+ 
+          {erro && (
+            <div className="flex items-center gap-2 bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] text-[#FF4757] text-[12px] px-4 py-2.5 rounded-lg">
+              <span>⚠</span> CRO ou senha incorretos.
             </div>
           )}
  
-          <button
-            type="submit"
-            disabled={cpf.length < 14 || buscando}
-            className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 border-none cursor-pointer"
-          >
-            {buscando ? 'Buscando...' : 'Entrar'}
+          <button type="submit" disabled={!rgCpf || senha.length < 6 || buscando}
+            className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg mt-1 text-[14px] transition-all duration-200 hover:bg-green-500 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed border-none cursor-pointer">
+            {buscando ? 'Verificando...' : 'Entrar'}
           </button>
         </form>
  

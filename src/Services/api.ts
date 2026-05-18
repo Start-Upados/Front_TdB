@@ -1,5 +1,4 @@
-//const API_URL = import.meta.env.VITE_BACKEND_URL ?? 'https://backend-mjgv.onrender.com'
-const API_URL = 'https://backend-mjgv.onrender.com'
+const API_URL = import.meta.env.VITE_BACKEND_URL ?? 'https://backend-mjgv.onrender.com'
 //console.log('API_URL:', API_URL)
  
  
@@ -151,8 +150,6 @@ export const dentistaService = {
     request<DentistaBody[]>('/dentista'),
   buscar: (rgCpf: string) =>
     request<DentistaBody>(`/dentista/${rgCpf}`),
-  buscarPorCro: (cro: string) =>        // ← novo
-    request<DentistaBody>(`/dentista/cro/${cro}`),
   atualizar: (rgCpf: string, body: Partial<DentistaBody>) =>
     request<unknown>(`/dentista/${rgCpf}`, 'PUT', body),
   deletar: (rgCpf: string) =>
@@ -191,12 +188,12 @@ export const authService = {
       { rgCpf, senha }
     ),
  
-  loginDentista: (cro: string, senha: string) =>
+  loginDentista: (rgCpf: string, senha: string) =>
     request<boolean>(
       '/dentista/login',
       'GET',
       undefined,
-      { cro, senha }
+      { rgCpf, senha }
     ),
  
   loginAdmin: (email: string, senha: string) =>
