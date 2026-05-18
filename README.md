@@ -1,303 +1,304 @@
-|| 🚀 StartUpados() ||
-
-> Inovação e tecnologia para transformar ideias em realidade 💡
-
-
-[![Deploy](https://img.shields.io/badge/deploy-vercel-black?logo=vercel)](https://www.startupados.com.br)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.2-38BDF8?logo=tailwindcss)](https://tailwindcss.com)
-[![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?logo=vite)](https://vitejs.dev)
-
+StartUpados() — Dashboard Turma do Bem
+> Sistema fullstack desenvolvido pelo grupo **StartUpados()** para a ONG **Turma do Bem**, integrando site institucional, portais de atendimento, dashboard executivo e inteligência artificial para priorização de pacientes.
 ---
-
-## 📖 Sobre o Projeto
-
-A **StartUpados()** é uma plataforma digital inovadora desenvolvida para conectar pessoas, empresas e oportunidades através da tecnologia. Nosso objetivo é impulsionar o acesso à tecnologia e criar soluções eficientes que transformem ideias em resultados concretos.
-
-O projeto inclui um **site institucional completo** e um **Dashboard Executivo** desenvolvido para a ONG **Turma do Bem** — centralizando dados de atendimentos, voluntários, doações e mensagens em um único painel de gestão.
-
-🌐 **Acesse:** [www.startupados.com.br](https://www.startupados.com.br)
-
+Sumário
+Sobre o Projeto
+Stack Tecnológica
+Funcionalidades
+Estrutura de Rotas
+Estrutura de Arquivos
+Integrações
+Machine Learning
+Variáveis de Ambiente
+Como Rodar Localmente
+Deploy
+Equipe
 ---
-
-## ⚙️ Tecnologias Utilizadas
-
-### 💻 Frontend
-| Tecnologia | Versão | Descrição |
-|---|---|---|
-| React | 19.2 | Interface baseada em componentes |
-| TypeScript | 5.9 | Tipagem estática e segurança de código |
-| Vite | 8.0 | Build tool rápida e moderna |
-| Tailwind CSS | 4.2 | Estilização utilitária com classes inline |
-| React Router DOM | 7.14 | Roteamento entre páginas |
-| React Hook Form | 7.72 | Gerenciamento de formulários |
-| Recharts | 2.x | Gráficos interativos para o Dashboard |
-
-### ☁️ Serviços e Integrações
-| Serviço | Descrição |
-|---|---|
-| Backend **Java + Quarkus** com banco **Oracle** |
-| Google Sheets API | Banco de dados da ONG Turma do Bem |
-| Google Cloud Platform | Service Account e autenticação |
-| Vercel | Deploy e hospedagem com CI/CD automático |
-
-### 🔜 Futuras Integrações (em desenvolvimento)
-- **WhatsApp Business API**
-- **Meta Graph API** (Instagram e Facebook)
-- **Gmail API** para leitura de e-mails
-
+Sobre o Projeto
+A Turma do Bem é uma ONG que oferece tratamento odontológico gratuito para jovens de 11 a 17 anos em vulnerabilidade social (Dentista do Bem) e para mulheres vítimas de violência (Apolônias do Bem).
+O sistema StartUpados() foi desenvolvido para digitalizar e otimizar os processos da ONG, oferecendo:
+Site institucional com informações sobre os programas
+Portal para solicitação de atendimento online
+Portal do beneficiário para acompanhamento do tratamento
+Painel do dentista voluntário
+Dashboard executivo com indicadores em tempo real
+Validação de pacientes por QR Code
+Cadastro de voluntários, funcionários e mutirões
+Integração com banco de dados Oracle via backend Java
+Modelo de Machine Learning para priorização de atendimentos
 ---
-
-## 🏗️ Arquitetura do Projeto
-
+Stack Tecnológica
+Frontend
+Tecnologia	Versão	Uso
+React	19	Framework principal
+TypeScript	5+	Tipagem estática
+Vite	6+	Build tool
+Tailwind CSS	v4	Estilização
+React Router DOM	v7	Roteamento
+React Hook Form	—	Formulários
+Recharts	—	Gráficos do dashboard
+qrcode.react	—	Geração de QR Code
+Backend
+Tecnologia	Uso
+Java 21	Linguagem
+Quarkus	Framework
+Jakarta REST (JAX-RS)	API REST
+JDBC	Conexão com banco
+Oracle Database	Banco de dados
+Integrações
+Serviço	Uso
+Google Sheets	Backup e armazenamento secundário
+Google Apps Script	API intermediária para o Sheets
+Render.com	Hospedagem do backend Java
+Vercel	Deploy do frontend
+VLibras	Acessibilidade em Libras
+Machine Learning
+Tecnologia	Uso
+Python	Linguagem
+Pandas	Manipulação de dados
+Scikit-learn	Modelo Random Forest
+Seaborn / Matplotlib	Visualizações
+Google Colab	Ambiente de execução
+---
+Funcionalidades
+Site Institucional
+Home com carrossel e seções informativas
+Nossos Serviços, Sobre Nós, Integrantes, FAQ, Fale Conosco
+Acessibilidade completa com VLibras
+Solicitação de Atendimento
+Seleção entre Dentista do Bem (jovens 11-17 anos) e Apolônias do Bem (mulheres vítimas de violência)
+Formulário em 3 steps para jovens (dados do adolescente, responsável, atendimento)
+Formulário em 2 steps para mulheres (dados pessoais, atendimento)
+Geração automática de protocolo único (`TDB-2026-XXXX` / `APO-2026-XXXX`)
+Geração automática de senha de acesso
+QR Code único por paciente
+Salvamento no banco Oracle + Google Sheets como backup
+Portal do Beneficiário
+Login por CPF e senha
+Visualização do histórico de consultas
+Progresso do tratamento
+Próximos atendimentos
+Session timeout de 30 minutos com aviso
+Busca no backend Java com fallback para mock
+Validação de Paciente (QR Code)
+Acesso por QR Code ou digitação manual do protocolo
+Busca no Google Sheets com fallback para mock
+Exibição da ficha completa do paciente
+Histórico de atendimentos em timeline
+Progresso do tratamento
+Confirmação de atendimento registrada na aba Atendimentos
+Painel do Dentista
+Login por CRO e senha
+Agenda de próximos atendimentos
+Botão de acesso rápido para validar paciente por QR Code
+Session timeout de 30 minutos
+Cadastro de Voluntário (Dentista)
+Formulário em 3 steps (dados pessoais, profissionais, atuação)
+Protocolo automático `VOL-2026-XXXX`
+Senha gerada automaticamente
+Integração com backend Java (`POST /dentista`)
+Backup no Google Sheets aba Voluntarios
+Dashboard Executivo (Admin)
+Acesso exclusivo com login admin. Contém 10 módulos:
+Página	Descrição
+Visão Geral	KPIs consolidados da ONG
+Operação	Agenda e atendimentos
+Voluntários	Rede de dentistas
+Impacto Social	Beneficiários e transformação
+Geografia	Distribuição nacional
+Financeiro	Doações e parceiros
+Inserir Dados	Adicionar registros
+Central de Mensagens	Todas as solicitações em tempo real
+Cadastrar Funcionário	Registro de funcionários com senha gerada
+Gerenciar Mutirões	Cadastro de mutirões de atendimento
+Central de Mensagens
+Lê dados do backend Java (`GET /solicitacao`) como fonte primária
+Fallback para Google Sheets se backend indisponível
+Filtros por tipo (Beneficiário, Voluntário, Doador, Parceiro)
+Busca por nome, email ou mensagem
+Alteração de status (Nova, Em atendimento, Resolvida)
+Notas internas por mensagem
+Cadastrar Funcionário
+Formulário completo com CPF, cargo, email, telefone, data de início e status
+Senha gerada automaticamente
+Integração com backend Java (`POST /funcionario`)
+Backup no Google Sheets aba Funcionarios
+Exibe senha gerada até o formulário ser limpo
+Gerenciar Mutirões
+Cadastro com nome, descrição, metas, número de dentistas e localização completa
+Backup no Google Sheets aba Mutiroes
+---
+Estrutura de Rotas
 ```
-Front_TdB/
-│
-├── public/
-│   ├── img/
-│   │   └── banner/              # Imagens do carrossel hero
-│   ├── logo-250x80.png
-│   ├── favicon.png
-│   ├── web_dev.png
-│   ├── e-commerce.png
-│   ├── aplicativos.png
-│   ├── chatbot.png
-│   ├── automation.png
-│   └── colab.png
-│
-├── src/
-│   │
-│   ├── Components/               # Componentes reutilizáveis
-│   │   ├── Header/
-│   │   │   └── Header.tsx        # Navbar com link Área Admin
-│   │   ├── Footer/
-│   │   │   └── Footer.tsx
-│   │   ├── Layout/
-│   │   │   └── Layout.tsx
-│   │   ├── HeroCarousel/
-│   │   │   └── HeroCarousel.tsx  # Carrossel animado da Home
-│   │   ├── HomeSections/
-│   │   │   └── HomeSections.tsx  # Seções: Stats, Projects, Tech, Process, Partners, CTA
-│   │   └── ProtectedRoute/
-│   │       └── ProtectedRoute.tsx # Proteção de rota do Dashboard
-│   │
-│   ├── Pages/                    # Páginas do site institucional
-│   │   ├── Home/
-│   │   │   └── Home.tsx
-│   │   ├── NossosServicos/
-│   │   │   └── NossosServicos.tsx
-│   │   ├── Integrantes/
-│   │   │   └── Integrantes.tsx
-│   │   ├── SobreNos/
-│   │   │   └── SobreNos.tsx
-│   │   ├── FAQ/
-│   │   │   └── FAQ.tsx
-│   │   ├── FaleConosco/
-│   │   │   └── FaleConosco.tsx   # Formulário integrado ao Google Sheets
-│   │   ├── Login/
-│   │   │   └── Login.tsx         # Página de autenticação admin
-│   │   └── Dashboard/
-│   │       ├── Dashboard.tsx     # Container principal com sidebar
-│   │       ├── mockData.ts       # Dados mock e interfaces TypeScript
-│   │       ├── components/
-│   │       │   └── Shared.tsx    # KPICard, Card, AlertCard, ProgressBar, etc.
-│   │       └── pages/
-│   │           ├── OverviewPage.tsx      # Visão geral executiva
-│   │           ├── OperationsPage.tsx    # Operação e agenda
-│   │           ├── VolunteersPage.tsx    # Gestão de voluntários
-│   │           ├── SocialImpactPage.tsx  # Impacto social
-│   │           ├── GeographyPage.tsx     # Distribuição geográfica
-│   │           ├── FinancialPage.tsx     # Financeiro e parceiros
-│   │           ├── DataEntryPage.tsx     # Inserção de dados via Sheets
-│   │           └── MessagesPage.tsx      # Central de Mensagens omnichannel
-│   │
-│   ├── services/
-│   │   └── googleSheets.ts       # Integração com Google Sheets API
-│   │
-│   ├── hooks/
-│   │   └── useSheets.ts          # Hooks para leitura e escrita no Sheets
-│   │
-│   ├── layouts/
-│   │   └── MainLayout.tsx        # Layout base com Header e Footer
-│   │
-│   ├── App.tsx                   # Componente principal e rotas
-│   └── main.tsx                  # Entry point (Vite)
-│
-├── .env                          # Variáveis de ambiente (não versionado)
-├── .env.example                  # Exemplo de variáveis necessárias
-├── .gitignore
-├── index.html
-├── package.json
-├── tailwind.config.js
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.node.json
-└── vite.config.ts
+/                        → Home (site institucional)
+/NossosServicos          → Nossos Serviços
+/SobreNos                → Sobre Nós
+/Integrantes             → Integrantes
+/FAQ                     → Perguntas Frequentes
+/FaleConosco             → Fale Conosco
+/login                   → Login (4 perfis + doação)
+/solicitar-atendimento   → Solicitação de atendimento
+/validar-paciente        → Validação por QR Code ou protocolo
+/meu-atendimento         → Portal do Beneficiário (protegido)
+/meu-painel              → Painel do Dentista (protegido)
+/cadastrar-voluntario    → Cadastro de dentista voluntário
+/dashboard               → Dashboard Executivo (protegido admin)
+*                        → 404 Not Found
 ```
-
 ---
-
-## 🎨 Design System
-
-### Tipografia
-| Uso | Fonte |
-|---|---|
-| Títulos do site | `Lobster, sans-serif` |
-| Texto corrido | `Roboto, sans-serif` |
-| Dashboard | `DM Sans, system-ui, sans-serif` |
-
-### Paleta de Cores — Dashboard
-| Token | Hex | Uso |
-|---|---|---|
-| Teal principal | `#00D4AA` | Accent, KPIs positivos |
-| Azul | `#40C4FF` | Informações |
-| Verde | `#00E676` | Sucesso, metas |
-| Vermelho | `#FF4757` | Alertas críticos |
-| Laranja | `#FF9557` | Avisos |
-| Roxo | `#B39DDB` | Voluntários |
-| Amarelo | `#FFD740` | Destaques |
-| BG principal | `#07111E` | Fundo do dashboard |
-| BG card | `#0F2035` | Cards |
-| Texto primário | `#E8F4FD` | Textos principais |
-| Texto secundário | `#7EB3CE` | Textos secundários |
-
-### Paleta de Cores — Site Institucional
-| Uso | Valor |
-|---|---|
-| Fundo hero | `from-[#1a1a2e] via-[#16213e] to-[#0f3460]` |
-| Accent | `blue-600` |
-| Hover accent | `amber-400` |
-
----
-
-## 📄 Páginas do Site Institucional
-
-| Página | Arquivo | Rota |
-|---|---|---|
-| Home | `src/Pages/Home/Home.tsx` | `/` |
-| Nossos Serviços | `src/Pages/NossosServicos/NossosServicos.tsx` | `/NossosServicos` |
-| Integrantes | `src/Pages/Integrantes/Integrantes.tsx` | `/Integrantes` |
-| Sobre nós | `src/Pages/SobreNos/SobreNos.tsx` | `/SobreNos` |
-| FAQ | `src/Pages/FAQ/FAQ.tsx` | `/FAQ` |
-| Fale Conosco | `src/Pages/FaleConosco/FaleConosco.tsx` | `/FaleConosco` |
-| Login Admin | `src/Pages/Login/Login.tsx` | `/login` |
-| Dashboard | `src/Pages/Dashboard/Dashboard.tsx` | `/dashboard` |
-
----
-
-## 📊 Dashboard Executivo — Turma do Bem
-
-O dashboard é uma área administrativa protegida por autenticação, com 8 páginas:
-
-| Página | Descrição |
-|---|---|
-| Visão Geral | KPIs executivos, evolução mensal, alertas |
-| Operação | Calendário, próximos atendimentos, histórico |
-| Voluntários | Top voluntários, crescimento da rede, engajamento |
-| Impacto Social | Perfil dos beneficiários, antes/depois, severidade |
-| Geografia | Cobertura por região e estado, alertas de baixa adesão |
-| Financeiro | Doações, custos, ROI social, parceiros |
-| Inserir Dados | Formulários para inserção via Google Sheets |
-| Central de Mensagens | Omnichannel — Site, Email, WhatsApp (em breve) |
-
-### Acesso ao Dashboard
+Estrutura de Arquivos
 ```
-URL:   https://www.startupados.com.br/login
-Email: ...
-Senha: ...
+src/
+├── Components/
+│   ├── Header/
+│   ├── Footer/
+│   ├── Layout/
+│   ├── HeroCarousel/
+│   ├── HomeSections/
+│   ├── ProtectedRoute/
+│   │   ├── ProtectedRoute.tsx
+│   │   ├── ProtectedRoutePaciente.tsx
+│   │   └── ProtectedRouteDentista.tsx
+│   └── SessionWarning/
+├── Pages/
+│   ├── Home/
+│   ├── Login/
+│   ├── Dashboard/
+│   │   ├── Dashboard.tsx
+│   │   └── pages/
+│   │       ├── OverviewPage.tsx
+│   │       ├── OperationsPage.tsx
+│   │       ├── VolunteersPage.tsx
+│   │       ├── SocialImpactPage.tsx
+│   │       ├── GeographyPage.tsx
+│   │       ├── FinancialPage.tsx
+│   │       ├── DataEntryPage.tsx
+│   │       ├── MessagesPage.tsx
+│   │       ├── CadastrarFuncionario.tsx
+│   │       └── GerenciarMutiroes.tsx
+│   ├── PortalBeneficiario/
+│   ├── PainelDentista/
+│   ├── SolicitarAtendimento/
+│   ├── ValidarPaciente/
+│   ├── CadastrarVoluntario/
+│   ├── NotFound/
+│   ├── FAQ/
+│   ├── FaleConosco/
+│   ├── Integrantes/
+│   ├── NossosServicos/
+│   └── SobreNos/
+├── Services/
+│   ├── api.ts              # Integração backend Java
+│   └── googleSheets.ts     # Integração Google Sheets
+└── Hooks/
+    └── useSessionTimeout.ts
 ```
-
 ---
-
-## 🔐 Variáveis de Ambiente
-
+Integrações
+Backend Java — Endpoints
+Base URL: `https://backend-mjgv.onrender.com`
+Método	Endpoint	Descrição
+POST	`/solicitacao`	Cadastrar solicitação de atendimento
+GET	`/solicitacao`	Listar todas as solicitações
+GET	`/solicitacao/{rgCpf}`	Buscar solicitação por CPF
+POST	`/beneficiario`	Cadastrar beneficiário
+GET	`/beneficiario/{rgCpf}`	Buscar beneficiário
+POST	`/dentista`	Cadastrar dentista voluntário
+PUT	`/dentista/{rgCpf}/addAtendimento`	Adicionar atendimento
+GET	`/dentista/{rgCpf}/getDesconto`	Buscar desconto por atendimentos
+POST	`/funcionario`	Cadastrar funcionário
+PUT	`/funcionario/{rgCpf}`	Atualizar funcionário
+POST	`/campanha`	Cadastrar mutirão
+PUT	`/campanha/{nome}/addAtendimento`	Adicionar atendimentos ao mutirão
+Google Sheets — Abas
+Planilha: `Turma_Do_Bem`
+Aba	Alimentada por
+Mensagens	SolicitarAtendimento
+Pacientes	SolicitarAtendimento
+Voluntarios	CadastrarVoluntario
+Funcionarios	CadastrarFuncionario
+Mutiroes	GerenciarMutiroes
+Atendimentos	ValidarPaciente
+Credenciais de Acesso (Demo)
+Perfil	Login	Senha
+Admin	turmadobem@tdb.org.br	tdb2026
+Paciente	CPF do cadastro	Gerada no formulário
+Dentista	CRO do cadastro	Gerada no cadastro
+---
+Machine Learning
+Modelo de classificação de prioridade de atendimento desenvolvido em Python com Random Forest.
+Dataset
+Arquivo: `base_ong_prioridade_v2.csv`
+Registros: 2.638 (após remoção de 9 duplicatas)
+Colunas: `tipo_pedido`, `sexo`, `idade`, `tempo_espera`, `vulnerabilidade`, `tipo_violencia`, `elegivel`, `programa`, `dano_dentario`, `tipo_tratamento`, `prioridade`
+Distribuição de Prioridade
+Prioridade	Quantidade	%
+BAIXA	1.151	44%
+MÉDIA	937	35%
+ALTA	550	21%
+Lógica de Priorização
+Apolônias do Bem (mulheres):
+ALTA: dano grave + violência grave
+ALTA: dano grave + idade maior ou igual a 50
+ALTA: dano moderado + violência grave + idade maior ou igual a 45
+Dentista do Bem (jovens 11-17 anos):
+ALTA: vulnerabilidade alta + tratamento canal ou extração
+ALTA: vulnerabilidade alta + restauração + tempo de espera maior que 20 dias
+Parâmetros do Modelo
+```python
+RandomForestClassifier(
+    n_estimators=200,
+    max_depth=15,
+    min_samples_split=5,
+    class_weight='balanced',
+    random_state=42
+)
+```
+---
+Variáveis de Ambiente
 Crie um arquivo `.env` na raiz do projeto:
-
 ```env
-VITE_GOOGLE_CLIENT_EMAIL=sua-service-account@projeto.iam.gserviceaccount.com
+VITE_GOOGLE_CLIENT_EMAIL=tdb-dashboard@startupados-tdb.iam.gserviceaccount.com
 VITE_GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-VITE_GOOGLE_SHEET_ID=id-da-sua-planilha
+VITE_GOOGLE_SHEET_ID=
+VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/.../exec
+VITE_BACKEND_URL=https://backend-mjgv.onrender.com
 ```
-
 ---
-
-## 🚀 Como Rodar o Projeto
-
+Como Rodar Localmente
 ```bash
-# Instalar dependências
+# 1. Clone o repositório
+git clone https://github.com/seu-usuario/startupados.git
+cd startupados
+
+# 2. Instale as dependências
 npm install
 
-# Rodar em desenvolvimento
+# 3. Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o .env com suas credenciais
+
+# 4. Rode o projeto
 npm run dev
 
-# Build para produção
+# 5. Acesse em http://localhost:5173
+```
+Build para produção
+```bash
 npm run build
-
-# Preview do build
 npm run preview
 ```
-
 ---
-
-## 📱 Responsividade
-
-| Breakpoint | Tamanho | Dispositivo |
-|---|---|---|
-| ES (Extra Small) | até 480px | Dispositivos móveis |
-| MD (Medium) | 768px | Tablets |
-| LG (Large) | acima de 1200px | Desktops |
-
+Deploy
+Frontend: Vercel — deploy automático a cada push na branch `main`
+URL de produção: www.startupados.com.br
+Backend: Render.com — `https://backend-mjgv.onrender.com`
+> **Atenção:** O backend no Render.com hiberna após 15 minutos de inatividade. A primeira requisição pode demorar até 60 segundos para acordar o serviço. O frontend trata esse cenário com fallback automático para o Google Sheets.
 ---
-
-## 🌐 Deploy
-
-| Ambiente | URL | Plataforma |
-|---|---|---|
-| Produção | [www.startupados.com.br](https://www.startupados.com.br) | Vercel |
-| Preview | [startupados.vercel.app](https://startupados.vercel.app) | Vercel |
-| Domínio | [www.startupados.com.br](https://www.startupados.com.br/) | Hostinger |
-
-O deploy é **automático** — qualquer `git push` na branch `main` atualiza o site em 1-2 minutos.
-
+Equipe
+Desenvolvido com pelo grupo StartUpados() — FIAP 2026
 ---
-
-## 🗃️ Google Sheets — Estrutura da Planilha
-
-A planilha `Turma_Do_Bem` no Google Sheets serve como banco de dados com 5 abas:
-
-| Aba | Colunas |
-|---|---|
-| Pacientes | ID, Nome, Idade, Cidade, Programa, Status, Data Cadastro |
-| Atendimentos | Paciente, Procedimento, Dentista, Status, Data |
-| Voluntários | Nome, Cidade, Estado, Pacientes, Status |
-| Doações | Empresa, Valor, Tipo, Data |
-| Mensagens | ID, Nome, Email, Telefone, Assunto, Mensagem, Canal, Tipo, Status, Data, Hora |
-
----
-
-## 👥 Integrantes da Equipe
-
-### Desenvolvimento
-| Nome | RM |
-|---|---|
-| Pedro Henrique Pinheiro Falchi | rm566967 |
-| Matheus Guimarães | rm567912 |
-
----
-
-## 🔜 Roadmap
-
-- [ ] Backend Java + Quarkus com Oracle DB
-- [ ] Conexão Frontend → Backend via REST API
-- [ ] WhatsApp Business API na Central de Mensagens
-- [ ] Meta Graph API (Instagram e Facebook)
-- [ ] Autenticação JWT robusta
-- [ ] Deploy do backend no Railway / Google Cloud Run
-
----
-
-*StartUpados() — Inovação e tecnologia para transformar ideias em realidade* 🚀
-
-
-
+<div align="center">
+  <p>Desenvolvido por <strong>StartUpados()</strong> para a <strong>Turma do Bem</strong></p>
+  <p>Transformando sorrisos, transformando vidas</p>
+</div>
