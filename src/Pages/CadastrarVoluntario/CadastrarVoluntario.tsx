@@ -347,7 +347,13 @@ export default function CadastrarVoluntario() {
               <>
                 <Campo label="Numero do CRO" error={errors.cro?.message}>
                   <input
-                    {...register('cro', { required: 'Campo obrigatorio' })}
+                    {...register('cro', {
+                      required: 'Campo obrigatorio',
+                      pattern: {
+                        value: /^CRO-[A-Z]{2}-\d{4,6}$/,
+                        message: 'Formato inválido. Ex.: CRO-SP-12345',
+                      },
+                    })}
                     placeholder="CRO-SP-12345"
                     className={inputCls}
                   />
@@ -356,12 +362,17 @@ export default function CadastrarVoluntario() {
                 
                   <Campo label="Cep" error={errors.cep?.message}>
                     <input
-                      {...register('cep', { required: 'Obrigatorio' })}
+                      {...register('cep', {
+                        required: 'Obrigatorio',
+                        pattern: {
+                          value: /^\d{5}-\d{3}$/,
+                          message: 'Formato inválido. Ex.: 12345-000',
+                        },
+                      })}
                       placeholder="Digite seu CEP"
                       className={inputCls}
                     />
-                  </Campo>      
-                
+                  </Campo>                 
 
                 
                   <Campo label="Número do Consultorio" error={errors.nConsultorio?.message}>
