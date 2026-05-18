@@ -89,7 +89,7 @@ export default function OperationsPage() {
 
       {/* Right column */}
       <div>
-        <Card title="Próximos atendimentos" className="mb-3">
+        <Card title=" atendimentos" className="mb-3">
           {UPCOMING_APPOINTMENTS.map((apt) => (
             <div
               key={apt.id}

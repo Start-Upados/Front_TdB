@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { dentistaService } from '../../Services/api'
 import { appendSheet } from '../../Services/googleSheets'
 
 // ─── TIPOS ────────────────────────────────────
@@ -12,7 +13,7 @@ interface FormData {
   email:            string
   // Profissionais
   cro:              string
-  especialidade:    string
+  especializacao:    string
   // Atuação
   cidade:           string
   estado:           string
@@ -44,6 +45,13 @@ function gerarProtocolo(): string {
   const ano = new Date().getFullYear()
   const num = Math.floor(Math.random() * 9000) + 1000
   return `VOL-${ano}-${num}`
+}
+
+function gerarSenha(nome: string): string {
+  // Ex: "joao123" — primeiros 4 chars do nome + 3 números aleatórios
+  const base = nome.toLowerCase().replace(/\s+/g, '').slice(0, 4)
+  const num  = Math.floor(Math.random() * 900) + 100
+  return `${base}${num}`
 }
 
 // ─── ESTADOS DO BRASIL ────────────────────────
@@ -100,7 +108,8 @@ const inputCls = "w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-
 const selectCls = "w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#00D4AA] transition-colors duration-200"
 
 // ─── TELA DE SUCESSO ──────────────────────────
-function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () => void }) {
+function TelaSucesso({ protocolo, onVoltar }: { protocolo: string, senha: string; onVoltar: () => void }) {
+  
   return (
     <div className="w-full max-w-md">
       <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl text-center">
@@ -113,12 +122,12 @@ function TelaSucesso({ protocolo, onVoltar }: { protocolo: string; onVoltar: () 
           Cadastro enviado!
         </h2>
         <p className="text-white/70 text-[13px] mb-6">
-          Seu cadastro foi registrado com sucesso. Guarde o numero do protocolo para acompanhar sua solicitacao.
+          Seu cadastro foi registrado com sucesso. Guarde o número do protocolo para acompanhar sua solicitação.
         </p>
 
         <div className="bg-[#07111E]/40 border border-amber-400/30 rounded-xl p-4 mb-6">
           <p className="text-[11px] text-white/50 uppercase tracking-wide mb-1">
-            Numero do protocolo
+            Número do protocolo
           </p>
           <p className="text-[24px] font-extrabold text-amber-400">
             #{protocolo}
@@ -171,6 +180,7 @@ export default function CadastrarVoluntario() {
   const [protocolo, setProtocolo] = useState('')
   const [cpf,       setCpf]       = useState('')
   const [whatsapp,  setWhatsapp]  = useState('')
+  const [senha, setSenha] = useState('')
 
   const { register, trigger, formState: { errors }, getValues, reset } = useForm<FormData>()
 
@@ -180,7 +190,7 @@ export default function CadastrarVoluntario() {
   async function nextStep() {
     const fieldsPerStep: (keyof FormData)[][] = [
       ['nome', 'dataNascimento', 'email'],
-      ['cro', 'especialidade'],
+      ['cro', 'especializacao'],
       ['cidade', 'estado', 'clinica', 'disponibilidade', 'participouAntes', 'aceitaTermos'],
     ]
     const valid = await trigger(fieldsPerStep[step - 1])
@@ -188,52 +198,76 @@ export default function CadastrarVoluntario() {
   }
 
   async function enviarFormulario() {
-    const valid = await trigger(['cidade', 'estado', 'clinica', 'disponibilidade', 'participouAntes', 'aceitaTermos'])
-    if (!valid) return
+  const valid = await trigger(['cidade', 'estado', 'clinica', 'disponibilidade', 'participouAntes', 'aceitaTermos'])
+  if (!valid) return
 
-    const data    = getValues()
-    setEnviando(true)
+  const data       = getValues()
+  const senhaGerada = gerarSenha(data.nome)
+  const prot       = gerarProtocolo()
+  const agora      = new Date()
+  const dataStr    = agora.toLocaleDateString('pt-BR')
 
-    const prot    = gerarProtocolo()
-    const agora   = new Date()
-    const dataStr = agora.toLocaleDateString('pt-BR')
+  setEnviando(true)
 
-    try {
-      await appendSheet('Voluntarios!A:N', [[
-        data.nome,              // Nome
-        cpf,                    // CPF
-        data.cro,               // CRO
-        data.especialidade,     // Especialidade
-        data.email,             // Email
-        whatsapp,               // WhatsApp
-        data.cidade,            // Cidade
-        data.estado,            // Estado
-        data.clinica,           // Clinica
-        data.disponibilidade,   // Disponibilidade
-        data.participouAntes,   // Participou Antes
-        'Aguardando analise',   // Status
-        dataStr,                // Data Cadastro
-        prot,                   // Protocolo
-        ]])
-
-      setProtocolo(prot)
-      setEnviado(true)
-      reset()
-      setCpf('')
-      setWhatsapp('')
-
-    } catch (err) {
-      console.error('Erro ao enviar:', err)
-      alert('Erro ao enviar. Tente novamente.')
-    } finally {
-      setEnviando(false)
-    }
+  try {
+    // 1. Backend Java
+    await dentistaService.cadastrar({
+      nome:           data.nome,
+      rgCpf:          prot,
+      email:          data.email,
+      senha:          senhaGerada,
+      telefone:       whatsapp,
+      cep:            '00000000',
+      nConsultorio:   0,
+      cro:            data.cro,
+      nAtendimentos:  0,
+      especializacao: data.especializacao,
+      status:         'Aguardando analise',
+      avaliacao:      0,
+      })
+  } catch (err) {
+    console.warn('Backend indisponivel, salvando no Sheets:', err)
   }
+
+  try {
+    // 2. Google Sheets (sempre salva como backup)
+    await appendSheet('Voluntarios!A:O', [[
+      data.nome,
+      cpf,
+      data.cro,
+      data.especializacao,
+      data.email,
+      whatsapp,
+      data.cidade,
+      data.estado,
+      data.clinica,
+      data.disponibilidade,
+      data.participouAntes,
+      'Aguardando analise',
+      dataStr,
+      prot,
+      senhaGerada,       // ← coluna O
+    ]])
+
+    setSenha(senhaGerada)
+    setProtocolo(prot)
+    setEnviado(true)
+    reset()
+    setCpf('')
+    setWhatsapp('')
+
+  } catch (err) {
+    console.error('Erro ao salvar no Sheets:', err)
+    alert('Erro ao enviar. Tente novamente.')
+  } finally {
+    setEnviando(false)
+  }
+}
 
   if (enviado) {
     return (
       <div className="min-h-screen bg-[#07111E] flex items-center justify-center p-4">
-        <TelaSucesso protocolo={protocolo} onVoltar={() => { setEnviado(false); setStep(1) }} />
+        <TelaSucesso protocolo={protocolo} senha={senha} onVoltar={() => { setEnviado(false); setStep(1) }} />
       </div>
     )
   }
@@ -334,8 +368,8 @@ export default function CadastrarVoluntario() {
                   />
                 </Campo>
 
-                <Campo label="Especialidade" error={errors.especialidade?.message}>
-                  <select {...register('especialidade', { required: 'Campo obrigatorio' })} className={selectCls}>
+                <Campo label="Especialidade" error={errors.especializacao?.message}>
+                  <select {...register('especializacao', { required: 'Campo obrigatorio' })} className={selectCls}>
                     <option value="">Selecione</option>
                     <option value="Clinico Geral">Clinico Geral</option>
                     <option value="Ortodontia">Ortodontia</option>
@@ -343,7 +377,7 @@ export default function CadastrarVoluntario() {
                     <option value="Periodontia">Periodontia</option>
                     <option value="Cirurgia">Cirurgia Buco-Maxilo-Facial</option>
                     <option value="Pediatria">Odontopediatria</option>
-                    <option value="Dentistica">Dentistica e Estetica</option>
+                    <option value="Dentistica">Dentistica e Estética</option>
                     <option value="Implantodontia">Implantodontia</option>
                     <option value="Outra">Outra</option>
                   </select>
@@ -386,7 +420,7 @@ export default function CadastrarVoluntario() {
                     <option value="Fins de semana">Fins de semana</option>
                     <option value="Dias de semana">Dias de semana</option>
                     <option value="Ambos">Ambos</option>
-                    <option value="Apenas mutiroes">Apenas mutiroes</option>
+                    <option value="Apenas mutiroes">Apenas mutirões</option>
                   </select>
                 </Campo>
 
@@ -394,7 +428,7 @@ export default function CadastrarVoluntario() {
                   <select {...register('participouAntes', { required: 'Campo obrigatorio' })} className={selectCls}>
                     <option value="">Selecione</option>
                     <option value="Sim">Sim, ja participei</option>
-                    <option value="Nao">Nao, sera minha primeira vez</option>
+                    <option value="Nao">Não, será minha primeira vez</option>
                   </select>
                 </Campo>
 
@@ -406,7 +440,7 @@ export default function CadastrarVoluntario() {
                   <div className="flex flex-col gap-1 text-[12px]">
                     <p className="text-white/60">Nome: <span className="text-white font-semibold">{getValues('nome')}</span></p>
                     <p className="text-white/60">CRO: <span className="text-white font-semibold">{getValues('cro')}</span></p>
-                    <p className="text-white/60">Especialidade: <span className="text-white font-semibold">{getValues('especialidade')}</span></p>
+                    <p className="text-white/60">Especialidade: <span className="text-white font-semibold">{getValues('especializacao')}</span></p>
                     <p className="text-white/60">Email: <span className="text-white font-semibold">{getValues('email')}</span></p>
                   </div>
                 </div>

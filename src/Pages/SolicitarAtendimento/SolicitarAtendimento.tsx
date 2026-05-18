@@ -151,7 +151,7 @@ function TelaSucesso({ protocolo, tipo, onVoltar, senha}: {
           <p className="text-[24px] font-extrabold text-amber-400">{senha}</p>
           
           {isApolonas && (
-            <p className="text-[11px] text-[#b81e96] mt-1">Programa Apolônias do Bem</p>
+            <p className="text-[11px] text-[#ffffff] mt-1">Programa Apolônias do Bem</p>
           )}
         </div>
 
@@ -175,9 +175,9 @@ function TelaSucesso({ protocolo, tipo, onVoltar, senha}: {
           <p className="text-[11px] text-[#00D4AA] uppercase tracking-wide font-bold mb-3">Próximos passos</p>
           <div className="flex flex-col gap-2">
             {(isApolonas ? [
-              'A equipe da Turma do Bem analisara sua solicitação',
-              'Voce sera contatada para uma triagem oral gratuita',
-              'Prazo de resposta: ate 5 dias uteis',
+              'A equipe da Turma do Bem analisará sua solicitação',
+              'Voce será contatada para uma triagem oral gratuita',
+              'Prazo de resposta: até 5 dias úteis',
               'Guarde o protocolo para consultas futuras',
             ] : [
               'A equipe da Turma do Bem analisara sua solicitação',
