@@ -16,7 +16,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'doacao',      label: 'Nova Doação'       },
 ];
 
-// ─── INPUT ────────────────────────────────────
+
 function Input({ label, value, onChange, placeholder, type = 'text' }: {
   label: string; value: string; onChange: (v: string) => void;
   placeholder?: string; type?: string;
@@ -37,7 +37,7 @@ function Input({ label, value, onChange, placeholder, type = 'text' }: {
   );
 }
 
-// ─── SELECT ───────────────────────────────────
+
 function Select({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void;
   options: string[];
@@ -59,7 +59,7 @@ function Select({ label, value, onChange, options }: {
   );
 }
 
-// ─── BOTÃO SALVAR ─────────────────────────────
+
 function SaveButton({ saving, onClick }: { saving: boolean; onClick: () => void }) {
   return (
     <button
@@ -72,7 +72,7 @@ function SaveButton({ saving, onClick }: { saving: boolean; onClick: () => void 
   );
 }
 
-// ─── SUCESSO ──────────────────────────────────
+
 function Success({ msg }: { msg: string }) {
   return (
     <div className="flex items-center gap-2 bg-[rgba(0,230,118,0.08)] border border-[rgba(0,230,118,0.25)] text-[#00E676] text-[12px] px-4 py-2.5 rounded-lg">

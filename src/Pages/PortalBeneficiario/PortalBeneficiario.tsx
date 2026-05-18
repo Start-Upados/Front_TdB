@@ -4,7 +4,7 @@ import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
 import SessionWarning from '../../Components/SessionWarning/SessionWarning'
 import { solicitacaoService } from '../../Services/api'
 
-// ─── TIPOS ────────────────────────────────────
+
 interface Consulta {
   data:         string
   hora:         string
@@ -30,7 +30,7 @@ interface Paciente {
   historico:     Consulta[]
 }
 
-// ─── MOCK DATA (fallback) ─────────────────────
+// ─── MOCK DATA (fallback banco de dados) ─────────────────────
 const MOCK_PACIENTES: Paciente[] = [
   {
     cpf: '123.456.789-00', nome: 'João Silva', idade: 15, cidade: 'São Paulo, SP',
@@ -187,7 +187,6 @@ function mapearBackend(dados: Record<string, string>): Paciente {
   }
 }
 
-// ─── TIMELINE ITEM ────────────────────────────
 function TimelineItem({ consulta, isLast }: { consulta: Consulta; isLast: boolean }) {
   const config = {
     concluido: { icon: '✓', bg: 'bg-green-500', text: 'text-green-600', label: 'Concluído',  border: 'border-green-200', cardBg: 'bg-green-50' },

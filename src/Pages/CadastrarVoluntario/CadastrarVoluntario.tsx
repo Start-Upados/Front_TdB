@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { dentistaService } from '../../Services/api'
 import { appendSheet } from '../../Services/googleSheets'
 
-// ─── TIPOS ────────────────────────────────────
+
 interface FormData {
   // Pessoais
   nome:             string
@@ -15,16 +15,11 @@ interface FormData {
   especializacao:    string
   cep:              string
   nConsultorio:     number
-  // Atuação
-  //cidade:           string
-  //estado:           string
-  //clinica:          string
   disponibilidade:  string
   participouAntes:  string
   aceitaTermos:     boolean
 }
 
-// ─── UTILITÁRIOS ──────────────────────────────
 function formatCPF(value: string): string {
   const nums = value.replace(/\D/g, '').slice(0, 11)
   if (nums.length <= 3) return nums
@@ -62,7 +57,7 @@ const ESTADOS = [
   'RO','RR','RS','SC','SE','SP','TO'
 ] */
 
-// ─── STEP INDICATOR ───────────────────────────
+
 function StepIndicator({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-6">
@@ -88,7 +83,7 @@ function StepIndicator({ step, total }: { step: number; total: number }) {
   )
 }
 
-// ─── CAMPO REUTILIZÁVEL ───────────────────────
+
 function Campo({
   label, error, required = true, children
 }: {
@@ -244,7 +239,7 @@ export default function CadastrarVoluntario() {
       'Aguardando analise',
       dataStr,
       prot,
-      senhaGerada,       // ← coluna O
+      senhaGerada,       
     ]])
 
     setSenha(senhaGerada)

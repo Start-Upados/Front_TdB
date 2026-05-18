@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { readSheet, appendSheet } from '../../Services/googleSheets'
 
-// ─── TIPOS ────────────────────────────────────
+
 interface Consulta {
   data:         string
   hora:         string
@@ -76,7 +76,7 @@ function buscarPorProtocolo(protocolo: string): Paciente | null {
   ) ?? null
 }
 
-// ─── TIMELINE ITEM ────────────────────────────
+
 function TimelineItem({ consulta, isLast }: { consulta: Consulta; isLast: boolean }) {
   const config = {
     concluido: { icon: 'OK', bg: 'bg-green-500', text: 'text-green-700', label: 'Concluido',  border: 'border-green-200', cardBg: 'bg-green-50'  },

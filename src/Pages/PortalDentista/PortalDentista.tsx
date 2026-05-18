@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-//  TIPOS //
 interface Atendimento {
   data:         string
   hora:         string

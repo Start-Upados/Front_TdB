@@ -1,6 +1,6 @@
 import React from 'react';
 
-// ─── KPI CARD ─────────────────────────────────
+
 interface KPICardProps {
   label: string;
   value: string;
@@ -32,7 +32,7 @@ export function KPICard({ label, value, change, changeType = 'up', accentColor =
   );
 }
 
-// ─── CARD ─────────────────────────────────────
+
 interface CardProps {
   title?: string;
   subtitle?: string;
@@ -54,7 +54,7 @@ export function Card({ title, subtitle, children, className = '' }: CardProps) {
   );
 }
 
-// ─── ALERT CARD ───────────────────────────────
+
 interface AlertCardProps {
   type: 'danger' | 'warning' | 'info' | 'success';
   title: string;
@@ -81,7 +81,7 @@ export function AlertCard({ type, title, description }: AlertCardProps) {
   );
 }
 
-// ─── PROGRESS BAR ─────────────────────────────
+
 interface ProgressBarProps {
   label: string;
   value: number;
@@ -106,7 +106,7 @@ export function ProgressBar({ label, value, color = '#00D4AA', suffix = '%' }: P
   );
 }
 
-// ─── SECTION TITLE ────────────────────────────
+
 export function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 text-[10.5px] font-bold text-[#3D6A85] uppercase tracking-[0.8px] mb-2.5 mt-1">
@@ -116,7 +116,7 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── STATUS BADGE ─────────────────────────────
+
 type StatusType = 'concluded' | 'active' | 'pending' | 'alert';
 
 const STATUS_CONFIG: Record<StatusType, { cls: string; label: string }> = {
@@ -136,7 +136,7 @@ export function StatusBadge({ status }: { status: StatusType }) {
   );
 }
 
-// ─── LEGEND ROW ───────────────────────────────
+
 export function LegendRow({ items }: { items: { color: string; label: string }[] }) {
   return (
     <div className="flex flex-wrap gap-3.5 mt-2 text-[11px] text-[#7EB3CE]">
@@ -150,7 +150,7 @@ export function LegendRow({ items }: { items: { color: string; label: string }[]
   );
 }
 
-// ─── PARTNER ROW ──────────────────────────────
+
 export function PartnerRow({ name, tier, contribution }: { name: string; tier: string; contribution: string }) {
   return (
     <div className="flex items-center justify-between px-2.5 py-2 bg-[#0C1B2E] rounded-[9px] mb-1.5 border border-[rgba(0,212,170,0.1)]">

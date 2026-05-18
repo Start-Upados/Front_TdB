@@ -5,7 +5,7 @@ import { appendSheet } from '../../Services/googleSheets'
 import { QRCodeSVG } from 'qrcode.react'
 import { solicitacaoService } from '../../Services/api'
 
-// ─── TIPOS ────────────────────────────────────
+
 type TipoAtendimento = 'selecao' | 'jovem' | 'mulher'
 
 interface FormJovem {

@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
-// ─── TIPOS ────────────────────────────────────
+
 type Modo = 'selecao' | 'admin' | 'paciente' | 'dentista';
 
 
-//  CREDENCIAIS ADMIN //
+
 const CREDENTIALS = {
   email:    'turmadobem@tdb.org.br',
   password: 'tdb2026',
 };
 
-//  UTILITÁRIOS //
+
 function formatCPF(value: string): string {
   const nums = value.replace(/\D/g, '').slice(0, 11);
   if (nums.length <= 3) return nums;
@@ -20,7 +20,7 @@ function formatCPF(value: string): string {
   return `${nums.slice(0, 3)}.${nums.slice(3, 6)}.${nums.slice(6, 9)}-${nums.slice(9)}`;
 }
 
-//  INPUT REUTILIZÁVEL //
+
 function Input({
   label, type = 'text', value, onChange, placeholder, autoComplete, children,
 }: {

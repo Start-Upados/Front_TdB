@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { appendSheet } from '../../../Services/googleSheets';
 
-// ─── TIPOS ────────────────────────────────────
+
 interface FuncionarioForm {
   nome:        string
   cpf:         string
@@ -13,7 +13,7 @@ interface FuncionarioForm {
   status:      string
 }
 
-// ─── UTILITÁRIOS ──────────────────────────────
+
 function formatCPF(value: string): string {
   const nums = value.replace(/\D/g, '').slice(0, 11)
   if (nums.length <= 3) return nums
@@ -30,7 +30,7 @@ function formatTelefone(value: string): string {
   return nums
 }
 
-// ─── COMPONENTE CAMPO ─────────────────────────
+
 function Campo({
   label, error, required = true, children
 }: {
