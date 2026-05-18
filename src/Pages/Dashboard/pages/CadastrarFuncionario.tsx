@@ -32,6 +32,12 @@ function formatTelefone(value: string): string {
   return nums
 }
 
+function gerarSenha(nome: string): string {
+  const base = nome.toLowerCase().replace(/\s+/g, '').slice(0, 4)
+  const num  = Math.floor(Math.random() * 900) + 100
+  return `${base}${num}`
+}
+
 
 function Campo({
   label, error, required = true, children
@@ -58,6 +64,7 @@ export default function CadastrarFuncionario() {
   const [sucesso,   setSucesso]   = useState(false)
   const [cpf,       setCpf]       = useState('')
   const [telefone,  setTelefone]  = useState('')
+  const [ senha, setSenha ] = useState('')
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FuncionarioForm>()
 
@@ -65,6 +72,7 @@ export default function CadastrarFuncionario() {
   setSalvando(true)
   setSucesso(false)
 
+  const senhaGerada = gerarSenha(data.nome)
   const agora   = new Date()
   const dataStr = agora.toLocaleDateString('pt-BR')
 
@@ -74,7 +82,7 @@ export default function CadastrarFuncionario() {
       nome:       data.nome,
       rgCpf:      cpf,
       email:      data.email,
-      senha:      '123456',
+      senha:      senhaGerada,
       telefone:   telefone,
       cep:        '00000000',
       cargo:      data.cargo,
@@ -98,6 +106,7 @@ export default function CadastrarFuncionario() {
       dataStr,
     ]])
 
+    setSenha(senhaGerada)
     setSucesso(true)
     reset()
     setCpf('')
@@ -127,11 +136,15 @@ export default function CadastrarFuncionario() {
 
       {/* Alerta de sucesso */}
       {sucesso && (
-        <div className="flex items-center gap-3 bg-[rgba(0,230,118,0.08)] border border-[rgba(0,230,118,0.25)] text-[#00E676] px-4 py-3 rounded-xl mb-6 text-[13px]">
-          <span className="text-[18px]">✓</span>
-          <div>
+        <div className="flex flex-col gap-1 bg-[rgba(0,230,118,0.08)] border border-[rgba(0,230,118,0.25)] text-[#00E676] px-4 py-3 rounded-xl mb-6 text-[13px]">
+          <div className="flex items-center gap-3">
+            <span className="text-[18px]">✓</span>
             <p className="font-bold">Funcionário cadastrado com sucesso!</p>
-            <p className="text-[11px] opacity-80 mt-0.5">Os dados foram salvos na planilha Funcionarios.</p>
+          </div>
+          <div className="mt-2 bg-[#07111E]/40 border border-[rgba(0,230,118,0.2)] rounded-lg px-4 py-2">
+            <p className="text-[11px] text-white/50 uppercase tracking-wide mb-1">Senha gerada</p>
+            <p className="text-[18px] font-extrabold tracking-widest text-[#00D4AA]">{senha}</p>
+            <p className="text-[11px] text-white/40 mt-1">Guarde essa senha repasse ao funcionário</p>
           </div>
         </div>
       )}
