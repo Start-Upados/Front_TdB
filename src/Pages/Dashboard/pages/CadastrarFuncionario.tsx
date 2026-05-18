@@ -95,7 +95,7 @@ export default function CadastrarFuncionario() {
 
   try {
     // 2. Google Sheets (sempre salva como backup)
-    await appendSheet('Funcionarios!A:H', [[
+    await appendSheet('Funcionarios!A:I', [[
       data.nome,
       cpf,
       data.cargo,
@@ -104,6 +104,7 @@ export default function CadastrarFuncionario() {
       data.dataInicio,
       data.status,
       dataStr,
+      senhaGerada,
     ]])
 
     setSenha(senhaGerada)
