@@ -20,23 +20,23 @@ export default function OverviewPage() {
   return (
     <div>
       {/* KPI Row 1 */}
-      <div className="grid grid-cols-4 gap-3 mb-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 mb-3.5">
         <KPICard label="Total de pacientes"      value="247.893" change="+12,4% vs 2024" changeType="up"      accentColor="#00D4AA" />
         <KPICard label="Atendimentos concluídos" value="198.234" change="+9,8% vs 2024"  changeType="up"      accentColor="#40C4FF" />
         <KPICard label="Dentistas voluntários"   value="4.218"   change="+6,2% vs 2024"  changeType="up"      accentColor="#B39DDB" />
-        <KPICard label="Cidades atendidas"       value="1.847"   change="+134 novas"      changeType="up"      accentColor="#00E676" />
+        <KPICard label="Cidades atendidas"       value="1.847"   change="+134 novas"     changeType="up"      accentColor="#00E676" />
       </div>
 
       {/* KPI Row 2 */}
-      <div className="grid grid-cols-4 gap-3 mb-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 mb-3.5">
         <KPICard label="Tratamentos ativos"   value="8.432"  change="Em andamento"    changeType="neutral" accentColor="#FF9557" />
         <KPICard label="Alta complexidade"    value="23,4%"  change="+2,1pp vs 2024"  changeType="down"    accentColor="#FF4757" />
         <KPICard label="Novos pacientes/mês"  value="1.243"  change="+8,7% vs mar"    changeType="up"      accentColor="#00D4AA" />
         <KPICard label="Taxa de sucesso"      value="94,7%"  change="+0,3pp vs 2024"  changeType="up"      accentColor="#00E676" />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-[2fr_1fr] gap-3 mb-3.5">
+      {/* Charts Row — stack no mobile, 2/3 + 1/3 no desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 mb-3.5">
 
         {/* Area chart */}
         <Card title="Evolução mensal de atendimentos — 2025">
@@ -44,7 +44,7 @@ export default function OverviewPage() {
             { color: '#00D4AA', label: 'Atendimentos'   },
             { color: '#40C4FF', label: 'Novos pacientes' },
           ]} />
-          <div className="h-[155px] mt-2.5">
+          <div className="h-[180px] lg:h-[155px] mt-2.5">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={MONTHLY_DATA} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
                 <defs>
@@ -75,7 +75,7 @@ export default function OverviewPage() {
 
         {/* Donut */}
         <Card title="Distribuição por programa">
-          <div className="h-[140px]">
+          <div className="h-[180px] lg:h-[140px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={PROGRAMS} cx="50%" cy="50%" innerRadius={44} outerRadius={62} paddingAngle={3} dataKey="value">
@@ -97,9 +97,9 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-      {/* Alerts */}
+      {/* Alerts — empilham no mobile */}
       <SectionTitle>Alertas do sistema</SectionTitle>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>{ALERTS.slice(0, 3).map((a, i) => <AlertCard key={i} {...a} />)}</div>
         <div>{ALERTS.slice(3).map((a, i) => <AlertCard key={i} {...a} />)}</div>
       </div>

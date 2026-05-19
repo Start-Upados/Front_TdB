@@ -23,8 +23,8 @@ function CalendarApril() {
       </div>
 
       <div className="grid grid-cols-7 gap-[3px]">
-        {dayLabels.map((d) => (
-          <div key={d} className="text-center text-[9.5px] font-semibold text-[#3D6A85] uppercase py-1">
+        {dayLabels.map((d, i) => (
+          <div key={`${d}-${i}`} className="text-center text-[9.5px] font-semibold text-[#3D6A85] uppercase py-1">
             {d}
           </div>
         ))}
@@ -58,7 +58,7 @@ function CalendarApril() {
 // ─── OPERATIONS PAGE ───────────────────────────
 export default function OperationsPage() {
   return (
-    <div className="grid grid-cols-[1fr_2fr] gap-3">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-3">
 
       {/* Left column */}
       <div>
@@ -89,7 +89,7 @@ export default function OperationsPage() {
 
       {/* Right column */}
       <div>
-        <Card title=" atendimentos" className="mb-3">
+        <Card title="Próximos atendimentos" className="mb-3">
           {UPCOMING_APPOINTMENTS.map((apt) => (
             <div
               key={apt.id}
@@ -101,10 +101,10 @@ export default function OperationsPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-[12.5px] font-medium text-[#E8F4FD] whitespace-nowrap overflow-hidden text-ellipsis">
+                <p className="text-[12.5px] font-medium text-[#E8F4FD] truncate">
                   {apt.patient} — {apt.type}
                 </p>
-                <p className="text-[11px] text-[#7EB3CE] mt-0.5">{apt.dentist} · {apt.time}</p>
+                <p className="text-[11px] text-[#7EB3CE] mt-0.5 truncate">{apt.dentist} · {apt.time}</p>
               </div>
 
               <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-semibold
@@ -119,29 +119,31 @@ export default function OperationsPage() {
         </Card>
 
         <Card title="Histórico recente de atendimentos">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {['ID', 'Paciente', 'Procedimento', 'Dentista', 'Data', 'Status'].map((h) => (
-                  <th key={h} className="text-left px-2.5 py-1.5 text-[10px] text-[#3D6A85] border-b border-[rgba(0,212,170,0.1)] font-semibold uppercase tracking-[0.5px]">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {RECENT_ATTENDANCES.map((att) => (
-                <tr key={att.id} className="hover:bg-[rgba(0,212,170,0.025)]">
-                  <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[10.5px] text-[#3D6A85]">{att.id}</td>
-                  <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[12.5px] text-[#E8F4FD]">{att.patient}</td>
-                  <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[12.5px] text-[#7EB3CE]">{att.type}</td>
-                  <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[12.5px] text-[#7EB3CE]">{att.dentist}</td>
-                  <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[11px] text-[#3D6A85]">{att.date}</td>
-                  <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)]"><StatusBadge status={att.status} /></td>
+          <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <table className="w-full border-collapse min-w-[600px]">
+              <thead>
+                <tr>
+                  {['ID', 'Paciente', 'Procedimento', 'Dentista', 'Data', 'Status'].map((h) => (
+                    <th key={h} className="text-left px-2.5 py-1.5 text-[10px] text-[#3D6A85] border-b border-[rgba(0,212,170,0.1)] font-semibold uppercase tracking-[0.5px] whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {RECENT_ATTENDANCES.map((att) => (
+                  <tr key={att.id} className="hover:bg-[rgba(0,212,170,0.025)]">
+                    <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[10.5px] text-[#3D6A85] whitespace-nowrap">{att.id}</td>
+                    <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[12.5px] text-[#E8F4FD] whitespace-nowrap">{att.patient}</td>
+                    <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[12.5px] text-[#7EB3CE] whitespace-nowrap">{att.type}</td>
+                    <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[12.5px] text-[#7EB3CE] whitespace-nowrap">{att.dentist}</td>
+                    <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)] text-[11px] text-[#3D6A85] whitespace-nowrap">{att.date}</td>
+                    <td className="px-2.5 py-[9px] border-b border-[rgba(0,212,170,0.05)]"><StatusBadge status={att.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
     </div>

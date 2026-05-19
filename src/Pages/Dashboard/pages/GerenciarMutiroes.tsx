@@ -25,12 +25,18 @@ function Campo({
   label: string; error?: string; required?: boolean; children: React.ReactNode
 }) {
   return (
-    <div>
-      <label className="block text-[11px] text-[#7EB3CE] font-semibold mb-1.5 uppercase tracking-[0.6px]">
+    <div className="min-w-0">
+      <label className="block text-[11px] text-[#7EB3CE] font-semibold mb-1.5 uppercase tracking-[0.6px] leading-tight">
         {label} {required && <span className="text-[#00D4AA]">*</span>}
       </label>
+
       {children}
-      {error && <p className="text-[11px] text-[#FF4757] mt-1">{error}</p>}
+
+      {error && (
+        <p className="text-[11px] text-[#FF4757] mt-1">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
@@ -124,7 +130,7 @@ export default function GerenciarMutiroes() {
           <span className="text-[18px]">✓</span>
           <div>
             <p className="font-bold">Mutirão cadastrado com sucesso!</p>
-            <p className="text-[11px] opacity-80 mt-0.5">Os dados foram salvos na planilha Mutiroes.</p>
+            <p className="text-[11px] opacity-80 mt-0.5">Os dados foram salvos no banco de dados Oracle e na planilha Mutiroes.</p>
           </div>
         </div>
       )}
@@ -166,7 +172,7 @@ export default function GerenciarMutiroes() {
                   className={inputCls}
                 />
               </Campo>
-              <Campo label="Num. atendimentos" error={errors.nAtendimentos?.message}>
+              <Campo label="Atendimentos" error={errors.nAtendimentos?.message}>
                 <input
                   type="number"
                   min={0}
@@ -269,7 +275,7 @@ export default function GerenciarMutiroes() {
           Informacao
         </p>
         <p className="text-[12px] text-[#7EB3CE]">
-          Os dados serao salvos na aba <span className="text-[#00D4AA] font-semibold">Mutiroes</span> da planilha Turma_Do_Bem no Google Sheets.
+          Os dados serao salvos no banco de dados Oracle e na aba <span className="text-[#00D4AA] font-semibold">Mutiroes</span> da planilha Turma_Do_Bem no Google Sheets.
         </p>
       </div>
  

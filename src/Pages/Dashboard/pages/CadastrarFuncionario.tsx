@@ -269,7 +269,7 @@ export default function CadastrarFuncionario() {
           Informacao
         </p>
         <p className="text-[12px] text-[#7EB3CE]">
-          Os dados serao salvos na aba <span className="text-[#00D4AA] font-semibold">Funcionarios</span> da planilha Turma_Do_Bem no Google Sheets. Certifique-se de que a aba existe antes de cadastrar.
+          Os dados serao salvos no banco de dados Oracle e na aba <span className="text-[#00D4AA] font-semibold">Funcionarios</span> da planilha Turma_Do_Bem no Google Sheets. Certifique-se de que a aba existe antes de cadastrar.
         </p>
       </div>
 

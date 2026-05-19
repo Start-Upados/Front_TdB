@@ -58,7 +58,7 @@ const Home = () =>{
                 Saiba mais
               </Link>
             </div>
-            <div className="hidden md:block w-[550px] flex-1">
+            <div className="w-full md:w-[550px] flex-1">
               <HeroCarousel />
             </div>
           </div>

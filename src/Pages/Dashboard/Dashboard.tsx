@@ -11,7 +11,6 @@ import MessagesPage from './pages/MessagesPage';
 import CadastrarFuncionario from './pages/CadastrarFuncionario';
 import GerenciarMutiroes from './pages/GerenciarMutiroes';
 
-
 export type PageId = 'overview' | 'ops' | 'vol' | 'impact' | 'geo' | 'fin' | 'data' | 'funcionarios' | 'messages' | 'mutiroes';
 
 const NAV_ITEMS: { id: PageId; label: string }[] = [
@@ -40,7 +39,6 @@ const PAGE_META: Record<PageId, { title: string; subtitle: string }> = {
   mutiroes: { title: 'Gerenciar Mutirões', subtitle: 'Cadastre e gerencie os mutirões de atendimento' },
 };
 
-/* Tiny scrollbar override — pode mover para App.css se preferir */
 const SCROLLBAR = `
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -48,13 +46,46 @@ const SCROLLBAR = `
 `;
 
 // ─── SIDEBAR ───────────────────────────────────
-function Sidebar({ activePage, onNavigate }: { activePage: PageId; onNavigate: (id: PageId) => void }) {
+function Sidebar({ 
+  activePage, 
+  onNavigate, 
+  isOpen, 
+  onClose 
+}: { 
+  activePage: PageId; 
+  onNavigate: (id: PageId) => void;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const navigate = useNavigate();
+
+  const handleNavigate = (id: PageId) => {
+    onNavigate(id);
+    onClose(); // fecha o drawer no mobile ao navegar
+  };
+
   return (
-    <aside className="w-[220px] bg-[#0F2035] border-r border-[rgba(0,212,170,0.1)] flex flex-col shrink-0 overflow-y-auto px-2.5">
+    <aside className={`
+      fixed lg:static inset-y-0 left-0 z-50 w-[260px] lg:w-[220px]
+      bg-[#0F2035] border-r border-[rgba(0,212,170,0.1)]
+      flex flex-col shrink-0 overflow-y-auto px-2.5
+      transform transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+    `}>
+
+      {/* Botão fechar — só no mobile */}
+      <div className="lg:hidden flex justify-end pt-3 pr-1">
+        <button 
+          onClick={onClose}
+          className="text-[#7EB3CE] text-2xl px-2 cursor-pointer"
+          aria-label="Fechar menu"
+        >
+          ✕
+        </button>
+      </div>
 
       {/* Logo */}
-      <div className="px-2 pt-5 pb-4 border-b border-[rgba(0,212,170,0.1)] mb-3">
+      <div className="px-2 pt-2 lg:pt-5 pb-4 border-b border-[rgba(0,212,170,0.1)] mb-3">
         <p className="text-[25px] font-bold text-[#8BC34A]">Turma do Bem</p>
         <p className="text-[15px] text-[#FF9800] mt-0.5">Dashboard Executivo</p>
         <div className="flex items-center gap-1.5 mt-2 text-[11px] text-[#00E676]">
@@ -63,16 +94,14 @@ function Sidebar({ activePage, onNavigate }: { activePage: PageId; onNavigate: (
         </div>
       </div>
 
-      {/* Label */}
       <p className="text-[12px] font-bold text-[#3D6A85] uppercase tracking-[1.1px] px-2 mb-1.5">
         Páginas
       </p>
 
-      {/* Nav */}
       {NAV_ITEMS.map(({ id, label }) => (
         <button
           key={id}
-          onClick={() => onNavigate(id)}
+          onClick={() => handleNavigate(id)}
           className={`flex items-center gap-2.5 w-full text-left px-3 py-2.5 rounded-[9px] text-[13px] transition-all outline-none border-none cursor-pointer font-[inherit] mb-0.5
             ${activePage === id
               ? 'bg-[rgba(0,212,170,0.15)] text-[#FF9800] font-medium'
@@ -84,48 +113,66 @@ function Sidebar({ activePage, onNavigate }: { activePage: PageId; onNavigate: (
         </button>
       ))}
 
-      {/* Annual goal */}
-      {/* Annual goal + Logout */}
-          <div className="mt-auto pt-4 pb-4 px-2 border-t border-[rgba(0,212,170,0.1)]">
-            <p className="text-[15px] text-white mb-1.5">Meta anual 2026:</p>
-            <p className="text-[22px] font-bold text-[#E8F4FD] leading-none">82%</p>
-            <p className="text-[11px] text-[#7EB3CE] mt-1 mb-1.5">254.000 de 310.000 atendimentos</p>
-            <div className="h-1 bg-[#0C1B2E] rounded-sm mb-4">
-              <div className="h-full w-[82%] bg-[#00D4AA] rounded-sm" />
-            </div>
+      <div className="mt-auto pt-4 pb-4 px-2 border-t border-[rgba(0,212,170,0.1)]">
+        <p className="text-[15px] text-white mb-1.5">Meta anual 2026:</p>
+        <p className="text-[22px] font-bold text-[#E8F4FD] leading-none">82%</p>
+        <p className="text-[11px] text-[#7EB3CE] mt-1 mb-1.5">254.000 de 310.000 atendimentos</p>
+        <div className="h-1 bg-[#0C1B2E] rounded-sm mb-4">
+          <div className="h-full w-[82%] bg-[#00D4AA] rounded-sm" />
+        </div>
 
-            {/* Botão sair */}
-            <button
-              onClick={() => {
-                localStorage.removeItem('tdb_auth');
-                navigate('/login');
-              }}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[9px] text-[15px] font-medium text-[#FF4757] bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.2)] hover:bg-[rgba(255,71,87,0.15)] transition-all cursor-pointer">
-              <span>→</span>
-              Sair
-            </button>
-          </div>
-      </aside>
+        <button
+          onClick={() => {
+            localStorage.removeItem('tdb_auth');
+            navigate('/login');
+          }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[9px] text-[15px] font-medium text-[#FF4757] bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.2)] hover:bg-[rgba(255,71,87,0.15)] transition-all cursor-pointer">
+          <span>→</span>
+          Sair
+        </button>
+      </div>
+    </aside>
   );
 }
 
 // ─── TOPBAR ────────────────────────────────────
-function TopBar({ activePage }: { activePage: PageId }) {
+function TopBar({ 
+  activePage, 
+  onMenuClick 
+}: { 
+  activePage: PageId;
+  onMenuClick: () => void;
+}) {
   const { title, subtitle } = PAGE_META[activePage];
   return (
-    <div className="px-5 py-3 border-b border-[rgba(0,212,170,0.1)] bg-[rgba(7,17,30,0.85)] backdrop-blur-md flex items-center justify-between shrink-0 sticky top-0 z-50">
-      <div>
-        <p className="text-[17px] font-bold text-[#E8F4FD]">{title}</p>
-        <p className="text-[11px] text-[#3D6A85] mt-0.5">{subtitle}</p>
+    <div className="px-4 lg:px-5 py-3 border-b border-[rgba(0,212,170,0.1)] bg-[rgba(7,17,30,0.85)] backdrop-blur-md flex items-center justify-between shrink-0 sticky top-0 z-30 gap-3">
+      
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* Hambúrguer — só no mobile */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden flex flex-col gap-1 shrink-0 p-1 cursor-pointer"
+          aria-label="Abrir menu"
+        >
+          <span className="w-5 h-0.5 bg-[#E8F4FD]"></span>
+          <span className="w-5 h-0.5 bg-[#E8F4FD]"></span>
+          <span className="w-5 h-0.5 bg-[#E8F4FD]"></span>
+        </button>
+
+        <div className="min-w-0">
+          <p className="text-[15px] lg:text-[17px] font-bold text-[#E8F4FD] truncate">{title}</p>
+          <p className="text-[10px] lg:text-[11px] text-[#3D6A85] mt-0.5 truncate hidden sm:block">{subtitle}</p>
+        </div>
       </div>
-      <div className="flex items-center gap-2.5">
-        <span className="bg-[rgba(255,71,87,0.15)] text-[#FF4757] text-[11px] font-semibold px-2.5 py-1 rounded-full">
+
+      <div className="flex items-center gap-1.5 lg:gap-2.5 shrink-0">
+        <span className="bg-[rgba(255,71,87,0.15)] text-[#FF4757] text-[10px] lg:text-[11px] font-semibold px-2 lg:px-2.5 py-1 rounded-full whitespace-nowrap">
           3 alertas
         </span>
-        <span className="bg-[rgba(0,230,118,0.12)] text-[#00E676] text-[11px] font-semibold px-2.5 py-1 rounded-full">
+        <span className="bg-[rgba(0,230,118,0.12)] text-[#00E676] text-[10px] lg:text-[11px] font-semibold px-2 lg:px-2.5 py-1 rounded-full whitespace-nowrap">
           Meta 82%
         </span>
-        <span className="bg-[#0F2035] border border-[rgba(0,212,170,0.1)] text-[#7EB3CE] text-[12px] px-3 py-1.5 rounded-[9px]">
+        <span className="hidden md:inline-block bg-[#0F2035] border border-[rgba(0,212,170,0.1)] text-[#7EB3CE] text-[12px] px-3 py-1.5 rounded-[9px] whitespace-nowrap">
           Maio 2026
         </span>
       </div>
@@ -133,7 +180,6 @@ function TopBar({ activePage }: { activePage: PageId }) {
   );
 }
 
-// ─── PAGE RENDERER ─────────────────────────────
 function renderPage(page: PageId) {
   switch (page) {
     case 'overview': return <OverviewPage />;
@@ -143,23 +189,42 @@ function renderPage(page: PageId) {
     case 'geo':      return <GeographyPage />;
     case 'fin':      return <FinancialPage />;
     case 'data':     return <DataEntryPage />;
-    case 'funcionarios':  return<CadastrarFuncionario />;
+    case 'funcionarios':  return <CadastrarFuncionario />;
     case 'messages': return <MessagesPage />;
-    case 'mutiroes':  return <GerenciarMutiroes />
+    case 'mutiroes':  return <GerenciarMutiroes />;
   }
 }
 
 // ─── DASHBOARD ─────────────────────────────────
 export default function Dashboard() {
   const [activePage, setActivePage] = useState<PageId>('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#07111E] text-[#E8F4FD] text-[13px]">
       <style>{SCROLLBAR}</style>
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+
+      {/* Overlay — só visível quando o drawer está aberto no mobile */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+        />
+      )}
+
+      <Sidebar 
+        activePage={activePage} 
+        onNavigate={setActivePage}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <TopBar activePage={activePage} />
-        <div className="flex-1 overflow-y-auto p-5">
+        <TopBar 
+          activePage={activePage} 
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
           {renderPage(activePage)}
         </div>
       </div>

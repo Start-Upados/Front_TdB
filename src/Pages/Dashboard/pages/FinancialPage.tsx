@@ -16,7 +16,7 @@ export default function FinancialPage() {
   return (
     <div>
       {/* KPI Row */}
-      <div className="grid grid-cols-4 gap-3 mb-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3.5">
         <KPICard label="Doações YTD 2025"       value="R$ 4,28M" change="+11% vs 2024"       changeType="up" accentColor="#00D4AA" />
         <KPICard label="Custo médio/tratamento"  value="R$ 380"   change="-4,2% otimizado"    changeType="up" accentColor="#40C4FF" />
         <KPICard label="ROI social"              value="R$ 8,70"  change="por R$1,00 invest."  changeType="up" accentColor="#B39DDB" />
@@ -24,7 +24,7 @@ export default function FinancialPage() {
       </div>
 
       {/* Main grid */}
-      <div className="grid grid-cols-[2fr_1fr] gap-3 mb-3.5">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 mb-3.5">
 
         {/* Donations bar chart */}
         <Card title="Doações mensais — 2025 (R$ mil)">
@@ -101,7 +101,7 @@ export default function FinancialPage() {
 
       {/* Partners */}
       <SectionTitle>Empresas parceiras 2025</SectionTitle>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] mb-3.5">
         <div>
           {PARTNERS.slice(0, 3).map((p) => <PartnerRow key={p.name} {...p} />)}
         </div>

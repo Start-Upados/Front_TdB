@@ -290,7 +290,7 @@ export default function MessagesPage() {
     <div className="flex flex-col h-full">
 
       {/* ── KPIs ── */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {[
           { label: 'Total de mensagens',  value: total,      color: '#00D4AA', icon: '📨' },
           { label: 'Novas',               value: novas,      color: '#FF4757', icon: '🔴' },
@@ -311,7 +311,7 @@ export default function MessagesPage() {
       </div>
 
       {/* ── Canais futuros (preview) ── */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-4 pr-2">
         <span className="text-[11px] text-[#3D6A85] font-medium">Canais ativos:</span>
         {[
           { label: 'Site',       color: '#40C4FF', active: true  },

@@ -216,9 +216,9 @@ export default function DataEntryPage() {
     <div>
       {/* Header */}
       <div className="mb-5">
-        <h2 className="text-[18px] font-bold text-[#E8F4FD]">Inserir Dados</h2>
+        <h2 className="text-[18px] font-bold text-[#E8F4FD]">Insira os Dados</h2>
         <p className="text-[12px] text-[#3D6A85] mt-1">
-          Os dados são salvos diretamente na planilha Google Sheets da Turma do Bem
+          Os dados são salvos diretamente no banco de dados Oracle e na planilha Google Sheets da Turma do Bem.
         </p>
       </div>
 
@@ -250,7 +250,7 @@ export default function DataEntryPage() {
       {/* Info */}
       <div className="mt-4 flex items-center gap-2 text-[11px] text-[#3D6A85]">
         <span className="text-[#00D4AA]">●</span>
-        Dados salvos em tempo real no Google Sheets — planilha Turma_Do_Bem
+        Dados salvos em tempo real no Banco de dados Oracle e Google Sheets planilha Turma_Do_Bem.
       </div>
     </div>
   );

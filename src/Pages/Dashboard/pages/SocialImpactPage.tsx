@@ -17,7 +17,7 @@ export default function SocialImpactPage() {
   return (
     <div>
       {/* KPI Row */}
-      <div className="grid grid-cols-4 gap-3 mb-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3.5">
         <KPICard label="Retorno à escola"      value="89,3%" change="dos pacientes"       changeType="up"   accentColor="#00D4AA" />
         <KPICard label="Melhora de autoestima" value="94,2%" change="índice antes/depois" changeType="up"   accentColor="#B39DDB" />
         <KPICard label="Inserção no mercado"   value="34,7%" change="acima da média"      changeType="up"   accentColor="#40C4FF" />
@@ -25,13 +25,13 @@ export default function SocialImpactPage() {
       </div>
 
       {/* Main row */}
-      <div className="grid grid-cols-[2fr_1fr] gap-3 mb-3.5">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 mb-3.5">
 
         {/* Left */}
         <div>
           <Card title="Perfil dos beneficiários — faixa etária" className="mb-3">
             <LegendRow items={AGE_DATA.map((a, i) => ({ color: AGE_COLORS[i], label: `${a.grupo} (${a.pct}%)` }))} />
-            <div className="h-[130px] mt-2.5">
+            <div className="h-[160px] lg:h-[130px] mt-2.5">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={AGE_DATA} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -47,7 +47,7 @@ export default function SocialImpactPage() {
             </div>
           </Card>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Card title="Gênero">
               <ProgressBar label="Feminino"  value={54} color="#D4537E" />
               <ProgressBar label="Masculino" value={46} color="#40C4FF" />
@@ -63,7 +63,7 @@ export default function SocialImpactPage() {
         {/* Right */}
         <div>
           <Card title="Severidade dos casos" className="mb-3">
-            <div className="h-[128px]">
+            <div className="h-[180px] lg:h-[128px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={SEVERITY_DATA} cx="50%" cy="50%" innerRadius={38} outerRadius={56} paddingAngle={3} dataKey="value">
@@ -77,7 +77,7 @@ export default function SocialImpactPage() {
           </Card>
 
           <Card title="Antes vs Depois do tratamento">
-            <div className="h-[128px]">
+            <div className="h-[180px] lg:h-[128px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={BEFORE_AFTER_DATA} margin={{ top: 4, right: 4, left: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
@@ -102,15 +102,15 @@ export default function SocialImpactPage() {
       {/* Accumulated impact */}
       <SectionTitle>Impacto social acumulado</SectionTitle>
       <Card>
-        <div className="grid grid-cols-4 divide-x divide-[rgba(0,212,170,0.1)]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-[rgba(0,212,170,0.1)] gap-y-3 lg:gap-y-0">
           {[
             { value: '247.893',  label: 'vidas transformadas',      color: '#00D4AA' },
-            { value: 'R$ 8,70',  label: 'ROI social por R$1,00',   color: '#00E676' },
+            { value: 'R$ 8,70',  label: 'ROI social por R$1,00',    color: '#00E676' },
             { value: '22 anos',  label: 'de voluntariado contínuo', color: '#40C4FF' },
-            { value: '3 países', label: 'Brasil · Argentina · Peru',color: '#B39DDB' },
+            { value: '3 países', label: 'Brasil · Argentina · Peru', color: '#B39DDB' },
           ].map(({ value, label, color }) => (
-            <div key={label} className="text-center py-2.5 px-4">
-              <p className="text-[26px] font-bold leading-none" style={{ color }}>{value}</p>
+            <div key={label} className="text-center py-2.5 px-2 sm:px-4">
+              <p className="text-[22px] sm:text-[26px] font-bold leading-none whitespace-nowrap" style={{ color }}>{value}</p>
               <p className="text-[10.5px] text-[#3D6A85] mt-1 leading-tight">{label}</p>
             </div>
           ))}
@@ -120,7 +120,7 @@ export default function SocialImpactPage() {
       {/* Programs */}
       <div className="mt-3.5">
         <SectionTitle>Por programa</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card title="Dentista do Bem">
             <p className="text-[22px] font-bold text-[#00D4AA] mb-1">187.234</p>
             <p className="text-[11px] text-[#3D6A85] mb-3">75,5% dos pacientes atendidos</p>

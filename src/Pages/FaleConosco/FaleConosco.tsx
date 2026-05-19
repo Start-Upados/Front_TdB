@@ -56,11 +56,11 @@ const FaleConosco = () => {
 
   return (
     <>
-      <header className="page-header">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4 pt-32 pl-20 text-center">
+      <header className="page-header pt-24 md:pt-32 pb-8 px-4">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 text-center">
           Fale Conosco
         </h2>
-        <p className="text-black font-semibold text-lg max-w-xl mx-auto text-center">
+        <p className="text-black font-semibold text-base sm:text-lg max-w-xl mx-auto text-center">
           Tem alguma dúvida, sugestão ou deseja o desenvolvimento de sua idéia? Entre em contato!
         </p>
       </header>

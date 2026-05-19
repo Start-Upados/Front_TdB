@@ -40,10 +40,9 @@ const SLIDES = [
 ];
 
 export default function HeroCarousel() {
-  const [current,  setCurrent]  = useState(0);
+  const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
 
-  // Troca automática a cada 4 segundos
   useEffect(() => {
     const timer = setInterval(() => {
       goTo((current + 1) % SLIDES.length);
@@ -63,11 +62,8 @@ export default function HeroCarousel() {
   const slide = SLIDES[current];
 
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-2xl shadow-2xl"
-      style={{ height: 750 }}
-    >
-      {/* ── Imagem de fundo com fade ── */}
+    <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl h-[460px] sm:h-[560px] lg:h-[750px]">
+      {/* Imagem de fundo com fade */}
       <div
         className="absolute inset-0 transition-opacity duration-500"
         style={{ opacity: animating ? 0 : 1 }}
@@ -77,19 +73,20 @@ export default function HeroCarousel() {
           alt={slide.tag}
           className="w-full h-full object-cover"
         />
-        {/* Overlay gradiente */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0D1B35]/95 via-[#0D1B35]/60 to-transparent" />
+        {/* Overlay: escurece o todo no mobile, gradiente lateral só no desktop */}
+        <div className="absolute inset-0 bg-[#0D1B35]/70 lg:bg-transparent" />
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-[#0D1B35]/95 via-[#0D1B35]/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0D1B35]/80 via-transparent to-transparent" />
       </div>
 
-      {/* ── Conteúdo do slide ── */}
+      {/* Conteúdo do slide */}
       <div
-        className="absolute inset-0 flex flex-col justify-center px-10 py-8 transition-all duration-500"
+        className="absolute inset-0 flex flex-col justify-center px-6 py-6 sm:px-8 lg:px-10 lg:py-8 transition-all duration-500"
         style={{ opacity: animating ? 0 : 1, transform: animating ? 'translateY(8px)' : 'translateY(0)' }}
       >
         {/* Tag */}
         <span
-          className="text-[11px] font-bold uppercase tracking-[0.2em] mb-3 inline-flex items-center gap-2"
+          className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-3 inline-flex items-center gap-2"
           style={{ color: slide.color }}
         >
           <span
@@ -100,16 +97,16 @@ export default function HeroCarousel() {
         </span>
 
         {/* Título */}
-        <h2 className="text-[28px] font-extrabold text-white leading-tight mb-4 max-w-[380px]">
+        <h2 className="text-2xl sm:text-3xl lg:text-[28px] font-extrabold text-white leading-tight mb-4 max-w-full lg:max-w-[380px]">
           {slide.title}
         </h2>
 
         {/* Descrição */}
-        <p className="text-[13.5px] text-blue-200/70 leading-relaxed max-w-[360px] mb-6">
+        <p className="text-sm sm:text-base lg:text-[13.5px] text-blue-200/80 leading-relaxed max-w-full lg:max-w-[360px] mb-6">
           {slide.desc}
         </p>
 
-        {/* Indicador do slide atual */}
+        {/* Indicador do slide */}
         <div
           className="text-[11px] font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5 w-fit"
           style={{
@@ -123,39 +120,42 @@ export default function HeroCarousel() {
         </div>
       </div>
 
-      {/* ── Dots de navegação ── */}
-      <div className="absolute bottom-5 right-6 flex gap-2">
+      {/* Dots */}
+      <div className="absolute bottom-5 right-4 sm:right-6 flex gap-2">
         {SLIDES.map((_s, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
+            aria-label={`Ir para slide ${i + 1}`}
             className="transition-all duration-300 rounded-full cursor-pointer border-none outline-none"
             style={{
-              width:   i === current ? 24 : 8,
-              height:  8,
+              width: i === current ? 24 : 8,
+              height: 8,
               background: i === current ? slide.color : 'rgba(255,255,255,0.25)',
             }}
           />
         ))}
       </div>
 
-      {/* ── Setas de navegação ── */}
+      {/* Setas — maiores no mobile pro toque, voltam ao tamanho original no desktop */}
       <button
         onClick={() => goTo((current - 1 + SLIDES.length) % SLIDES.length)}
-        className="absolute left-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
-        style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' }}
+        aria-label="Slide anterior"
+        className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-11 h-11 lg:w-9 lg:h-9 rounded-full flex items-center justify-center text-white text-xl lg:text-base cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
+        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
       >
         ‹
       </button>
       <button
         onClick={() => goTo((current + 1) % SLIDES.length)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
-        style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' }}
+        aria-label="Próximo slide"
+        className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-11 h-11 lg:w-9 lg:h-9 rounded-full flex items-center justify-center text-white text-xl lg:text-base cursor-pointer border-none outline-none transition-all duration-200 hover:scale-110"
+        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
       >
         ›
       </button>
 
-      {/* ── Barra de progresso ── */}
+      {/* Barra de progresso */}
       <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10">
         <div
           key={current}
