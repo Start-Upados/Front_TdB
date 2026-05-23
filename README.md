@@ -300,7 +300,7 @@ Backend: Render.com — `https://backend-mjgv.onrender.com`
 ## Links
 Github -> https://github.com/Start-Upados/Front_TdB
 Youtube -> https://www.youtube.com/watch?v=wU_QVad8MSQ
-Vercel -> startupados-p8l3lk4m9-pedro-falchi-s-projects.vercel.app
+Vercel -> startupados.vercel.app
 Domínio -> https://www.startupados.com.br/
 
 Equipe
@@ -314,3 +314,5 @@ Matheus Guimarães - https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-045
   <p>Desenvolvido por <strong>StartUpados()</strong> para a <strong>Turma do Bem</strong></p>
   <p>Transformando sorrisos, transformando vidas</p>
 </div>
+
+## Contato: startupados@gmail.com
