@@ -1,4 +1,5 @@
-StartUpados() — Dashboard Turma do Bem
+## StartUpados() — Dashboard Turma do Bem
+
 > Sistema fullstack desenvolvido pelo grupo **StartUpados()** para a ONG **Turma do Bem**, integrando site institucional, portais de atendimento, dashboard executivo e inteligência artificial para priorização de pacientes.
 ---
 Sumário
@@ -295,10 +296,23 @@ URL de produção: www.startupados.com.br
 Backend: Render.com — `https://backend-mjgv.onrender.com`
 > **Atenção:** O backend no Render.com hiberna após 15 minutos de inatividade. A primeira requisição pode demorar até 60 segundos para acordar o serviço. O frontend trata esse cenário com fallback automático para o Google Sheets.
 ---
+
+## Links
+Github -> https://github.com/Start-Upados/Front_TdB
+Youtube -> https://www.youtube.com/watch?v=wU_QVad8MSQ
+Vercel -> startupados.vercel.app
+Domínio -> https://www.startupados.com.br/
+
 Equipe
 Desenvolvido com pelo grupo StartUpados() — FIAP 2026
+
+Pedro Falchi - www.linkedin.com/in/pedro-henrique-falchi-4ab4b937b
+Matheus Guimarães - https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b/
+
 ---
 <div align="center">
   <p>Desenvolvido por <strong>StartUpados()</strong> para a <strong>Turma do Bem</strong></p>
   <p>Transformando sorrisos, transformando vidas</p>
 </div>
+
+## Contato: startupados@gmail.com
