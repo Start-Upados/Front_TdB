@@ -1,7 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif;
+@layer base {
+  :root {
+    /* Surfaces */
+    --canvas:        250 251 253;
+    --surface:       255 255 255;
+    --surface-soft:  246 247 249;
+    --elevated:      255 255 255;
+
+    /* Lines */
+    --line:          226 232 240;
+    --line-strong:   203 213 225;
+
+    /* Ink */
+    --ink:           15 23 42;
+    --muted:         71 85 105;
+    --subtle:        148 163 184;
+
+    /* Brand (Turma do Bem — azul profundo + coral acolhedor) */
+    --brand:         30 91 184;
+    --brand-soft:    219 234 254;
+    --accent:        247 127 79;
+    --accent-soft:   254 235 220;
+
+    /* Semantic */
+    --success:       22 163 74;
+    --success-soft:  220 252 231;
+    --warning:       202 138 4;
+    --warning-soft:  254 249 195;
+    --danger:        220 38 38;
+    --danger-soft:   254 226 226;
+    --info:          37 99 235;
+    --info-soft:     219 234 254;
+  }
+
+  .dark {
+    --canvas:        11 18 32;
+    --surface:       17 24 39;
+    --surface-soft:  24 32 47;
+    --elevated:      30 41 59;
+
+    --line:          51 65 85;
+    --line-strong:   71 85 105;
+
+    --ink:           248 250 252;
+    --muted:         203 213 225;
+    --subtle:        100 116 139;
+
+    --brand:         96 165 250;
+    --brand-soft:    30 58 138;
+    --accent:        251 146 60;
+    --accent-soft:   124 45 18;
+
+    --success:       74 222 128;
+    --success-soft:  20 83 45;
+    --warning:       250 204 21;
+    --warning-soft:  113 63 18;
+    --danger:        248 113 113;
+    --danger-soft:   127 29 29;
+    --info:          96 165 250;
+    --info-soft:     30 58 138;
+  }
+
+  * {
+    border-color: rgb(var(--line) / 1);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--ink));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--line-strong) / 0.7); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--muted) / 0.6); }
 }
