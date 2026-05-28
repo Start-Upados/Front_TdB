@@ -20,11 +20,11 @@
     --muted:         71 85 105;
     --subtle:        148 163 184;
 
-    /* Brand (Turma do Bem — azul profundo + coral acolhedor) */
-    --brand:         30 91 184;
-    --brand-soft:    219 234 254;
-    --accent:        247 127 79;
-    --accent-soft:   254 235 220;
+    /* Brand (Turma do Bem — Laranja + verde) */
+    --brand:         232 132 7;       /* TdB laranja #E88407 */
+    --brand-soft:    255 237 213;     /* tom pêssego suave de fundo */
+    --accent:        206 214 0;       /* TdB lime #CED600 */
+    --accent-soft:   236 252 203;     /* tom lime suave de fundo */
 
     /* Semantic */
     --success:       22 163 74;
@@ -50,10 +50,10 @@
     --muted:         203 213 225;
     --subtle:        100 116 139;
 
-    --brand:         96 165 250;
-    --brand-soft:    30 58 138;
-    --accent:        251 146 60;
-    --accent-soft:   124 45 18;
+    --brand:         251 146 60;      /* laranja mais claro pro fundo escuro */
+    --brand-soft:    124 45 18;       /* laranja escuro de fundo */
+    --accent:        190 242 100;     /* lime mais claro pro fundo escuro */
+    --accent-soft:   54 83 20;        /* lime escuro de fundo */
 
     --success:       74 222 128;
     --success-soft:  20 83 45;

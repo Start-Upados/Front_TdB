@@ -1,5 +1,4 @@
 import { useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -20,171 +19,16 @@ import {
 
 import { KpiCard } from '../components/KpiCard';
 import { Avatar } from '../components/Avatar';
+import { PriorityPill } from '../components/PriorityPill';
 
-import {
-  PriorityPill,
-  type Prioridade,
-} from '../components/PriorityPill';
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
-type Canal =
-  | 'Site'
-  | 'WhatsApp'
-  | 'Email'
-  | 'Instagram'
-  | 'Telefone';
-
-interface Solicitacao {
-  id: string;
-  nome: string;
-  iniciais: string;
-  idade?: number;
-  cidade?: string;
-  canal: Canal;
-  tipo: string;
-  preview: string;
-  mensagem: string;
-  data: string;
-  prioridade: Prioridade;
-  score: number;
-
-  featuresUsadas?: {
-    idade?: string;
-    programa?: string;
-    canal?: string;
-  };
-}
-
-// ─────────────────────────────────────────────
-// DATA
-// ─────────────────────────────────────────────
-
-const SOLICITACOES: Solicitacao[] = [
-  {
-    id: '1',
-    nome: 'João Silva',
-    iniciais: 'JS',
-    idade: 13,
-    cidade: 'São Paulo, SP',
-    canal: 'WhatsApp',
-    tipo: 'Beneficiário',
-    preview: 'Filho com dor forte há 3 dias…',
-    mensagem:
-      'Olá, meu filho de 13 anos está com dor muito forte no dente há 3 dias. Não consigo dormir vendo ele assim. Estamos em São Paulo, em situação difícil. Por favor, como posso conseguir atendimento?',
-    data: '14min',
-    prioridade: 'Alta',
-    score: 0.87,
-
-    featuresUsadas: {
-      idade: '13 anos · faixa crítica',
-      programa:
-        'Dentista do Bem · vulnerabilidade',
-      canal: 'WhatsApp · urgência típica',
-    },
-  },
-
-  {
-    id: '2',
-    nome: 'Maria Santos',
-    iniciais: 'MS',
-    idade: 34,
-    cidade: 'Recife, PE',
-    canal: 'Site',
-    tipo: 'Beneficiária',
-    preview:
-      'Vítima de violência precisa atendimento…',
-    mensagem:
-      'Boa tarde. Sou Maria, fui vítima de violência doméstica e perdi vários dentes. Estou em Recife e preciso muito de ajuda para voltar a sorrir.',
-    data: '1h',
-    prioridade: 'Alta',
-    score: 0.79,
-
-    featuresUsadas: {
-      idade: '34 anos · faixa adulto',
-      programa:
-        'Apolônias do Bem · vulnerabilidade alta',
-      canal: 'Site · solicitação formal',
-    },
-  },
-
-  {
-    id: '3',
-    nome: 'Dr. Carlos Melo',
-    iniciais: 'CM',
-    cidade: 'Belo Horizonte, MG',
-    canal: 'Site',
-    tipo: 'Voluntário',
-    preview:
-      'Quero me cadastrar como voluntário…',
-    mensagem:
-      'Sou dentista clínico geral, atuo há 12 anos em BH, e gostaria de fazer parte da rede de voluntários da Turma do Bem. Como faço para iniciar?',
-    data: '3h',
-    prioridade: 'Media',
-    score: 0.68,
-
-    featuresUsadas: {
-      programa:
-        'Voluntariado · cadastro pendente',
-      canal: 'Site · solicitação formal',
-    },
-  },
-
-  {
-    id: '4',
-    nome: 'Colgate Brasil',
-    iniciais: 'CB',
-    cidade: 'São Paulo, SP',
-    canal: 'Email',
-    tipo: 'Doador',
-    preview:
-      'Proposta de ampliar parceria 2026…',
-    mensagem:
-      'Prezados, gostaríamos de agendar uma reunião para discutir a ampliação de nossa parceria em 2026. Temos interesse em apoiar a expansão do programa Apolônias.',
-    data: '5h',
-    prioridade: 'Media',
-    score: 0.71,
-
-    featuresUsadas: {
-      programa: 'Parceria estratégica',
-      canal: 'Email · comunicação formal',
-    },
-  },
-
-  {
-    id: '5',
-    nome: 'Ana Beatriz',
-    iniciais: 'AB',
-    idade: 27,
-    cidade: 'Salvador, BA',
-    canal: 'Instagram',
-    tipo: 'Beneficiária',
-    preview:
-      'Dúvida sobre o dia da consulta…',
-    mensagem:
-      'Oi! Tenho uma consulta marcada, mas não tenho certeza se é amanhã ou semana que vem. Vocês podem me confirmar?',
-    data: '7h',
-    prioridade: 'Baixa',
-    score: 0.82,
-
-    featuresUsadas: {
-      idade:
-        '27 anos · paciente em tratamento',
-      canal:
-        'Instagram · canal informal',
-    },
-  },
-];
+import { listarSolicitacoes, obterKpis } from '../services/central';
+import type { Canal, Prioridade } from '../data/central';
 
 // ─────────────────────────────────────────────
 // ICONS
 // ─────────────────────────────────────────────
 
-const CHANNEL_ICONS: Record<
-  Canal,
-  React.ComponentType<{
+const CHANNEL_ICONS: Record<  Canal,  React.ComponentType<{
     className?: string;
     strokeWidth?: number;
   }>
@@ -251,6 +95,9 @@ function FeatureRow({
 export default function CentralPage() {
   const navigate = useNavigate();
 
+  const solicitacoes = listarSolicitacoes();
+  const kpis = obterKpis();
+
   const [selectedId, setSelectedId] =
     useState('1');
 
@@ -263,7 +110,7 @@ export default function CentralPage() {
   const [search, setSearch] =
     useState('');
 
-  const filtered = SOLICITACOES.filter(
+  const filtered = solicitacoes.filter(
     (s) => {
       if (
         filterCanal !== 'Todos' &&
@@ -293,9 +140,9 @@ export default function CentralPage() {
   );
 
   const selected =
-    SOLICITACOES.find(
+    solicitacoes.find(
       (s) => s.id === selectedId
-    ) || SOLICITACOES[0];
+    ) || solicitacoes[0];
 
   const ChannelIcon =
     CHANNEL_ICONS[selected.canal];
@@ -305,34 +152,9 @@ export default function CentralPage() {
 
       {/* KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-        <KpiCard
-          label="Solicitações novas hoje"
-          value="23"
-          sub="+8 vs ontem"
-        />
-
-        <KpiCard
-          label="Alta sem resposta +24h"
-          value="5"
-          valueTone="danger"
-          sub="Atenção urgente"
-          subTone="danger"
-        />
-
-        <KpiCard
-          label="Tempo médio resposta"
-          value="2.4h"
-          sub="−12% vs semana"
-          subTone="success"
-        />
-
-        <KpiCard
-          label="Acurácia ML (30 dias)"
-          value="92%"
-          sub="+3pp com overrides"
-          subTone="success"
-        />
+        {kpis.map((k) => (
+          <KpiCard key={k.label} {...k} />
+        ))}
       </div>
 
       {/* FILTERS */}

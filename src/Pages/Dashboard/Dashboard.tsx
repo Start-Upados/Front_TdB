@@ -35,12 +35,12 @@ export default function Dashboard() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         {/* TOPO MOBILE */}
-        <div className="flex items-center justify-between p-4 border-b md:hidden bg-black">
+        <div className="flex items-center justify-between p-4 border-b md:hidden bg-white">
           <button onClick={() => setSidebarOpen(true)}>
-            <Menu size={28} />
+            <Menu size={28} className='text-[#E88407]' />
           </button>
 
-          <h1 className="font-semibold text-white">
+          <h1 className="font-extrabold text-[#CED600]">
             Turma do Bem
           </h1>
         </div>

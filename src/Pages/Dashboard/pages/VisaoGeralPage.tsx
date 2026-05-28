@@ -18,15 +18,25 @@ import {
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
+import {
+  obterKpis,
+  obterGraficoMensal,
+  listarAlertas,
+  obterDistribuicao,
+} from '../services/visaoGeral';
+import type { IconeAlerta } from '../data/visaoGeral';
 
-const monthlyData = [
-  { mes: 'Mai', atendimentos: 612 },
-  { mes: 'Jun', atendimentos: 678 },
-  { mes: 'Jul', atendimentos: 721 },
-  { mes: 'Ago', atendimentos: 765 },
-  { mes: 'Set', atendimentos: 792 },
-  { mes: 'Out', atendimentos: 847 },
-];
+// Mapa chave -> componente de ícone (o data não guarda componentes React)
+const ICONES_ALERTA: Record<IconeAlerta, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  alerta:  AlertTriangle,
+  relogio: Clock,
+  usuario: UserMinus,
+};
+
+const COR_BARRA: Record<'brand' | 'accent', string> = {
+  brand:  'bg-brand',
+  accent: 'bg-accent',
+};
 
 interface AlertRowProps {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
@@ -124,17 +134,23 @@ function AlertRow({
 }
 
 export default function VisaoGeralPage() {
+  const kpis = obterKpis();
+  const grafico = obterGraficoMensal();
+  const alertas = listarAlertas();
+  const { itens: distribuicao, total } = obterDistribuicao();
+
   return (
     <div className="flex flex-col gap-5 w-full max-w-full">
 
       {/* SAUDAÇÃO */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h1 className="text-2xl md:text-xl font-semibold text-ink">
-          Bom dia, Renata
+        <h1 className="text-2xl md:text-xl font-extrabold text-[#CED600]">
+          Bem vindo(a)!
+          <p className="text-2xl md:text-xl font-extrabold text-[#E88407]">Renata</p>
         </h1>
 
         <p className="text-sm md:text-xs text-muted">
-          Outubro de 2025
+          Junho de 2026
         </p>
       </div>
 
@@ -146,31 +162,9 @@ export default function VisaoGeralPage() {
         xl:grid-cols-4
         gap-4
       ">
-        <KpiCard
-          label="Atendimentos no mês"
-          value="847"
-          sub="+11% vs setembro"
-          subTone="success"
-        />
-
-        <KpiCard
-          label="Pacientes em tratamento"
-          value="312"
-          sub="47 na fila de espera"
-        />
-
-        <KpiCard
-          label="Dentistas ativos"
-          value="1.284"
-          sub="de 1.452 cadastrados"
-        />
-
-        <KpiCard
-          label="Doações no mês"
-          value="R$ 84k"
-          sub="+R$ 12k vs setembro"
-          subTone="success"
-        />
+        {kpis.map((k) => (
+          <KpiCard key={k.label} {...k} />
+        ))}
       </div>
 
       {/* ALERTAS */}
@@ -188,37 +182,22 @@ export default function VisaoGeralPage() {
           </h2>
 
           <span className="text-xs text-subtle whitespace-nowrap">
-            3 itens
+            {alertas.length} itens
           </span>
         </div>
 
         <div className="divide-y divide-line">
-          <AlertRow
-            icon={AlertTriangle}
-            tone="danger"
-            title="5 solicitações Alta sem resposta há +24h"
-            subtitle="3 do WhatsApp, 2 do site · risco de perder contato"
-            link="/dashboard/comunicacoes"
-            linkLabel="Abrir Central"
-          />
-
-          <AlertRow
-            icon={Clock}
-            tone="warning"
-            title="3 pacientes na fila há +60 dias"
-            subtitle="Risco de evasão · sem dentista compatível na região"
-            link="/dashboard/triagens"
-            linkLabel="Abrir Triagens"
-          />
-
-          <AlertRow
-            icon={UserMinus}
-            tone="info"
-            title="8 dentistas sem atividade há +90 dias"
-            subtitle="Vale enviar reengajamento ou consultar disponibilidade"
-            link="/dashboard/voluntarios"
-            linkLabel="Abrir Voluntários"
-          />
+          {alertas.map((a) => (
+            <AlertRow
+              key={a.id}
+              icon={ICONES_ALERTA[a.icone]}
+              tone={a.tone}
+              title={a.titulo}
+              subtitle={a.subtitulo}
+              link={a.link}
+              linkLabel={a.linkLabel}
+            />
+          ))}
         </div>
       </div>
 
@@ -248,7 +227,7 @@ export default function VisaoGeralPage() {
           <div className="h-[260px] md:h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={monthlyData}
+                data={grafico}
                 margin={{
                   top: 20,
                   right: 10,
@@ -334,52 +313,30 @@ export default function VisaoGeralPage() {
           </div>
 
           <div className="space-y-5">
+            {distribuicao.map((d) => (
+              <div key={d.programa}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-ink">
+                    {d.programa}
+                  </span>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-ink">
-                  Dentista do Bem
-                </span>
+                  <span className="text-sm font-medium text-ink">
+                    {d.valor}
+                  </span>
+                </div>
 
-                <span className="text-sm font-medium text-ink">
-                  576
-                </span>
+                <div className="h-2 bg-surface-soft rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${COR_BARRA[d.cor]} rounded-full transition-all`}
+                    style={{ width: `${d.percent}%` }}
+                  />
+                </div>
+
+                <p className="text-xs text-subtle mt-1">
+                  {d.percent}% do total
+                </p>
               </div>
-
-              <div className="h-2 bg-surface-soft rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-brand rounded-full transition-all"
-                  style={{ width: '68%' }}
-                />
-              </div>
-
-              <p className="text-xs text-subtle mt-1">
-                68% do total
-              </p>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-ink">
-                  Apolônias do Bem
-                </span>
-
-                <span className="text-sm font-medium text-ink">
-                  271
-                </span>
-              </div>
-
-              <div className="h-2 bg-surface-soft rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent rounded-full transition-all"
-                  style={{ width: '32%' }}
-                />
-              </div>
-
-              <p className="text-xs text-subtle mt-1">
-                32% do total
-              </p>
-            </div>
+            ))}
           </div>
 
           <div className="
@@ -397,7 +354,7 @@ export default function VisaoGeralPage() {
             </span>
 
             <span className="font-medium text-ink">
-              847 atendimentos
+              {total} atendimentos
             </span>
           </div>
         </div>

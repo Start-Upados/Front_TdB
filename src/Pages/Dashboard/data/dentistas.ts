@@ -234,3 +234,11 @@ export const DISTRIBUICAO_REGIONAL: Record<Regiao, { count: number; percent: num
   'Centro-Oeste':  { count: 124, percent: 10 },
   'Norte':         { count: 63,  percent: 5  },
 };
+
+export interface KpiData {
+  label: string;
+  value: string | number;
+  valueTone?: 'default' | 'danger' | 'warning' | 'success';
+  sub?: string;
+  subTone?: 'default' | 'success' | 'warning' | 'danger';
+}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -13,10 +13,13 @@ import { KpiCard } from '../components/KpiCard';
 import { Avatar } from '../components/Avatar';
 
 import {
-  DENTISTAS,
-  DISTRIBUICAO_REGIONAL,
-  type Regiao,
-} from '../data/dentistas';
+  obterKpis,
+  listarDentistas,
+  listarPendentes,
+  listarEspecialidades,
+  obterDistribuicaoRegional,
+} from '../services/voluntarios';
+import type { Regiao } from '../data/dentistas';
 
 const REGIOES: Regiao[] = [
   'Sudeste',
@@ -29,6 +32,12 @@ const REGIOES: Regiao[] = [
 export default function VoluntariosPage() {
   const navigate = useNavigate();
 
+  const kpis = obterKpis();
+  const dentistas = listarDentistas();
+  const pendentes = listarPendentes();
+  const especialidades = listarEspecialidades();
+  const distribuicao = obterDistribuicaoRegional();
+
   const [regiao, setRegiao] = useState<Regiao>('Sudeste');
 
   const [search, setSearch] = useState('');
@@ -37,21 +46,7 @@ export default function VoluntariosPage() {
 
   const [filtroStatus, setFiltStatus] = useState('Todos');
 
-  const pendentes = DENTISTAS.filter(
-    (d) => d.status === 'Pendente'
-  );
-
-  const especialidades = useMemo(() => {
-    return Array.from(
-      new Set(
-        DENTISTAS
-          .filter((d) => d.status !== 'Pendente')
-          .map((d) => d.especialidade)
-      )
-    );
-  }, []);
-
-  const filtered = DENTISTAS.filter((d) => {
+  const filtered = dentistas.filter((d) => {
     if (d.status === 'Pendente') return false;
 
     if (d.regiao !== regiao) return false;
@@ -79,33 +74,9 @@ export default function VoluntariosPage() {
 
       {/* KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Dentistas ativos"
-          value="1.284"
-          sub="de 1.452 cadastrados"
-        />
-
-        <KpiCard
-          label="Inativos +90 dias"
-          value="23"
-          valueTone="warning"
-          sub="Vale reengajar"
-        />
-
-        <KpiCard
-          label="Pendentes aprovação"
-          value={pendentes.length}
-          valueTone="danger"
-          sub="Aguardando ação"
-          subTone="danger"
-        />
-
-        <KpiCard
-          label="Novos este mês"
-          value="18"
-          sub="+5 vs setembro"
-          subTone="success"
-        />
+        {kpis.map((k) => (
+          <KpiCard key={k.label} {...k} />
+        ))}
       </div>
 
       {/* APROVAÇÕES */}
@@ -187,7 +158,7 @@ export default function VoluntariosPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
 
           {REGIOES.map((r) => {
-            const data = DISTRIBUICAO_REGIONAL[r];
+            const data = distribuicao[r];
 
             const isActive = regiao === r;
 
@@ -378,7 +349,7 @@ export default function VoluntariosPage() {
 
         {/* FOOTER */}
         <button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm text-ink transition-colors hover:bg-surface-soft">
-          Ver todos os {DISTRIBUICAO_REGIONAL[regiao].count} da região {regiao}
+          Ver todos os {distribuicao[regiao].count} da região {regiao}
 
           <ArrowRight
             className="h-4 w-4"

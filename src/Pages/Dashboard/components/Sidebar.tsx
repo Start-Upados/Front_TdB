@@ -47,12 +47,12 @@ export function Sidebar() {
     ">
       {/* HEADER */}
       <div className="px-5 pt-6 pb-5 border-b border-line">
-        <p className="text-2xl md:text-lg font-semibold text-ink leading-tight">
+        <p className="text-2xl md:text-lg font-extrabold text-[#CED600] leading-tight">
           Turma do Bem
         </p>
 
         <p className="text-sm md:text-xs text-muted mt-1">
-          Painel do coordenador
+          Admin Dashboard
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export function Sidebar() {
           </div>
 
           <p className="text-xs text-subtle mt-2 leading-relaxed">
-            254.000 de 310.000 atendimentos
+            82.000 de 100.000 atendimentos
           </p>
         </div>
 
