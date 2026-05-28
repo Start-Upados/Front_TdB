@@ -18,7 +18,7 @@ import NotFound from './Pages/NotFound/NotFound'
 import SolicitarAtendimento from './Pages/SolicitarAtendimento/SolicitarAtendimento'
 import ValidarPaciente from './Pages/ValidarPaciente/ValidarPaciente'
 import CadastrarVoluntario from './Pages/CadastrarVoluntario/CadastrarVoluntario'
-import PlaceholderPage from './Pages/Dashboard/pages/PlaceholderPage'
+//import PlaceholderPage from './Pages/Dashboard/pages/PlaceholderPage'
 import VisaoGeralPage from './Pages/Dashboard/pages/VisaoGeralPage'
 import CentralPage from './Pages/Dashboard/pages/CentralPage'
 import TriagensPage from './Pages/Dashboard/pages/TriagensPage'
@@ -26,6 +26,9 @@ import VoluntariosPage from './Pages/Dashboard/pages/VoluntariosPage'
 import DentistaPerfilPage from './Pages/Dashboard/pages/DentistaPerfilPage'
 import AtendimentosPage from './Pages/Dashboard/pages/AtendimentosPage'
 import MutiroesPage from './Pages/Dashboard/pages/MutiroesPage'
+import FinanceiroPage from './Pages/Dashboard/pages/FinanceiroPage'
+import RelatoriosPage from './Pages/Dashboard/pages/RelatoriosPage'
+import ConfiguracoesPage from './Pages/Dashboard/pages/ConfiguracoesPage'
 
 const App = () => {
   return (
@@ -78,10 +81,10 @@ const App = () => {
           <Route path="voluntarios"     element={<VoluntariosPage />} />
           <Route path="voluntarios/:id" element={<DentistaPerfilPage />} />
           <Route path="mutiroes"      element={<MutiroesPage />} />
-          <Route path="financeiro"    element={<PlaceholderPage title="Financeiro" />} />
+          <Route path="financeiro"    element={<FinanceiroPage />} />
           <Route path="comunicacoes"  element={<CentralPage />} />
-          <Route path="relatorios"    element={<PlaceholderPage title="Relatórios e impacto" />} />
-          <Route path="configuracoes" element={<PlaceholderPage title="Configurações" />} />
+          <Route path="relatorios"    element={<RelatoriosPage />} />
+          <Route path="configuracoes" element={<ConfiguracoesPage />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
