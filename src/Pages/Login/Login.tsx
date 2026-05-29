@@ -53,7 +53,7 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-sm">
+      <div className="bg-white glow-border border-2 border-gray rounded-2xl p-6 sm:p-8 shadow-sm ">
 
         {/* Branding */}
         <div className="text-center mb-6">
@@ -65,19 +65,39 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
         </div>
 
         {/* Ação principal */}
-        <button
-          onClick={() => navigate('/solicitar-atendimento')}
-          className="flex items-center gap-3 w-full p-4 mb-3 rounded-xl bg-[#FFEDD5] border-2 border-[#E88407] hover:bg-[#FED7AA] transition-all duration-200 cursor-pointer text-left"
-        >
-          <div className="w-11 h-11 rounded-full bg-[#E88407] flex items-center justify-center shrink-0">
-            <Plus size={20} className="text-white" strokeWidth={2.5} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-[#9A3412] text-[14px]">Solicitar atendimento</p>
-            <p className="text-[#9A3412]/85 text-[12px] mt-0.5">Cadastro gratuito para tratamento bucal</p>
-          </div>
-          <ArrowRight size={18} className="text-[#E88407] shrink-0" />
-        </button>
+        <div className="relative rounded-xl overflow-hidden p-[2px] mb-3">
+
+          {/* Borda animada 
+          <div className="absolute inset-0 animate-border-spin">
+            <div className="w-full h-full scale-[3] bg-gradient-to-r from-orange-500 via-yellow-300 via-orange-400 to-orange-600" />
+          </div> */}
+
+          {/* Conteúdo */}
+          <button
+            onClick={() => navigate('/solicitar-atendimento')}
+            className="relative z-10 flex items-center gap-3 w-full p-4 rounded-[10px] bg-[#FFEDD5] hover:bg-[#FED7AA] transition-all duration-200 cursor-pointer text-left animate-orange-glow"
+          >
+            <div className="w-11 h-11 rounded-full bg-[#E88407] flex items-center justify-center shrink-0">
+              <Plus size={20} className="text-white" strokeWidth={2.5} />
+            </div>
+
+            <div className="flex-1 min-w-0 ">
+              <p className="font-semibold text-[#9A3412] text-[14px]">
+                Solicitar atendimento
+              </p>
+
+              <p className="text-[#9A3412]/85 text-[12px] mt-0.5">
+                Cadastro gratuito para tratamento bucal
+              </p>
+            </div>
+
+            <ArrowRight
+              size={18}
+              className="text-[#E88407] shrink-0 group-hover:translate-x-1 transition-transform"
+            />
+          </button>
+
+        </div>
 
         {/* Opções — 3 botões em coluna */}
         <div className="flex flex-col gap-2.5 mb-5">
@@ -102,7 +122,7 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
         {/* Doação — destaque com lime TdB */}
         <button
           onClick={() => window.open('https://paybox.doare.org/paybox?payboxId=83fed202-df0f-4665-9c74-688a834028d4', '_blank')}
-          className="w-full bg-[#CED600] text-[#1A2E05] font-semibold py-3 rounded-xl hover:bg-[#B5BC00] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] flex items-center justify-center gap-2"
+          className="w-full bg-[#CED600] text-[#1A2E05] font-semibold py-3 rounded-xl hover:bg-[#B5BC00] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] flex items-center justify-center gap-2 animate-green-glow"
         >
           <Heart size={16} fill="#1A2E05" />
           Quero fazer uma doação
