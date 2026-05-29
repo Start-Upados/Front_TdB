@@ -242,8 +242,8 @@ export function ProcessSection() {
 
 
 const PARTNERS = [
-  { name: 'Turma do Bem', desc: 'ONG · Saúde bucal'      },
-  { name: 'FIAP',         desc: 'Educação · Tecnologia'   },
+  { name: 'Turma do Bem', desc: 'ONG · Saúde bucal',   url: "https://turmadobem.org.br",   },
+  { name: 'FIAP',         desc: 'Educação · Tecnologia',  url: "https://www.fiap.com.br",  },
   //{ name: 'Colgate',      desc: 'Patrocinador'            },
   //{ name: 'Oral-B',       desc: 'Parceiro estratégico'    },
 ];
@@ -257,7 +257,10 @@ export function PartnersSection() {
         </p>
         <div className="grid grid-cols-2 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {PARTNERS.map((p, i) => (
-            <div
+            <a
+              href={p.url}
+              target="_blank"
+              rel="noopener noreferrer"
               key={i}
               className="flex flex-col items-center justify-center py-6 px-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all duration-200 group"
             >
@@ -266,7 +269,7 @@ export function PartnersSection() {
               </div>
               <p className="font-bold text-[#1a1a2e] text-[14px]">{p.name}</p>
               <p className="text-gray-700 text-[11px] mt-0.5">{p.desc}</p>
-            </div>
+            </a>
           ))}
         </div>
       </div>

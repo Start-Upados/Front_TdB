@@ -40,7 +40,7 @@ const Home = () =>{
         <header className={`px-6 py-20 md:py-28 min-h-[80vh] flex items-center bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]`}>
           <div className="max-w-[90%] mx-auto w-full flex flex-col md:flex-row items-center gap-10">
             <div className="flex-1 text-white text-left">
-              <h2 className="text-accent uppercase tracking-[10px] text-sm font-semibold mb-3">
+              <h2 className="text-accent uppercase tracking-[10px] text-sm font-semibold mb-3 text-yellow-400">
                 Inovação & Tecnologia
               </h2>
               <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-8">

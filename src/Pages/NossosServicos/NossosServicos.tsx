@@ -31,7 +31,7 @@ export default function NossosServicos() {
 
       <ProcessSection />
 
-      <section className="bg-accent py-16 px-6 text-center ">
+      <section className="bg-white py-16 px-6 text-center ">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 text-black">Pronto para transformar seu projeto?</h2>
         <Link to="/faleConosco" className="inline-block bg-blue-600 text-accent font-bold px-8 py-3 rounded-lg hover:bg-amber-400 hover:-translate-y-0.5 transition-all duration-200 text-white">
           Fale com a gente 🚀

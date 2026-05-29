@@ -10,7 +10,7 @@ export default function Sobre() {
         <div className="bg-white rounded-2xl shadow-md p-8 md:p-12 space-y-6">
 
           <div>
-            <h3 className="text-accent font-bold text-xl mb-3">🏢 Sobre nós:</h3>
+            <h3 className="text-blue-600 font-bold text-xl mb-3">🏢 Sobre nós:</h3>
             <p className="text-gray-600 leading-relaxed mb-3">
               A StartUpados nasceu com o propósito de impulsionar o acesso à tecnologia e criar conexões
               inteligentes entre pessoas, empresas e oportunidades. Somos uma plataforma digital inovadora,
@@ -23,7 +23,7 @@ export default function Sobre() {
           </div>
 
           <div>
-            <h3 className="text-accent font-bold text-xl mb-3">🎯 Visão:</h3>
+            <h3 className="text-blue-600 font-bold text-xl mb-3">🎯 Visão:</h3>
             <p className="text-gray-600 leading-relaxed">
               Ser referência em soluções digitais acessíveis e inovadoras, promovendo inclusão tecnológica e
               ampliando oportunidades para todos que desejam desenvolver seus projetos, negócios e habilidades.
@@ -31,7 +31,7 @@ export default function Sobre() {
           </div>
 
           <div>
-            <h3 className="text-accent font-bold text-xl mb-3">🌟 Missão:</h3>
+            <h3 className="text-blue-600 font-bold text-xl mb-3">🌟 Missão:</h3>
             <p className="text-gray-600 leading-relaxed">
               Desenvolver plataformas modernas e eficientes que conectem pessoas, conhecimento e oportunidades,
               simplificando processos e fortalecendo comunidades por meio da tecnologia, inovação e colaboração.
@@ -39,7 +39,7 @@ export default function Sobre() {
           </div>
 
           <div>
-            <h3 className="text-accent font-bold text-xl mb-3">💡 Valores:</h3>
+            <h3 className="text-blue-600 font-bold text-xl mb-3">💡 Valores:</h3>
             <ul className="list-disc list-inside text-gray-600 space-y-1 leading-relaxed">
               <li>Inovação contínua</li>
               <li>Simplicidade e acessibilidade</li>
@@ -52,7 +52,7 @@ export default function Sobre() {
           </div>
 
           <div>
-            <h3 className="text-accent font-bold text-xl mb-3">🤝 Nosso compromisso:</h3>
+            <h3 className="text-blue-600 font-bold text-xl mb-3">🤝 Nosso compromisso:</h3>
             <ul className="list-disc list-inside text-gray-600 space-y-1 leading-relaxed">
               <li>Oferecer uma experiência intuitiva, segura e eficiente.</li>
               <li>Criar oportunidades reais através da tecnologia.</li>
@@ -63,7 +63,7 @@ export default function Sobre() {
           </div>
 
           <div>
-            <h3 className="text-accent font-bold text-xl mb-3">🚀 Quem queremos ser:</h3>
+            <h3 className="text-blue-600 font-bold text-xl mb-3">🚀 Quem queremos ser:</h3>
             <p className="text-gray-600 leading-relaxed mb-3">
               Mais do que uma plataforma, queremos ser um movimento de transformação — uma ponte entre quem sonha
               e quem realiza, entre quem ensina e quem aprende, entre quem precisa e quem pode ajudar.
