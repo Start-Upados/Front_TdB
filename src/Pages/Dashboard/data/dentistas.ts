@@ -1,5 +1,5 @@
 export type Regiao = 'Sudeste' | 'Sul' | 'Nordeste' | 'Centro-Oeste' | 'Norte';
-export type StatusDentista = 'Ativa' | 'Inativo' | 'Pendente';
+export type StatusDentista = 'Ativa' | 'Inativo' | 'Pendente' | 'Suspensa' | 'Rejeitado';
 export type ProgramaTdB = 'Dentista do Bem' | 'Apolônias do Bem';
 
 export interface PacienteResumo {
@@ -25,6 +25,12 @@ export interface DisponibilidadeDia {
   ocupados: number;
   total: number;
   livre: boolean;
+}
+
+export interface RegistroSuspensao {
+  data: string;      // YYYY-MM-DD
+  motivo: string;
+  observacao?: string;
 }
 
 export interface DentistaCompleto {
@@ -54,6 +60,7 @@ export interface DentistaCompleto {
   ultimosAtendimentos: UltimoAtendimento[];
   horarioConfigurado: string;
   proximoSlot?: string;
+  historicoSuspensoes?: RegistroSuspensao[];
 }
 
 export const DENTISTAS: DentistaCompleto[] = [

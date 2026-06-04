@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [
     react()],
   build: {
-    chunkSizeWarningLimit: 1000, // apenas silencia o aviso
+    chunkSizeWarningLimit: 2000, // apenas silencia o aviso
   }
   })

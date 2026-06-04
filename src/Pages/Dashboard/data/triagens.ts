@@ -29,6 +29,7 @@ export interface Paciente {
     detalhe: string;
   };
   statusVinculacao: StatusVinculacao;
+  dentistaConvidadoId?: string;  // NOVO — rastreia qual dentista foi convidado
 }
 
 export interface Dentista {

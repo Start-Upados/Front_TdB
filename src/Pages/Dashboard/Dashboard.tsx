@@ -3,6 +3,7 @@ import { Sidebar } from '../Dashboard/components/Sidebar';
 import { TopBar } from '../Dashboard/components/Topbar';
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
+import { Toaster } from 'sonner';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -46,6 +47,17 @@ export default function Dashboard() {
         </div>
 
         <TopBar />
+
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            style: {
+              background: 'rgb(var(--surface))',
+              color: 'rgb(var(--ink))',
+              border: '1px solid rgb(var(--line))',
+            },
+          }}
+        />
 
         <main className="flex-1 overflow-y-auto bg-canvas p-3 md:p-6">
           <Outlet />

@@ -47,7 +47,7 @@ export default function VoluntariosPage() {
   const [filtroStatus, setFiltStatus] = useState('Todos');
 
   const filtered = dentistas.filter((d) => {
-    if (d.status === 'Pendente') return false;
+    if (d.status === 'Pendente' || d.status === 'Rejeitado') return false;
 
     if (d.regiao !== regiao) return false;
 
@@ -256,6 +256,7 @@ export default function VoluntariosPage() {
             >
               <option value="Todos">Status</option>
               <option value="Ativa">Ativa</option>
+              <option value="Suspensa">Suspensa</option>
               <option value="Inativo">Inativo</option>
             </select>
           </div>
@@ -326,10 +327,9 @@ export default function VoluntariosPage() {
                 <div className="flex flex-col gap-3 sm:flex-row lg:items-center">
 
                   <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium ${
-                    d.status === 'Ativa'
-                      ? 'bg-success-soft text-success'
-                      : 'bg-warning-soft text-warning'
-                  }`}>
+                    d.status === 'Ativa'    ? 'bg-success-soft text-success' :
+                    d.status === 'Suspensa' ? 'bg-danger-soft text-danger' :
+                                              'bg-warning-soft text-warning'  }`}>
                     {d.status}
                   </span>
 
