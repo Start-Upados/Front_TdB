@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import {
+  Smile, ShieldCheck, QrCode, Stethoscope, ClipboardList,
+  CheckCircle2, ArrowLeft, Check, ArrowRight, Circle, AlertCircle,
+} from 'lucide-react'
 import { readSheet, appendSheet } from '../../Services/googleSheets'
 
 
@@ -26,7 +30,7 @@ interface Paciente {
   historico:     Consulta[]
 }
 
-// ─── MOCK DATA ────────────────────────────────
+// ─── MOCK DATA ──────────────────────── (preservado, 2 pacientes)
 // TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/pacientes/protocolo/${protocolo}`)
 const MOCK_PACIENTES: Paciente[] = [
   {
@@ -77,40 +81,37 @@ function buscarPorProtocolo(protocolo: string): Paciente | null {
 }
 
 
+// ─── TIMELINE (visual TdB) ───────────────────
 function TimelineItem({ consulta, isLast }: { consulta: Consulta; isLast: boolean }) {
   const config = {
-    concluido: { icon: 'OK', bg: 'bg-green-500', text: 'text-green-700', label: 'Concluido',  border: 'border-green-200', cardBg: 'bg-green-50'  },
-    proximo:   { icon: '->',  bg: 'bg-blue-600',  text: 'text-blue-700',  label: 'Proximo',    border: 'border-blue-200',  cardBg: 'bg-blue-50'   },
-    agendado:  { icon: 'o',  bg: 'bg-gray-300',  text: 'text-gray-500',  label: 'Agendado',   border: 'border-gray-200',  cardBg: 'bg-gray-50'   },
+    concluido: { Icon: Check,      bg: 'bg-green-500', text: 'text-green-700', label: 'Concluído', border: 'border-green-200',  cardBg: 'bg-green-50' },
+    proximo:   { Icon: ArrowRight, bg: 'bg-[#E88407]', text: 'text-[#9A3412]', label: 'Próximo',   border: 'border-orange-200', cardBg: 'bg-[#FFEDD5]' },
+    agendado:  { Icon: Circle,     bg: 'bg-gray-300',  text: 'text-gray-500',  label: 'Agendado',  border: 'border-gray-200',   cardBg: 'bg-gray-50' },
   }
   const c = config[consulta.status]
 
   return (
     <div className="flex gap-3">
       <div className="flex flex-col items-center">
-        <div className={`w-8 h-8 rounded-full ${c.bg} flex items-center justify-center text-white font-bold text-[10px] shrink-0`}>
-          {c.icon}
+        <div className={`w-8 h-8 rounded-full ${c.bg} flex items-center justify-center text-white shrink-0`}>
+          <c.Icon size={14} strokeWidth={2.5} />
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" />}
       </div>
       <div className={`flex-1 mb-4 p-3 rounded-xl border ${c.border} ${c.cardBg}`}>
         <div className="flex items-center justify-between mb-0.5">
-          <p className="font-semibold text-gray-800 text-[13px]">{consulta.procedimento}</p>
+          <p className="font-semibold text-[#0F172A] text-[13px]">{consulta.procedimento}</p>
           <span className={`text-[10px] font-semibold ${c.text}`}>{c.label}</span>
         </div>
-        <p className="text-gray-500 text-[11px]">{consulta.data} as {consulta.hora}</p>
+        <p className="text-[#475569] text-[11px]">{consulta.data} às {consulta.hora}</p>
       </div>
     </div>
   )
 }
 
-// ─── FICHA DO PACIENTE ────────────────────────
+// ─── FICHA DO PACIENTE (visual TdB) ───────────
 function FichaPaciente({
-  paciente,
-  onConfirmar,
-  onVoltar,
-  confirmando,
-  confirmado,
+  paciente, onConfirmar, onVoltar, confirmando, confirmado,
 }: {
   paciente:    Paciente
   onConfirmar: () => void
@@ -122,90 +123,99 @@ function FichaPaciente({
 
   return (
     <div className="w-full max-w-lg">
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
 
-        {/* Header */}
-        <div className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-6 py-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">
+        {/* Header laranja TdB */}
+        <div className="bg-gradient-to-br from-[#FFEDD5] via-[#FED7AA] to-[#FDBA74] px-6 py-8 text-center border-b border-orange-200">
+          <div className="w-16 h-16 rounded-full bg-[#E88407] flex items-center justify-center text-white text-xl font-bold mx-auto mb-3 shadow-md">
             {paciente.nome.charAt(0)}
           </div>
-          <h2 className="text-[20px] font-extrabold text-white mb-1">{paciente.nome}</h2>
-          <p className="text-blue-300 text-[13px]">{paciente.idade} anos · {paciente.cidade}</p>
-          <p className="text-blue-400 text-[12px] mt-1">{paciente.programa}</p>
+          <h2 className="text-[20px] font-extrabold text-[#9A3412] mb-1">{paciente.nome}</h2>
+          <p className="text-[#9A3412]/80 text-[13px]">{paciente.idade} anos · {paciente.cidade}</p>
+          <p className="text-[#9A3412]/70 text-[12px] mt-1">{paciente.programa}</p>
 
-          {/* Badge validado */}
-          <div className="inline-flex items-center gap-2 bg-green-500/20 border border-green-500/40 rounded-full px-4 py-1.5 mt-3">
-            <span className="text-green-400 text-[12px] font-bold">Paciente validado</span>
+          <div className="inline-flex items-center gap-1.5 bg-green-100 border border-green-300 rounded-full px-4 py-1.5 mt-3">
+            <ShieldCheck size={14} className="text-green-700" strokeWidth={2.5} />
+            <span className="text-green-700 text-[12px] font-bold">Paciente validado</span>
           </div>
         </div>
 
         <div className="p-6">
 
-          {/* Protocolo */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
-            <p className="text-[10px] text-amber-600 uppercase tracking-wide font-bold mb-0.5">Protocolo</p>
-            <p className="text-[16px] font-extrabold text-amber-700">#{paciente.protocolo}</p>
+          {/* Protocolo — destaque laranja TdB */}
+          <div className="bg-[#FFEDD5] border border-orange-200 rounded-xl px-4 py-3 mb-5">
+            <p className="text-[10px] text-[#9A3412] uppercase tracking-wide font-bold mb-0.5">Protocolo</p>
+            <p className="text-[16px] font-extrabold text-[#E88407] font-mono">#{paciente.protocolo}</p>
           </div>
 
-          {/* Progresso */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+          {/* Tratamento atual */}
+          <div className="bg-[#F8FAFC] rounded-xl p-4 mb-5 border border-[#E2E8F0]">
             <div className="flex items-center justify-between mb-2">
-              <p className="font-bold text-gray-800 text-[14px]">Tratamento atual</p>
-              <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              <p className="font-bold text-[#0F172A] text-[14px]">Tratamento atual</p>
+              <span className="text-[11px] font-semibold text-[#E88407] bg-[#FFEDD5] px-2 py-0.5 rounded-full">
                 {paciente.status}
               </span>
             </div>
-            <p className="text-gray-500 text-[12px] mb-3">
-              {paciente.procedimento} — Sessao {paciente.sessaoAtual} de {paciente.totalSessoes}
+            <p className="text-[#475569] text-[12px] mb-3">
+              {paciente.procedimento} — Sessão {paciente.sessaoAtual} de {paciente.totalSessoes}
             </p>
-            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden mb-1">
+            <div className="h-2.5 bg-[#E2E8F0] rounded-full overflow-hidden mb-1">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
+                className="h-full bg-gradient-to-r from-[#E88407] to-[#F97316] rounded-full"
                 style={{ width: `${progresso}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] text-gray-400">
-              <span>Inicio</span>
-              <span className="font-semibold text-blue-600">{progresso}% concluido</span>
-              <span>Conclusao</span>
+            <div className="flex justify-between text-[10px] text-[#94A3B8]">
+              <span>Início</span>
+              <span className="font-semibold text-[#E88407]">{progresso}% concluído</span>
+              <span>Conclusão</span>
             </div>
           </div>
 
-          {/* Dentista responsavel */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-2">Dentista responsável</p>
-            <p className="font-semibold text-gray-800 text-[14px]">{paciente.dentista}</p>
-            <p className="text-gray-500 text-[12px]">{paciente.clinica}</p>
+          {/* Dentista responsável */}
+          <div className="bg-[#F8FAFC] rounded-xl p-4 mb-5 border border-[#E2E8F0]">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Stethoscope size={12} className="text-[#94A3B8]" strokeWidth={2} />
+              <p className="text-[10px] text-[#94A3B8] uppercase tracking-wide font-bold">Dentista responsável</p>
+            </div>
+            <p className="font-semibold text-[#0F172A] text-[14px]">{paciente.dentista}</p>
+            <p className="text-[#475569] text-[12px]">{paciente.clinica}</p>
           </div>
 
-          {/* Historico */}
+          {/* Histórico */}
           <div className="mb-5">
-            <p className="font-bold text-gray-800 text-[14px] mb-3">Histórico de consultas</p>
+            <div className="flex items-center gap-1.5 mb-3">
+              <ClipboardList size={14} className="text-[#E88407]" strokeWidth={2} />
+              <p className="font-bold text-[#0F172A] text-[14px]">Histórico de consultas</p>
+            </div>
             {paciente.historico.map((c, i) => (
               <TimelineItem key={i} consulta={c} isLast={i === paciente.historico.length - 1} />
             ))}
           </div>
 
-          {/* Confirmacao */}
+          {/* Confirmação */}
           {confirmado ? (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center mb-4">
-              <p className="text-green-600 font-bold text-[15px] mb-1">Atendimento confirmado!</p>
-              <p className="text-green-500 text-[12px]">Registrado com sucesso no histórico da ONG.</p>
+              <CheckCircle2 size={24} className="text-green-600 mx-auto mb-2" strokeWidth={2} />
+              <p className="text-green-700 font-bold text-[15px] mb-1">Atendimento confirmado!</p>
+              <p className="text-green-600 text-[12px]">Registrado com sucesso no histórico da ONG.</p>
             </div>
           ) : (
             <button
               onClick={onConfirmar}
               disabled={confirmando}
-              className="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] mb-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] mb-3 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
             >
-              {confirmando ? 'Registrando...' : 'Confirmar Atendimento'}
+              <CheckCircle2 size={16} strokeWidth={2.5} />
+              {confirmando ? 'Registrando...' : 'Confirmar atendimento'}
             </button>
           )}
 
           <button
             onClick={onVoltar}
-            className="w-full bg-gray-100 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer border-none text-[14px]"
+            className="w-full bg-white border border-[#E2E8F0] text-[#475569] font-semibold py-3 rounded-xl hover:bg-[#F8FAFC] transition-colors cursor-pointer text-[14px] inline-flex items-center justify-center gap-2"
           >
+            <QrCode size={16} strokeWidth={2} />
             Escanear outro paciente
           </button>
 
@@ -215,10 +225,9 @@ function FichaPaciente({
   )
 }
 
-// ─── TELA DE BUSCA ────────────────────────────
+// ─── TELA DE BUSCA (visual TdB) ───────────────
 function TelaBusca({
-  onEncontrado,
-  protocoloInicial,
+  onEncontrado, protocoloInicial,
 }: {
   onEncontrado:     (p: Paciente) => void
   protocoloInicial: string
@@ -227,6 +236,7 @@ function TelaBusca({
   const [buscando,   setBuscando]   = useState(false)
   const [naoAchado,  setNaoAchado]  = useState(false)
 
+  // LÓGICA 100% PRESERVADA: readSheet com mesmos índices [16][6][0]..., fallback mock.
   async function handleBuscar(e: React.FormEvent) {
     e.preventDefault()
     if (!protocolo.trim()) return
@@ -283,37 +293,34 @@ function TelaBusca({
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-blue-600 border border-amber-400 rounded-2xl p-8 shadow-2xl">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-sm">
 
-        {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-amber-400 mb-4 bg-[#07111E]/40">
-            <span className="text-2xl">🦷</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FFEDD5] border-2 border-[#E88407] mb-4">
+            <Smile size={28} className="text-[#E88407]" strokeWidth={2} />
           </div>
-          <h1 className="text-[20px] font-bold text-amber-400">Validar Paciente</h1>
-          <p className="text-white/60 text-[12px] mt-1">Digite ou escaneie o protocolo do paciente</p>
+          <h1 className="text-[20px] font-bold text-[#0F172A]">Validar paciente</h1>
+          <p className="text-[#475569] text-[12px] mt-1">Digite ou escaneie o protocolo do paciente</p>
         </div>
 
         <form onSubmit={handleBuscar} className="flex flex-col gap-4">
 
-          {/* Campo protocolo */}
           <div>
-            <label className="block text-[11px] text-white font-semibold mb-1.5 uppercase tracking-[0.6px]">
-              Numero do protocolo
+            <label className="block text-[11px] text-[#475569] font-semibold mb-1.5 uppercase tracking-[0.6px]">
+              Número do protocolo
             </label>
             <input
               type="text"
               value={protocolo}
               onChange={e => { setProtocolo(e.target.value.toUpperCase()); setNaoAchado(false) }}
               placeholder="TDB-2026-0000"
-              className="w-full bg-[#07111E] border border-[rgba(0,212,170,0.15)] text-[#E8F4FD] placeholder-[#3D6A85] rounded-lg px-4 py-3 text-[14px] outline-none focus:border-[#00D4AA] transition-colors duration-200 font-mono tracking-wider"
+              className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-4 py-3 text-[14px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 transition-all duration-200 font-mono tracking-wider"
             />
           </div>
 
-          {/* Erro */}
           {naoAchado && (
-            <div className="flex items-start gap-2 bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] text-[#FF4757] text-[12px] px-4 py-3 rounded-lg">
-              <span className="shrink-0">!</span>
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-[12px] px-4 py-3 rounded-lg">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">Protocolo não encontrado</p>
                 <p className="text-[11px] mt-0.5 opacity-80">Verifique o número e tente novamente.</p>
@@ -324,17 +331,19 @@ function TelaBusca({
           <button
             type="submit"
             disabled={!protocolo.trim() || buscando}
-            className="w-full bg-amber-400 text-[#07111E] font-bold py-3 rounded-lg hover:bg-amber-500 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#E88407] text-white font-bold py-3 rounded-xl hover:bg-[#D97706] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-none text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {buscando ? 'Buscando...' : 'Buscar paciente'}
           </button>
 
         </form>
 
-        {/* Info */}
-        <div className="mt-5 p-4 bg-[#07111E]/30 border border-[rgba(0,212,170,0.2)] rounded-xl">
-          <p className="text-[11px] text-[#00D4AA] font-bold uppercase tracking-wide mb-2">Como usar</p>
-          <div className="flex flex-col gap-1.5 text-[12px] text-white/60">
+        <div className="mt-5 p-4 bg-[#FFEDD5]/40 border border-orange-200 rounded-xl">
+          <div className="flex items-center gap-1.5 mb-2">
+            <QrCode size={14} className="text-[#E88407]" strokeWidth={2} />
+            <p className="text-[11px] text-[#9A3412] font-bold uppercase tracking-wide">Como usar</p>
+          </div>
+          <div className="flex flex-col gap-1.5 text-[12px] text-[#9A3412]/80">
             <p>1. Escaneie o QR Code da carteirinha do paciente</p>
             <p>2. O protocolo será preenchido automaticamente</p>
             <p>3. Ou digite manualmente o número do protocolo</p>
@@ -344,7 +353,11 @@ function TelaBusca({
       </div>
 
       <p className="text-center mt-5 text-[13px]">
-        <Link to="/login" className="text-[#7EB3CE] hover:text-amber-400 transition-colors">
+        <Link
+          to="/login"
+          className="text-[#E88407] hover:underline transition-colors inline-flex items-center gap-1.5 font-medium"
+        >
+          <ArrowLeft size={14} />
           Voltar ao login
         </Link>
       </p>
@@ -353,16 +366,15 @@ function TelaBusca({
 }
 
 // ─── VALIDAR PACIENTE (PRINCIPAL) ─────────────
+// LÓGICA 100% PRESERVADA: useSearchParams, useEffect, appendSheet com mesmos campos.
 export default function ValidarPaciente() {
   const [searchParams]                  = useSearchParams()
   const [paciente,    setPaciente]      = useState<Paciente | null>(null)
   const [confirmando, setConfirmando]   = useState(false)
   const [confirmado,  setConfirmado]    = useState(false)
 
-  // Lê protocolo da URL se vier do QR Code
   const protocoloUrl = searchParams.get('protocolo') ?? ''
 
-  // Se veio protocolo pela URL, busca automaticamente
   useEffect(() => {
     if (protocoloUrl) {
       const resultado = buscarPorProtocolo(protocoloUrl)
@@ -404,7 +416,7 @@ export default function ValidarPaciente() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07111E] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center p-4">
       {paciente ? (
         <FichaPaciente
           paciente={paciente}

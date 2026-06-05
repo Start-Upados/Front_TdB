@@ -78,6 +78,25 @@ export async function responderSolicitacao(id: string, texto: string): Promise<v
   }));
 }
 
+/** Resposta do PACIENTE — devolve a conversa pra status 'aberta' (admin precisa atender). */
+export async function responderComoPaciente(id: string, texto: string): Promise<void> {
+  // PROD: POST /api/solicitacoes/{id}/mensagens { texto, autor: 'paciente' }
+  await new Promise((r) => setTimeout(r, 400));
+  const ts = new Date().toISOString();
+  patch(id, (s) => ({
+    ...s,
+    mensagens: [...s.mensagens, {
+      id: `msg-${id}-${Date.now()}`,
+      autor: 'paciente',
+      texto,
+      timestamp: ts,
+    }],
+    status: 'aberta',
+    ultimaAtualizacao: ts,
+    data: atualizarTempoRelativo(ts),
+  }));
+}
+
 export async function resolverSolicitacao(id: string): Promise<void> {
   await new Promise((r) => setTimeout(r, 300));
   fechar(id, 'resolvida');

@@ -1,8 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'  // ← NOVO: useMemo
 import { Link, useNavigate } from 'react-router-dom'
+import {
+  Activity, Calendar, MapPin, ClipboardList, Info,
+  Stethoscope, LogOut, MessageSquare,
+  Check, ArrowRight, Circle,
+  Send, Inbox,  // ← NOVO
+} from 'lucide-react'
 import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
 import SessionWarning from '../../Components/SessionWarning/SessionWarning'
 import { solicitacaoService } from '../../Services/api'
+// NOVO ↓ — ajusta o caminho se a pasta do seu Dashboard for diferente
+import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
+import type { Solicitacao } from '../Dashboard/data/central'
 
 
 interface Consulta {
@@ -30,7 +39,7 @@ interface Paciente {
   historico:     Consulta[]
 }
 
-// ─── MOCK DATA (fallback banco de dados) ─────────────────────
+// ─── MOCK DATA (PRESERVADO — todos os 10) ─────────
 const MOCK_PACIENTES: Paciente[] = [
   {
     cpf: '123.456.789-00', nome: 'João Silva', idade: 15, cidade: 'São Paulo, SP',
@@ -161,12 +170,11 @@ const MOCK_PACIENTES: Paciente[] = [
   },
 ]
 
-// ─── BUSCA NO MOCK ────────────────────────────
+// ─── PRESERVADO ────────────────────────────────
 function buscarNaMock(cpf: string): Paciente | null {
   return MOCK_PACIENTES.find(p => p.cpf === cpf) ?? null
 }
 
-// ─── MAPEAR BACKEND → PACIENTE ────────────────
 function mapearBackend(dados: Record<string, string>): Paciente {
   return {
     cpf:          dados.rgCpf       ?? '',
@@ -187,144 +195,352 @@ function mapearBackend(dados: Record<string, string>): Paciente {
   }
 }
 
+// ─── NOVO: helpers de tempo pras mensagens ────
+function formatarHora(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function dataCurta(timestamp: string): string {
+  return new Date(timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
+// ─── TIMELINE (visual TdB, PRESERVADO) ─────
 function TimelineItem({ consulta, isLast }: { consulta: Consulta; isLast: boolean }) {
   const config = {
-    concluido: { icon: '✓', bg: 'bg-green-500', text: 'text-green-600', label: 'Concluído',  border: 'border-green-200', cardBg: 'bg-green-50' },
-    proximo:   { icon: '→', bg: 'bg-blue-600',  text: 'text-blue-600',  label: 'Próximo',    border: 'border-blue-200',  cardBg: 'bg-blue-50'  },
-    agendado:  { icon: '○', bg: 'bg-gray-300',  text: 'text-gray-500',  label: 'Agendado',   border: 'border-gray-200',  cardBg: 'bg-gray-50'  },
+    concluido: { Icon: Check,      bg: 'bg-green-500', text: 'text-green-700', label: 'Concluído', border: 'border-green-200',  cardBg: 'bg-green-50' },
+    proximo:   { Icon: ArrowRight, bg: 'bg-[#E88407]', text: 'text-[#9A3412]', label: 'Próximo',   border: 'border-orange-200', cardBg: 'bg-[#FFEDD5]' },
+    agendado:  { Icon: Circle,     bg: 'bg-gray-300',  text: 'text-gray-500',  label: 'Agendado',  border: 'border-gray-200',   cardBg: 'bg-gray-50' },
   }
   const c = config[consulta.status]
   return (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className={`w-9 h-9 rounded-full ${c.bg} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-          {c.icon}
+        <div className={`w-9 h-9 rounded-full ${c.bg} flex items-center justify-center text-white shrink-0`}>
+          <c.Icon size={16} strokeWidth={2.5} />
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" />}
       </div>
       <div className={`flex-1 mb-5 p-4 rounded-xl border ${c.border} ${c.cardBg}`}>
         <div className="flex items-center justify-between mb-1">
-          <p className="font-semibold text-gray-800 text-[14px]">{consulta.procedimento}</p>
+          <p className="font-semibold text-[#0F172A] text-[14px]">{consulta.procedimento}</p>
           <span className={`text-[11px] font-semibold ${c.text}`}>{c.label}</span>
         </div>
-        <p className="text-gray-500 text-[12px]">{consulta.data} às {consulta.hora}</p>
+        <p className="text-[#475569] text-[12px]">{consulta.data} às {consulta.hora}</p>
       </div>
     </div>
   )
 }
 
-// ─── PAINEL DO PACIENTE ───────────────────────
+// ═══════════════════════════════════════════════
+// NOVO: SEÇÃO DE MENSAGENS
+// ═══════════════════════════════════════════════
+
+function SecaoMensagens({ pacienteNome }: { pacienteNome: string }) {
+  const [versao, setVersao] = useState(0)
+  const [conversaAberta, setConversaAberta] = useState<string | null>(null)
+  const [resposta, setResposta] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
+  // Filtra conversas onde o nome bate (case-insensitive)
+  const minhasConversas = useMemo<Solicitacao[]>(() => {
+    return listarSolicitacoes()
+      .filter(s => s.nome.toLowerCase() === pacienteNome.toLowerCase())
+      .sort((a, b) => b.ultimaAtualizacao.localeCompare(a.ultimaAtualizacao))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pacienteNome, versao])
+
+  const conversa = conversaAberta
+    ? minhasConversas.find(c => c.id === conversaAberta)
+    : null
+
+  const naoLidas = minhasConversas.filter(c => c.status === 'aguardando-paciente').length
+
+  async function handleResponder() {
+    if (!conversa || !resposta.trim()) return
+    setEnviando(true)
+    try {
+      await responderComoPaciente(conversa.id, resposta)
+      setResposta('')
+      setVersao(v => v + 1)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  // Sem mensagens — card simples
+  if (minhasConversas.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+        <div className="flex items-center gap-2 mb-3">
+          <Inbox size={18} className="text-[#E88407]" strokeWidth={2} />
+          <h2 className="font-bold text-[#0F172A] text-[16px]">Minhas mensagens</h2>
+        </div>
+        <p className="text-[#475569] text-[13px]">
+          Você ainda não tem mensagens da equipe Turma do Bem.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Inbox size={18} className="text-[#E88407]" strokeWidth={2} />
+          <h2 className="font-bold text-[#0F172A] text-[16px]">Minhas mensagens</h2>
+        </div>
+        {naoLidas > 0 && (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E88407] text-white text-[11px] font-semibold">
+            {naoLidas} {naoLidas === 1 ? 'nova' : 'novas'}
+          </span>
+        )}
+      </div>
+
+      {/* Lista de conversas */}
+      {!conversa && (
+        <div className="space-y-2">
+          {minhasConversas.map(c => {
+            const ultimaMsg = c.mensagens[c.mensagens.length - 1]
+            const eraDoAdmin = ultimaMsg?.autor === 'admin'
+            const aguardando = c.status === 'aguardando-paciente'
+            return (
+              <button
+                key={c.id}
+                onClick={() => setConversaAberta(c.id)}
+                className={`w-full text-left p-3 rounded-xl border transition-colors ${
+                  aguardando
+                    ? 'border-[#E88407] bg-[#FFEDD5]/40 hover:bg-[#FFEDD5]'
+                    : 'border-[#E2E8F0] hover:bg-[#F8FAFC]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[13px] font-semibold text-[#0F172A]">
+                    {eraDoAdmin ? 'Equipe TdB' : 'Você'}
+                  </p>
+                  <span className="text-[11px] text-[#94A3B8]">
+                    {ultimaMsg ? dataCurta(ultimaMsg.timestamp) : c.data}
+                  </span>
+                </div>
+                <p className="text-[12px] text-[#475569] line-clamp-2">
+                  {ultimaMsg?.texto ?? c.preview}
+                </p>
+                {aguardando && (
+                  <p className="text-[11px] text-[#E88407] font-semibold mt-1.5">
+                    Aguardando sua resposta
+                  </p>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Thread aberto */}
+      {conversa && (
+        <div>
+          <button
+            onClick={() => { setConversaAberta(null); setResposta('') }}
+            className="text-[12px] text-[#E88407] hover:underline mb-3 inline-flex items-center gap-1 bg-transparent border-none cursor-pointer"
+          >
+            <ArrowRight size={12} className="rotate-180" />
+            Voltar para mensagens
+          </button>
+
+          <div className="bg-[#F8FAFC] rounded-xl p-3 max-h-[400px] overflow-y-auto mb-3 space-y-3 border border-[#E2E8F0]">
+            {conversa.mensagens.map(msg => {
+              const isPaciente = msg.autor === 'paciente'
+              return (
+                <div key={msg.id} className={`flex gap-2 ${isPaciente ? 'flex-row-reverse' : ''}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${
+                    isPaciente ? 'bg-[#E88407]' : 'bg-[#0F172A]'
+                  }`}>
+                    {isPaciente ? 'EU' : 'TDB'}
+                  </div>
+                  <div className={`max-w-[80%] flex flex-col ${isPaciente ? 'items-end' : 'items-start'}`}>
+                    <div className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${
+                      isPaciente
+                        ? 'bg-[#E88407] text-white rounded-tr-sm'
+                        : 'bg-white border border-[#E2E8F0] text-[#0F172A] rounded-tl-sm'
+                    }`}>
+                      {msg.texto}
+                    </div>
+                    <span className="text-[10px] text-[#94A3B8] mt-1 px-1">
+                      {formatarHora(msg.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {conversa.status !== 'fechada' ? (
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={resposta}
+                onChange={(e) => setResposta(e.target.value)}
+                placeholder="Digite sua mensagem..."
+                rows={3}
+                className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 resize-none"
+              />
+              <button
+                onClick={handleResponder}
+                disabled={enviando || !resposta.trim()}
+                className="w-full bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 border-none cursor-pointer"
+              >
+                <Send size={14} strokeWidth={2.5} />
+                {enviando ? 'Enviando...' : 'Enviar resposta'}
+              </button>
+            </div>
+          ) : (
+            <p className="text-center text-[12px] text-[#94A3B8] py-3 border-t border-[#E2E8F0]">
+              Esta conversa foi finalizada
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── PAINEL DO PACIENTE (PRESERVADO + 1 linha nova) ──
 function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: () => void }) {
   const progresso = paciente.totalSessoes > 0
     ? Math.round((paciente.sessaoAtual / paciente.totalSessoes) * 100)
     : 0
 
   return (
-    <div>
-      <header className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] px-6 py-16 text-center">
-        <div className="max-w-2xl mx-auto">
-          <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+    <div className="min-h-screen bg-[#FAFBFD]">
+
+      <header className="bg-gradient-to-br from-[#FFEDD5] via-[#FED7AA] to-[#FDBA74] px-6 py-12 border-b border-orange-200">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="w-20 h-20 rounded-full bg-[#E88407] flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-md">
             {paciente.nome.charAt(0)}
           </div>
-          <h1 className="text-3xl font-extrabold text-white mb-1">
-            Olá, {paciente.nome.split(' ')[0]}! 👋
+          <h1 className="text-[26px] font-extrabold text-[#9A3412] mb-1">
+            Olá, {paciente.nome.split(' ')[0]}!
           </h1>
-          <p className="text-blue-300 text-[15px]">
+          <p className="text-[#9A3412]/80 text-[14px]">
             {paciente.programa} · {paciente.cidade || 'Turma do Bem'}
           </p>
         </div>
       </header>
 
-      <section className="py-10 px-6 max-w-2xl mx-auto">
+      <section className="py-8 px-6 max-w-2xl mx-auto">
 
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
+        {/* Seu tratamento */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-gray-800 text-[16px]">📊 Seu tratamento</h2>
-            <span className="text-[12px] font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+            <div className="flex items-center gap-2">
+              <Activity size={18} className="text-[#E88407]" strokeWidth={2} />
+              <h2 className="font-bold text-[#0F172A] text-[16px]">Seu tratamento</h2>
+            </div>
+            <span className="text-[12px] font-semibold text-[#E88407] bg-[#FFEDD5] px-3 py-1 rounded-full">
               {paciente.status}
             </span>
           </div>
-          <p className="text-gray-500 text-[13px] mb-3">
+          <p className="text-[#475569] text-[13px] mb-3">
             {paciente.procedimento}
             {paciente.totalSessoes > 0 && ` — Sessão ${paciente.sessaoAtual} de ${paciente.totalSessoes}`}
           </p>
           {paciente.totalSessoes > 0 && (
             <>
-              <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-2">
+              <div className="h-3 bg-[#F1F5F9] rounded-full overflow-hidden mb-2">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000"
+                  className="h-full bg-gradient-to-r from-[#E88407] to-[#F97316] rounded-full transition-all duration-1000"
                   style={{ width: `${progresso}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[11px] text-gray-400">
+              <div className="flex justify-between text-[11px] text-[#94A3B8]">
                 <span>Início</span>
-                <span className="font-semibold text-blue-600">{progresso}% concluído</span>
+                <span className="font-semibold text-[#E88407]">{progresso}% concluído</span>
                 <span>Conclusão</span>
               </div>
             </>
           )}
         </div>
 
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-md p-6 mb-5 text-white">
-          <h2 className="font-bold text-[16px] mb-4">📅 Próximo atendimento</h2>
+        {/* Próximo atendimento */}
+        <div className="bg-gradient-to-br from-[#E88407] to-[#F97316] rounded-2xl shadow-md p-6 mb-5 text-white">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar size={18} strokeWidth={2} />
+            <h2 className="font-bold text-[16px]">Próximo atendimento</h2>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">Data e hora</p>
+              <p className="text-white/80 text-[11px] uppercase tracking-wide mb-1">Data e hora</p>
               <p className="font-bold text-[18px]">{paciente.proximaData}</p>
-              <p className="text-blue-200 text-[14px]">às {paciente.proximaHora}</p>
+              <p className="text-white/80 text-[14px]">às {paciente.proximaHora}</p>
             </div>
             <div>
-              <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">Dentista</p>
+              <p className="text-white/80 text-[11px] uppercase tracking-wide mb-1">Dentista</p>
               <p className="font-semibold text-[14px]">{paciente.dentista}</p>
             </div>
             <div>
-              <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">Clínica</p>
+              <p className="text-white/80 text-[11px] uppercase tracking-wide mb-1">Clínica</p>
               <p className="font-semibold text-[14px]">{paciente.clinica}</p>
             </div>
             <div>
-              <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">Procedimento</p>
+              <p className="text-white/80 text-[11px] uppercase tracking-wide mb-1">Procedimento</p>
               <p className="font-semibold text-[14px]">{paciente.procedimento}</p>
             </div>
           </div>
           {paciente.endereco && (
-            <div className="mt-4 pt-4 border-t border-blue-500">
-              <p className="text-blue-200 text-[11px] uppercase tracking-wide mb-1">📍 Endereço</p>
+            <div className="mt-4 pt-4 border-t border-white/30">
+              <div className="flex items-center gap-1.5 mb-1">
+                <MapPin size={12} strokeWidth={2} />
+                <p className="text-white/80 text-[11px] uppercase tracking-wide">Endereço</p>
+              </div>
               <p className="text-[13px]">{paciente.endereco}</p>
             </div>
           )}
         </div>
 
+        {/* NOVO ↓ — Seção de mensagens da Central */}
+        <SecaoMensagens pacienteNome={paciente.nome} />
+
+        {/* Histórico */}
         {paciente.historico.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-5 border border-gray-100">
-            <h2 className="font-bold text-gray-800 text-[16px] mb-5">📋 Histórico de consultas</h2>
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+            <div className="flex items-center gap-2 mb-5">
+              <ClipboardList size={18} className="text-[#E88407]" strokeWidth={2} />
+              <h2 className="font-bold text-[#0F172A] text-[16px]">Histórico de consultas</h2>
+            </div>
             {paciente.historico.map((c, i) => (
               <TimelineItem key={i} consulta={c} isLast={i === paciente.historico.length - 1} />
             ))}
           </div>
         )}
 
-        <div className="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-100">
-          <h2 className="font-bold text-gray-800 text-[14px] mb-3">ℹ️ Informações do programa</h2>
+        {/* Informações do programa */}
+        <div className="bg-[#F8FAFC] rounded-2xl p-5 mb-6 border border-[#E2E8F0]">
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={16} className="text-[#475569]" strokeWidth={2} />
+            <h2 className="font-bold text-[#0F172A] text-[14px]">Informações do programa</h2>
+          </div>
           <div className="grid grid-cols-2 gap-3 text-[13px]">
             <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Programa</p>
-              <p className="font-semibold text-gray-700">{paciente.programa}</p>
+              <p className="text-[#94A3B8] text-[11px] uppercase tracking-wide">Programa</p>
+              <p className="font-semibold text-[#475569]">{paciente.programa}</p>
             </div>
             {paciente.idade > 0 && (
               <div>
-                <p className="text-gray-400 text-[11px] uppercase tracking-wide">Idade</p>
-                <p className="font-semibold text-gray-700">{paciente.idade} anos</p>
+                <p className="text-[#94A3B8] text-[11px] uppercase tracking-wide">Idade</p>
+                <p className="font-semibold text-[#475569]">{paciente.idade} anos</p>
               </div>
             )}
             {paciente.cidade && (
               <div>
-                <p className="text-gray-400 text-[11px] uppercase tracking-wide">Cidade</p>
-                <p className="font-semibold text-gray-700">{paciente.cidade}</p>
+                <p className="text-[#94A3B8] text-[11px] uppercase tracking-wide">Cidade</p>
+                <p className="font-semibold text-[#475569]">{paciente.cidade}</p>
               </div>
             )}
             <div>
-              <p className="text-gray-400 text-[11px] uppercase tracking-wide">Dentista</p>
-              <p className="font-semibold text-gray-700">{paciente.dentista}</p>
+              <div className="flex items-center gap-1 text-[#94A3B8]">
+                <Stethoscope size={11} strokeWidth={2} />
+                <p className="text-[11px] uppercase tracking-wide">Dentista</p>
+              </div>
+              <p className="font-semibold text-[#475569] mt-0.5">{paciente.dentista}</p>
             </div>
           </div>
         </div>
@@ -332,14 +548,16 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
         <div className="flex flex-col gap-3">
           <button
             onClick={onVoltar}
-            className="w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors duration-200 cursor-pointer border-none text-[14px]"
+            className="w-full bg-white border border-[#E2E8F0] text-[#475569] font-semibold py-3 rounded-xl hover:bg-[#F8FAFC] transition-colors duration-200 cursor-pointer text-[14px] inline-flex items-center justify-center gap-2"
           >
+            <LogOut size={16} strokeWidth={2} />
             Sair
           </button>
           <Link
             to="/FaleConosco"
-            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200 text-center text-[14px] no-underline"
+            className="w-full bg-[#0F172A] text-white font-bold py-3 rounded-xl hover:bg-[#1E293B] hover:-translate-y-0.5 transition-all duration-200 text-center text-[14px] no-underline inline-flex items-center justify-center gap-2"
           >
+            <MessageSquare size={16} strokeWidth={2} />
             Falar com o Suporte
           </Link>
         </div>
@@ -349,7 +567,7 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
   )
 }
 
-// ─── PORTAL DO BENEFICIÁRIO (PRINCIPAL) ───────
+// ─── PRINCIPAL (PRESERVADO 100%) ──────────────
 const PortalBeneficiario = () => {
   const { showWarning, minutesLeft, resetTimer } = useSessionTimeout({
     timeoutMinutes: 30,
@@ -370,7 +588,6 @@ const PortalBeneficiario = () => {
 
     async function carregarDados() {
       try {
-        // 1. Tenta buscar no backend Java pelo rgCpf
         const dados = await solicitacaoService.buscar(cpfSalvo!)
         if (dados) {
           setPaciente(mapearBackend(dados as unknown as Record<string, string>))
@@ -380,7 +597,6 @@ const PortalBeneficiario = () => {
         // Backend falhou — usa fallback
       }
 
-      // 2. Fallback: busca no mock
       const mock = buscarNaMock(cpfSalvo!)
       if (mock) {
         setPaciente(mock)
@@ -399,8 +615,11 @@ const PortalBeneficiario = () => {
 
   if (carregando) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center">
-        <p className="text-white text-[15px]">Carregando seus dados...</p>
+      <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-[#FFEDD5] border-t-[#E88407] rounded-full animate-spin mb-3" />
+          <p className="text-[#475569] text-[14px]">Carregando seus dados...</p>
+        </div>
       </div>
     )
   }
