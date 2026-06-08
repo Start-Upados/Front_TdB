@@ -13,6 +13,15 @@ import { solicitacaoService } from '../../Services/api'
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
 
+import { CalendarHeart } from 'lucide-react';   // ← já tem MapPin, renomeia se conflitar
+import {
+  listarProximosPorCidade,
+  pacienteEstaConfirmado,
+  confirmarPresencaPaciente,
+  cancelarPresencaPaciente,
+} from '../Dashboard/services/mutiroes';
+import type { Mutirao } from '../Dashboard/data/mutiroes';
+
 
 interface Consulta {
   data:         string
@@ -403,6 +412,132 @@ function SecaoMensagens({ pacienteNome }: { pacienteNome: string }) {
   )
 }
 
+function SecaoMutiroes({ paciente }: { paciente: Paciente }) {
+  const [versao, setVersao] = useState(0)
+  const [processando, setProcessando] = useState<string | null>(null)
+
+  const mutiroes = useMemo<Mutirao[]>(() => {
+    return listarProximosPorCidade(paciente.cidade)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paciente.cidade, versao])
+
+  async function handleToggle(mutiraoId: string) {
+    setProcessando(mutiraoId)
+    try {
+      if (pacienteEstaConfirmado(mutiraoId, paciente.cpf)) {
+        await cancelarPresencaPaciente(mutiraoId, paciente.cpf)
+      } else {
+        await confirmarPresencaPaciente(mutiraoId, {
+          cpf: paciente.cpf,
+          nome: paciente.nome,
+          cidade: paciente.cidade,
+        })
+      }
+      setVersao((v) => v + 1)
+    } finally {
+      setProcessando(null)
+    }
+  }
+
+  if (mutiroes.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+        <div className="flex items-center gap-2 mb-3">
+          <CalendarHeart size={18} className="text-[#E88407]" strokeWidth={2} />
+          <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões na sua cidade</h2>
+        </div>
+        <p className="text-[#475569] text-[13px]">
+          Nenhum mutirão programado em <span className="font-semibold">{paciente.cidade}</span> no momento.
+          Volte aqui mais tarde para conferir.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+      <div className="flex items-center gap-2 mb-4">
+        <CalendarHeart size={18} className="text-[#E88407]" strokeWidth={2} />
+        <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões na sua cidade</h2>
+      </div>
+
+      <div className="space-y-3">
+        {mutiroes.map((m) => {
+          const confirmado = pacienteEstaConfirmado(m.id, paciente.cpf)
+          const isProcessing = processando === m.id
+          const isApolonia = m.programa === 'Apolônias do Bem'
+          return (
+            <div
+              key={m.id}
+              className={`rounded-xl border p-4 ${
+                confirmado
+                  ? 'border-green-300 bg-green-50/50'
+                  : 'border-[#E2E8F0] bg-[#F8FAFC]'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#0F172A] text-[14px]">{m.nome ?? m.local}</p>
+                  <p className="text-[#475569] text-[12px] mt-0.5">{m.local}</p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                  isApolonia
+                    ? 'bg-[#ECFCCB] text-[#3F6212]'
+                    : 'bg-[#FFEDD5] text-[#9A3412]'
+                }`}>
+                  {m.programa}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[12px] text-[#475569] mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={12} strokeWidth={2} />
+                  <span>{new Date(m.data + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Activity size={12} strokeWidth={2} />
+                  <span>{m.horario}</span>
+                </div>
+                {m.endereco && (
+                  <div className="flex items-center gap-1.5 col-span-2 text-[11px]">
+                    <MapPin size={11} strokeWidth={2} className="shrink-0" />
+                    <span className="truncate">{m.endereco}</span>
+                  </div>
+                )}
+              </div>
+
+              {confirmado ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 inline-flex items-center justify-center gap-1.5 bg-green-100 border border-green-300 rounded-lg py-2 text-[12px] text-green-700 font-semibold">
+                    <Check size={14} strokeWidth={2.5} />
+                    Você confirmou presença
+                  </div>
+                  <button
+                    onClick={() => handleToggle(m.id)}
+                    disabled={isProcessing}
+                    className="px-3 py-2 text-[12px] border border-[#E2E8F0] rounded-lg text-[#475569] hover:bg-white transition-colors disabled:opacity-50"
+                  >
+                    {isProcessing ? '...' : 'Cancelar'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleToggle(m.id)}
+                  disabled={isProcessing}
+                  className="w-full bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 border-none cursor-pointer"
+                >
+                  <Check size={14} strokeWidth={2.5} />
+                  {isProcessing ? 'Confirmando...' : 'Confirmar presença'}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── PAINEL DO PACIENTE (PRESERVADO + 1 linha nova) ──
 function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: () => void }) {
   const progresso = paciente.totalSessoes > 0
@@ -498,6 +633,7 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
 
         {/* NOVO ↓ — Seção de mensagens da Central */}
         <SecaoMensagens pacienteNome={paciente.nome} />
+        <SecaoMutiroes paciente={paciente} />
 
         {/* Histórico */}
         {paciente.historico.length > 0 && (

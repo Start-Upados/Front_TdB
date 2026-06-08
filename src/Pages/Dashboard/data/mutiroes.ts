@@ -15,6 +15,14 @@ export interface VoluntarioConvocado {
   status: StatusConvite;
 }
 
+export interface PacienteConfirmado {
+  pacienteCpf: string;       // CPF do paciente
+  nome: string;
+  iniciais: string;
+  cidade: string;            // snapshot da cidade na hora da confirmação
+  confirmadoEm: string;      // YYYY-MM-DD
+}
+
 export interface EstatisticasMutirao {
   pacientesAtendidos: number;
   vinculosCriados: number;
@@ -45,6 +53,7 @@ export interface Mutirao {
   dentistasNecessarios: number;
   pacientesEsperados: number;
   voluntariosConvocados: VoluntarioConvocado[];
+  pacientesConfirmados?: PacienteConfirmado[];
   // Para mutirões realizados:
   atendimentosRealizados?: number;
   encaminhamentos?: number;

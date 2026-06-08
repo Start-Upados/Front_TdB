@@ -8,6 +8,9 @@ import {
 import { dataDeHoje } from './atendimentos';
 import { listarDentistas } from './voluntarios';
 import type { DentistaCompleto } from '../data/dentistas';
+import type { /* ... existentes ..., */ PacienteConfirmado } from '../data/mutiroes';
+
+
 
 /*
   HOJE: estado mutável em memória.
@@ -211,4 +214,99 @@ export function listarVoluntariosDisponiveis(
 
 export function listarEspecialidadesParaFiltro(): string[] {
   return [...ESPECIALIDADES_MUTIRAO];
+}
+
+/**
+ * Extrai a cidade base de uma string que pode vir como "São Paulo, SP" ou "São Paulo".
+ * Necessário porque o Portal do Paciente usa o formato "Cidade, UF" e o Mutirão usa só "Cidade".
+ */
+export function extrairCidade(cidadeFull: string): string {
+  return (cidadeFull ?? '').split(',')[0].trim();
+}
+
+/** Mutirões futuros filtrados pela cidade do usuário (match case-insensitive). */
+export function listarProximosPorCidade(cidade: string): Mutirao[] {
+  const alvo = extrairCidade(cidade).toLowerCase();
+  return listarProximos().filter((m) => m.cidade.toLowerCase() === alvo);
+}
+
+// ─── Pacientes ───
+export function pacienteEstaConfirmado(mutiraoId: string, pacienteCpf: string): boolean {
+  const m = obterMutirao(mutiraoId);
+  return !!m?.pacientesConfirmados?.some((p) => p.pacienteCpf === pacienteCpf);
+}
+
+export async function confirmarPresencaPaciente(
+  mutiraoId: string,
+  paciente: { cpf: string; nome: string; cidade: string },
+): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+  mutiroes = mutiroes.map((m) => {
+    if (m.id !== mutiraoId) return m;
+    const atuais = m.pacientesConfirmados ?? [];
+    if (atuais.some((p) => p.pacienteCpf === paciente.cpf)) return m;
+    const iniciais = paciente.nome
+      .trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s))
+      .map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'P';
+    const novo: PacienteConfirmado = {
+      pacienteCpf: paciente.cpf,
+      nome: paciente.nome,
+      iniciais,
+      cidade: extrairCidade(paciente.cidade),
+      confirmadoEm: new Date().toISOString().slice(0, 10),
+    };
+    return { ...m, pacientesConfirmados: [...atuais, novo] };
+  });
+}
+
+export async function cancelarPresencaPaciente(mutiraoId: string, pacienteCpf: string): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+  mutiroes = mutiroes.map((m) => {
+    if (m.id !== mutiraoId) return m;
+    return {
+      ...m,
+      pacientesConfirmados: (m.pacientesConfirmados ?? []).filter((p) => p.pacienteCpf !== pacienteCpf),
+    };
+  });
+}
+
+// ─── Dentistas ───
+export function dentistaEstaConfirmado(mutiraoId: string, dentistaId: string): boolean {
+  const m = obterMutirao(mutiraoId);
+  return !!m?.voluntariosConvocados.some((v) => v.dentistaId === dentistaId);
+}
+
+export async function autoInscreverDentista(
+  mutiraoId: string,
+  dentista: { id: string; nome: string; especialidade: string; cidade: string; estado: string },
+): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+  mutiroes = mutiroes.map((m) => {
+    if (m.id !== mutiraoId) return m;
+    if (m.voluntariosConvocados.some((v) => v.dentistaId === dentista.id)) return m;
+    const iniciais = dentista.nome
+      .trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s))
+      .map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'D';
+    const novo: VoluntarioConvocado = {
+      dentistaId: dentista.id,
+      nome: dentista.nome,
+      iniciais,
+      especialidade: dentista.especialidade,
+      cidade: extrairCidade(dentista.cidade),
+      estado: dentista.estado,
+      convocadoEm: new Date().toISOString().slice(0, 10),
+      status: 'confirmado',
+    };
+    const atualizado = {
+      ...m,
+      voluntariosConvocados: [...m.voluntariosConvocados, novo],
+      dentistasConfirmados: m.voluntariosConvocados.length + 1,
+    };
+    return atualizado;
+  });
+}
+
+export async function cancelarPresencaDentista(mutiraoId: string, dentistaId: string): Promise<void> {
+  // Reusa cancelarConvocacao já existente — mesma mecânica
+  return cancelarConvocacao(mutiraoId, dentistaId);
 }

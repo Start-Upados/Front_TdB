@@ -4,7 +4,7 @@ import {
   UserCheck,
   CalendarDays,
   Users,
- Megaphone,
+  Megaphone,
   Wallet,
   MessageSquare,
   FileBarChart,

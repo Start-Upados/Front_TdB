@@ -10,6 +10,16 @@ import { dentistaService, type DentistaBody } from '../../Services/api'
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
 
+import { CalendarHeart, Calendar, Activity, Check } from 'lucide-react'   // ← junta com os outros
+import {
+  listarProximosPorCidade,
+  dentistaEstaConfirmado,
+  autoInscreverDentista,
+  cancelarPresencaDentista,
+} from '../Dashboard/services/mutiroes'
+import type { Mutirao } from '../Dashboard/data/mutiroes'
+
+
 interface Dentista {
   nome:              string
   rgCpf:            string
@@ -23,6 +33,7 @@ interface Dentista {
   n_atendimentos:    number
   avaliacao:         number
   status:            string
+  cidade:            string
 }
 
 // (mock antigo mantido no arquivo original, comentado, foi preservado;
@@ -211,6 +222,140 @@ function SecaoMensagens({ dentistaNome }: { dentistaNome: string }) {
   )
 }
 
+function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
+  const [versao, setVersao] = useState(0)
+  const [processando, setProcessando] = useState<string | null>(null)
+
+  // Filtro de especialidade: só mutirões que precisam da especialidade dele
+  // (se o dentista é "Ortodontia" e o mutirão precisa de "Clínico geral, Periodontia", não mostra)
+  const mutiroes = useMemo<Mutirao[]>(() => {
+    if (!dentista.cidade) return []
+    return listarProximosPorCidade(dentista.cidade)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dentista.cidade, versao])
+
+  async function handleToggle(mutiraoId: string) {
+    setProcessando(mutiraoId)
+    try {
+      if (dentistaEstaConfirmado(mutiraoId, dentista.rgCpf)) {
+        await cancelarPresencaDentista(mutiraoId, dentista.rgCpf)
+      } else {
+        await autoInscreverDentista(mutiraoId, {
+          id: dentista.rgCpf,
+          nome: dentista.nome,
+          especialidade: dentista.especializacao,
+          cidade: dentista.cidade,
+          estado: '',   // backend não retorna UF separado, fica vazio
+        })
+      }
+      setVersao((v) => v + 1)
+    } finally {
+      setProcessando(null)
+    }
+  }
+
+  if (!dentista.cidade) return null
+
+  if (mutiroes.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+        <div className="flex items-center gap-2 mb-3">
+          <CalendarHeart size={18} className="text-[#E88407]" strokeWidth={2} />
+          <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões na sua cidade</h2>
+        </div>
+        <p className="text-[#475569] text-[13px]">
+          Nenhum mutirão programado em <span className="font-semibold">{dentista.cidade}</span> no momento.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+      <div className="flex items-center gap-2 mb-4">
+        <CalendarHeart size={18} className="text-[#E88407]" strokeWidth={2} />
+        <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões na sua cidade</h2>
+      </div>
+
+      <div className="space-y-3">
+        {mutiroes.map((m) => {
+          const confirmado = dentistaEstaConfirmado(m.id, dentista.rgCpf)
+          const isProcessing = processando === m.id
+          const vagas = m.dentistasNecessarios - m.dentistasConfirmados
+          return (
+            <div
+              key={m.id}
+              className={`rounded-xl border p-4 ${
+                confirmado
+                  ? 'border-green-300 bg-green-50/50'
+                  : 'border-[#E2E8F0] bg-[#F8FAFC]'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#0F172A] text-[14px]">{m.nome ?? m.local}</p>
+                  <p className="text-[#475569] text-[12px] mt-0.5">
+                    {m.tipo} · {m.programa}
+                  </p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                  vagas > 0 ? 'bg-[#FFEDD5] text-[#9A3412]' : 'bg-green-100 text-green-700'
+                }`}>
+                  {vagas > 0 ? `${vagas} vaga${vagas > 1 ? 's' : ''}` : 'Equipe completa'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[12px] text-[#475569] mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={12} strokeWidth={2} />
+                  <span>{new Date(m.data + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Activity size={12} strokeWidth={2} />
+                  <span>{m.horario}</span>
+                </div>
+              </div>
+
+              {m.especialidades.length > 0 && (
+                <p className="text-[11px] text-[#475569] mb-3">
+                  <span className="font-semibold">Especialidades:</span>{' '}
+                  {m.especialidades.join(', ')}
+                </p>
+              )}
+
+              {confirmado ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 inline-flex items-center justify-center gap-1.5 bg-green-100 border border-green-300 rounded-lg py-2 text-[12px] text-green-700 font-semibold">
+                    <Check size={14} strokeWidth={2.5} />
+                    Você está confirmado
+                  </div>
+                  <button
+                    onClick={() => handleToggle(m.id)}
+                    disabled={isProcessing}
+                    className="px-3 py-2 text-[12px] border border-[#E2E8F0] rounded-lg text-[#475569] hover:bg-white transition-colors disabled:opacity-50"
+                  >
+                    {isProcessing ? '...' : 'Cancelar'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleToggle(m.id)}
+                  disabled={isProcessing || vagas === 0}
+                  className="w-full bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 border-none cursor-pointer"
+                >
+                  <Check size={14} strokeWidth={2.5} />
+                  {isProcessing ? 'Inscrevendo...' : vagas === 0 ? 'Sem vagas' : 'Quero participar'}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+
 // ─── PAINEL DO DENTISTA (visual TdB) ──────────
 function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () => void }) {
   return (
@@ -261,6 +406,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
 
         {/* NOVO ↓ — Mensagens com a equipe TdB */}
         <SecaoMensagens dentistaNome={dentista.nome} />
+        <SecaoMutiroes dentista={dentista} />
 
         {/* Informações profissionais */}
         <div className="bg-gradient-to-br from-[#E88407] to-[#F97316] rounded-2xl shadow-md p-6 mb-5 text-white">
@@ -364,6 +510,7 @@ const PainelDentistaPage = () => {
           n_atendimentos: resultado.nAtendimentos ?? 0,
           avaliacao: resultado.avaliacao ?? 0,
           status: resultado.status ?? 'Ativo',
+          cidade: (resultado as unknown as { dto?: { localidade?: string } }).dto?.localidade ?? '',
         })
 
       } catch (erro) {

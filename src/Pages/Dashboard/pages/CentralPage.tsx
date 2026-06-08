@@ -17,7 +17,7 @@ import {
   listarAtivas, listarArquivo, obterKpis,
   atualizarClassificacao, arquivarSolicitacao,
   responderSolicitacao, encaminharSolicitacao, promoverParaTriagem,
-  resolverSolicitacao, reabrirSolicitacao,
+  resolverSolicitacao, reabrirSolicitacao, carregarSolicitacoesReais,
 } from '../services/central';
 import { classificarPrioridade } from '../services/ml';
 import type { Canal, Prioridade, Solicitacao, MotivoFechamento } from '../data/central';
@@ -105,8 +105,31 @@ export default function CentralPage() {
   const [resposta, setResposta] = useState('');
   const [acaoModal, setAcaoModal] = useState<AcaoModal>(null);
   const [processandoModal, setProcessandoModal] = useState(false);
+  const [carregandoBackend, setCarregandoBackend] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
+
+  // Função pra recarregar do backend Java
+  async function recarregarDoBackend(silencioso = false) {
+    setCarregandoBackend(true);
+    try {
+      const resultado = await carregarSolicitacoesReais();
+      refresh();
+      if (!silencioso) {
+        if (resultado.fonte === 'backend') {
+          toast.success(`${resultado.count} ${resultado.count === 1 ? 'solicitação carregada' : 'solicitações carregadas'} do backend`);
+        } else {
+          toast.warning('Backend indisponível', {
+            description: 'Mostrando dados de demonstração.',
+          });
+        }
+      }
+    } catch {
+      if (!silencioso) toast.error('Erro ao carregar solicitações');
+    } finally {
+      setCarregandoBackend(false);
+    }
+  }
 
   function refresh() { setVersao((v) => v + 1); }
 
@@ -126,6 +149,12 @@ export default function CentralPage() {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [selectedId, versao]);
+
+  // Carrega do backend Java no mount (silencioso — sem toast)
+  useEffect(() => {
+    recarregarDoBackend(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = todas.filter((s) => {
     if (filterCanal !== 'Todos' && s.canal !== filterCanal) return false;
@@ -339,6 +368,15 @@ export default function CentralPage() {
           </select>
         </div>
 
+        <button
+          onClick={() => recarregarDoBackend(false)}
+          disabled={carregandoBackend}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50 disabled:cursor-not-allowed xl:w-auto"
+          >
+          <RefreshCw className={`h-4 w-4 ${carregandoBackend ? 'animate-spin' : ''}`} strokeWidth={2} />
+          {carregandoBackend ? 'Carregando...' : 'Recarregar'}
+        </button>
+
         {vista === 'ativas' && (
           <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink transition-colors hover:bg-surface-soft xl:w-auto">
             <Plus className="h-4 w-4" strokeWidth={2} />
@@ -366,7 +404,7 @@ export default function CentralPage() {
                   key={item.id}
                   onClick={() => { setSelectedId(item.id); setResposta(''); }}
                   className={`flex w-full gap-4 border-b border-line p-4 text-left transition-colors ${
-                    isSelected ? 'bg-brand-soft' : 'hover:bg-surface-soft'
+                    isSelected ? 'bg-info-soft' : 'hover:bg-surface-soft'
                   }`}
                 >
                   <div className="flex min-w-[60px] flex-col items-center gap-2">

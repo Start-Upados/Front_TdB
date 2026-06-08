@@ -15,7 +15,7 @@ import { Modal } from '../components/Modal';
 import {
   listarProximos, listarRecentes, obterMutirao, diasAte,
   criarMutirao, convocarVoluntarios, cancelarConvocacao,
-  listarVoluntariosDisponiveis, listarEspecialidadesParaFiltro,
+  cancelarPresencaPaciente, listarVoluntariosDisponiveis, listarEspecialidadesParaFiltro,
   type NovoMutiraoInput,
 } from '../services/mutiroes';
 
@@ -555,6 +555,13 @@ function DetalhesMutiraoModal({
     onCancelarConvite();
   }
 
+  async function cancelarPaciente(pacienteCpf: string) {
+  await cancelarPresencaPaciente(m!.id, pacienteCpf);
+  toast.success('Inscrição do paciente removida');
+  setVersaoLocal((v) => v + 1);
+  onCancelarConvite();
+}
+
   return (
     <Modal
       open={open} onClose={onClose}
@@ -670,6 +677,44 @@ function DetalhesMutiraoModal({
               ))}
             </div>
           )}
+          {/* Pacientes confirmados */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+              Pacientes inscritos ({(m.pacientesConfirmados ?? []).length}
+              {m.pacientesEsperados > 0 && ` de ~${m.pacientesEsperados} esperados`})
+            </p>
+            {(m.pacientesConfirmados ?? []).length === 0 ? (
+              <p className="text-sm text-muted py-4 text-center border border-dashed border-line rounded-xl">
+                Nenhum paciente confirmou presença ainda.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {(m.pacientesConfirmados ?? []).map((p) => (
+                  <div key={p.pacienteCpf} className="flex items-center gap-3 p-3 rounded-xl border border-line">
+                    <Avatar initials={p.iniciais} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">{p.nome}</p>
+                      <p className="text-xs text-muted">
+                        {p.cidade} · confirmado em {new Date(p.confirmadoEm + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-medium bg-success-soft text-success">
+                      confirmado
+                    </span>
+                    {m.status !== 'realizado' && (
+                      <button
+                        onClick={() => cancelarPaciente(p.pacienteCpf)}
+                        className="p-1.5 rounded-lg text-muted hover:bg-danger-soft hover:text-danger transition-colors"
+                        title="Remover inscrição"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Modal>
@@ -925,6 +970,7 @@ function RelatorioMutiraoModal({
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Pacientes atendidos: ${stats.pacientesAtendidos}`, 20, y); y += 6;
+    doc.text(`Pacientes inscritos pelo portal: ${(m!.pacientesConfirmados ?? []).length}`, 20, y); y += 6;
     doc.text(`Encaminhados para tratamento: ${stats.vinculosCriados}`, 20, y); y += 6;
     doc.text(`Taxa de comparecimento: ${stats.taxaComparecimento}%`, 20, y); y += 6;
     doc.text(`Voluntários presentes: ${m!.dentistasConfirmados}`, 20, y); y += 6;
@@ -978,6 +1024,7 @@ function RelatorioMutiraoModal({
       <div className="space-y-4">
         {/* Cards de stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label="Inscritos" value={(m.pacientesConfirmados ?? []).length} sub="pelo portal" />
           <StatCard label="Pacientes" value={stats.pacientesAtendidos} sub="atendidos" />
           <StatCard label="Encaminhados" value={stats.vinculosCriados} sub="para tratamento" tone="success" />
           <StatCard label="Comparecimento" value={`${stats.taxaComparecimento}%`} sub={`de ~${m.pacientesEsperados} esperados`} />
