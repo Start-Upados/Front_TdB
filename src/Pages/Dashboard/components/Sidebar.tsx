@@ -84,7 +84,7 @@ export function Sidebar() {
 
           <div className="h-2 bg-surface-soft rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand rounded-full"
+              className="h-full bg-blue-400 rounded-full"
               style={{ width: '82%' }}
             />
           </div>

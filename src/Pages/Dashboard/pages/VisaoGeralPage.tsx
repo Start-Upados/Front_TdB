@@ -277,7 +277,7 @@ export default function VisaoGeralPage() {
 
                 <Bar
                   dataKey="atendimentos"
-                  fill="rgb(var(--brand))"
+                  fill="#2563EB"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={42}
                 >

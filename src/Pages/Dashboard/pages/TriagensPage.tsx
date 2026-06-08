@@ -265,7 +265,7 @@ export default function TriagensPage() {
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
                   className={`w-full text-left flex gap-3 p-4 border-b border-line transition-colors ${
-                    isSelected ? 'bg-brand-soft' : 'hover:bg-surface-soft'
+                    isSelected ? 'bg-info-soft border-l-4 border-info' : 'hover:bg-surface-soft'
                   }`}
                 >
                   <div className="flex flex-col items-center gap-1 min-w-[56px]">
@@ -341,18 +341,26 @@ export default function TriagensPage() {
           </div>
 
           {dentistasSugeridos.map(({ dentista, match }, idx) => {
+            const [dentistaSelecionado, setDentistaSelecionado] = useState<string | null>(null);
             const isTop = idx === 0;
             const ehConvidado = dentista.id === dentistaConvidadoId;
             const desabilitado = conviteAtivo && !ehConvidado;
+            const isDentistaSelecionado = dentistaSelecionado === dentista.id;
 
             return (
               <div
                 key={dentista.id}
-                className={`flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl mb-3 ${
-                  ehConvidado ? 'border-2 border-warning bg-warning-soft/40' :
-                  isTop      ? 'border-2 border-info' :
-                              'border border-line'
-                }`}
+                onClick={() => setDentistaSelecionado(dentista.id)}
+                className={`cursor-pointer flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl mb-3 transition-all ${
+                  isDentistaSelecionado
+                  ? 'bg-info-soft border-2 border-info'
+                  : ehConvidado
+                  ? 'border-2 border-warning bg-warning-soft/40'
+                  : isTop
+                  ? 'border-2 border-info'
+                  : 'border border-line hover:bg-surface-soft'
+              }
+            `}
               >
                 <Avatar initials={dentista.iniciais} size="sm" />
                 <div className="flex-1 min-w-0">
