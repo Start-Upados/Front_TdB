@@ -6,6 +6,7 @@ import {
   Search, Plus, Sparkles, RefreshCw, Send, ArrowRight, Share2, Archive,
   MessageSquare, Globe, Mail, MessageCircle, Phone, AlertCircle,
   Inbox, FileCheck, RotateCcw, CheckCircle2,
+  ClipboardCheck, XCircle, Upload, Trash2, Camera,
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
@@ -18,9 +19,15 @@ import {
   atualizarClassificacao, arquivarSolicitacao,
   responderSolicitacao, encaminharSolicitacao, promoverParaTriagem,
   resolverSolicitacao, reabrirSolicitacao, carregarSolicitacoesReais,
+  registrarTriagemOral, aprovarSolicitacao, recusarSolicitacao,
 } from '../services/central';
 import { classificarPrioridade } from '../services/ml';
-import type { Canal, Prioridade, Solicitacao, MotivoFechamento } from '../data/central';
+import type { Canal, Prioridade, Solicitacao, MotivoFechamento,
+  TriagemOral, InfoRecusa, MotivoRecusa,
+ } from '../data/central';
+
+import { MOTIVOS_RECUSA_LABEL } from '../data/central';
+
 
 // ─────────────────────────────────────────────
 // ICONS
@@ -54,6 +61,8 @@ function configMotivo(motivo: MotivoFechamento) {
     case 'arquivada':   return { label: 'Arquivada',   bg: 'bg-surface-soft', text: 'text-muted',   Icon: Archive };
     case 'encaminhada': return { label: 'Encaminhada', bg: 'bg-info-soft',    text: 'text-info',    Icon: Share2 };
     case 'promovida':   return { label: 'Promovida',   bg: 'bg-brand-soft',   text: 'text-brand',   Icon: ArrowRight };
+    case 'aprovada':    return { label: 'Aprovada',    bg: 'bg-success-soft', text: 'text-success', Icon: CheckCircle2 };
+    case 'recusada':    return { label: 'Recusada',    bg: 'bg-danger-soft',  text: 'text-danger',  Icon: XCircle };
   }
 }
 
@@ -106,6 +115,8 @@ export default function CentralPage() {
   const [acaoModal, setAcaoModal] = useState<AcaoModal>(null);
   const [processandoModal, setProcessandoModal] = useState(false);
   const [carregandoBackend, setCarregandoBackend] = useState(false);
+  const [acaoAprovacao, setAcaoAprovacao] = useState<'triagem' | 'aprovar' | 'recusar' | null>(null);
+  const [processandoAprovacao, setProcessandoAprovacao] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
 
@@ -303,6 +314,54 @@ export default function CentralPage() {
     }
   }
 
+  async function handleRegistrarTriagem(triagem: TriagemOral) {
+  if (!selected) return;
+  setProcessandoAprovacao(true);
+  try {
+    await registrarTriagemOral(selected.id, triagem);
+    toast.success(
+      triagem.recomendacao === 'apta' ? 'Triagem registrada · Apta' : 'Triagem registrada · Não apta',
+      { description: triagem.recomendacao === 'apta' ? 'Pronta pra aprovação.' : 'Recomenda-se recusar.' },
+    );
+    setAcaoAprovacao(null);
+    refresh();
+  } catch {
+    toast.error('Não foi possível registrar a triagem');
+  } finally {
+    setProcessandoAprovacao(false);
+  }
+}
+
+async function handleAprovar(aprovadaPor: string) {
+  if (!selected) return;
+  setProcessandoAprovacao(true);
+  try {
+    await aprovarSolicitacao(selected.id, aprovadaPor);
+    toast.success('Solicitação aprovada', { description: 'Encaminhada para Triagens.' });
+    setAcaoAprovacao(null);
+    refresh();
+  } catch {
+    toast.error('Não foi possível aprovar');
+  } finally {
+    setProcessandoAprovacao(false);
+  }
+}
+
+async function handleRecusar(info: InfoRecusa) {
+  if (!selected) return;
+  setProcessandoAprovacao(true);
+  try {
+    await recusarSolicitacao(selected.id, info);
+    toast.success('Solicitação recusada', { description: MOTIVOS_RECUSA_LABEL[info.motivo] });
+    setAcaoAprovacao(null);
+    refresh();
+  } catch {
+    toast.error('Não foi possível recusar');
+  } finally {
+    setProcessandoAprovacao(false);
+  }
+}
+
   return (
     <div className="flex w-full max-w-full flex-col gap-5">
 
@@ -471,6 +530,9 @@ export default function CentralPage() {
             onAbrirArquivar={() => setAcaoModal('arquivar')}
             onAbrirResolver={() => setAcaoModal('resolver')}
             onReabrir={handleReabrir}
+            onAbrirAprovar={() => setAcaoAprovacao('aprovar')}      
+            onAbrirRecusar={() => setAcaoAprovacao('recusar')}      
+            onAbrirTriagem={() => setAcaoAprovacao('triagem')}      
           />
         )}
       </div>
@@ -497,6 +559,28 @@ export default function CentralPage() {
         onConfirmar={handleConfirmarArquivar}
         processando={processandoModal}
       />
+      <TriagemOralModal
+        open={acaoAprovacao === 'triagem'}
+        solicitacao={selected ?? null}
+        onClose={() => !processandoAprovacao && setAcaoAprovacao(null)}
+        onConfirmar={handleRegistrarTriagem}
+        processando={processandoAprovacao}
+      />
+      <AprovarSolicitacaoModal
+        open={acaoAprovacao === 'aprovar'}
+        solicitacao={selected ?? null}
+        onClose={() => !processandoAprovacao && setAcaoAprovacao(null)}
+        onConfirmar={handleAprovar}
+        processando={processandoAprovacao}
+      />
+      <RecusarSolicitacaoModal
+        open={acaoAprovacao === 'recusar'}
+        solicitacao={selected ?? null}
+        sugerirMotivo={selected?.status === 'triagem-nao-apta' ? 'sem-indicacao-odontologica' : undefined}
+        onClose={() => !processandoAprovacao && setAcaoAprovacao(null)}
+        onConfirmar={handleRecusar}
+        processando={processandoAprovacao}
+      />
     </div>
   );
 }
@@ -511,6 +595,7 @@ function DetalheConversa({
   reclassificando, respondendo, promovendo, reabrindo,
   onReclassificar, onResponder, onPromover,
   onAbrirEncaminhar, onAbrirArquivar, onAbrirResolver, onReabrir,
+  onAbrirAprovar, onAbrirRecusar, onAbrirTriagem,
 }: {
   selected: Solicitacao;
   vista: Vista;
@@ -528,6 +613,9 @@ function DetalheConversa({
   onAbrirArquivar: () => void;
   onAbrirResolver: () => void;
   onReabrir: () => void;
+  onAbrirAprovar: () => void;
+  onAbrirRecusar: () => void;
+  onAbrirTriagem: () => void;
 }) {
   const ChannelIcon = CHANNEL_ICONS[selected.canal];
   const isFechada = selected.status === 'fechada';
@@ -653,65 +741,111 @@ function DetalheConversa({
       <div className="border-t border-line p-4 md:p-5">
         {isFechada ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted">
-              {motivoCfg && `Fechada como ${motivoCfg.label.toLowerCase()}`}
-              {selected.destinatarioEncaminhamento && ` para ${selected.destinatarioEncaminhamento}`}
-            </p>
-            <button
-              onClick={onReabrir}
-              disabled={reabrindo}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50"
-            >
+            <div className="text-sm text-muted">
+              {motivoCfg && <p>Fechada como {motivoCfg.label.toLowerCase()}</p>}
+              {selected.destinatarioEncaminhamento && <p className="text-xs mt-0.5">para {selected.destinatarioEncaminhamento}</p>}
+              {selected.infoRecusa && (
+                <p className="text-xs mt-0.5">
+                  Motivo: <span className="font-medium">{MOTIVOS_RECUSA_LABEL[selected.infoRecusa.motivo]}</span>
+                  {selected.infoRecusa.detalhe && ` — ${selected.infoRecusa.detalhe}`}
+                </p>
+              )}
+            </div>
+            <button onClick={onReabrir} disabled={reabrindo}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50">
               <RotateCcw className="h-4 w-4" strokeWidth={2} />
               {reabrindo ? 'Reabrindo...' : 'Reabrir conversa'}
             </button>
           </div>
         ) : (
           <>
+            {/* Card de resumo da triagem (apenas pra triagem-apta/nao-apta) */}
+            {(selected.status === 'triagem-apta' || selected.status === 'triagem-nao-apta') && selected.triagemOral && (
+              <div className={`mb-3 rounded-xl border p-3 ${
+                selected.status === 'triagem-apta' ? 'border-success/30 bg-success-soft' : 'border-warning/30 bg-warning-soft'
+              }`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide ${
+                  selected.status === 'triagem-apta' ? 'text-success' : 'text-warning'
+                }`}>
+                  Triagem oral registrada · {selected.status === 'triagem-apta' ? 'APTA' : 'NÃO APTA'}
+                </p>
+                <p className="mt-1 text-xs text-ink">
+                  {selected.triagemOral.realizadaPor} · {new Date(selected.triagemOral.realizadaEm + 'T12:00:00').toLocaleDateString('pt-BR')} · severidade {selected.triagemOral.severidade}
+                </p>
+              </div>
+            )}
+
+            {/* TEXTAREA — sempre visível em estados ativos */}
             <textarea
               value={resposta}
               onChange={(e) => setResposta(e.target.value)}
               placeholder={`Responder ${selected.nome.split(' ')[0]}...`}
-              className="mb-3 min-h-[80px] w-full resize-none rounded-2xl border border-line bg-surface shadow-cardp-4 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              className="mb-3 min-h-[80px] w-full resize-none rounded-2xl border border-line bg-surface p-4 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
+
+            {/* BOTÕES — Responder sempre primeiro + botões específicos por status */}
             <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2 xl:flex xl:flex-row xl:flex-wrap">
-              <button
-                onClick={onResponder}
-                disabled={respondendo || !resposta.trim()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm text-surface transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <button onClick={onResponder} disabled={respondendo || !resposta.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm text-surface transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
                 <Send className="h-4 w-4" strokeWidth={2} />
                 {respondendo ? 'Enviando...' : 'Responder'}
               </button>
-              <button
-                onClick={onAbrirResolver}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-success transition-colors hover:bg-success-soft"
-              >
-                <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
-                Resolver
-              </button>
-              <button
-                onClick={onPromover}
-                disabled={promovendo}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50"
-              >
-                <ArrowRight className="h-4 w-4" strokeWidth={2} />
-                {promovendo ? 'Promovendo...' : 'Promover'}
-              </button>
-              <button
-                onClick={onAbrirEncaminhar}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft"
-              >
-                <Share2 className="h-4 w-4" strokeWidth={2} />
-                Encaminhar
-              </button>
-              <button
-                onClick={onAbrirArquivar}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft"
-              >
-                <Archive className="h-4 w-4" strokeWidth={2} />
-                Arquivar
-              </button>
+
+              {/* APROVAR — disponível pra pendente-aprovacao e triagem-apta */}
+              {(selected.status === 'pendente-aprovacao' || selected.status === 'triagem-apta') && (
+                <button onClick={onAbrirAprovar}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm text-surface transition-opacity hover:opacity-90">
+                  <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+                  Aprovar
+                </button>
+              )}
+
+              {/* REGISTRAR TRIAGEM — só pendente-triagem */}
+              {selected.status === 'pendente-triagem' && (
+                <button onClick={onAbrirTriagem}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft">
+                  <ClipboardCheck className="h-4 w-4" strokeWidth={2} />
+                  Registrar triagem oral
+                </button>
+              )}
+
+              {/* RECUSAR — disponível em todos os estados pendentes */}
+              {(selected.status === 'pendente-aprovacao' ||
+                selected.status === 'pendente-triagem' ||
+                selected.status === 'triagem-apta' ||
+                selected.status === 'triagem-nao-apta') && (
+                <button onClick={onAbrirRecusar}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-danger/30 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger-soft">
+                  <XCircle className="h-4 w-4" strokeWidth={2} />
+                  Recusar
+                </button>
+              )}
+
+              {/* FLUXO PADRÃO (aberta, aguardando-paciente) — Resolver, Promover, Encaminhar, Arquivar */}
+              {(selected.status === 'aberta' || selected.status === 'aguardando-paciente') && (
+                <>
+                  <button onClick={onAbrirResolver}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-success transition-colors hover:bg-success-soft">
+                    <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+                    Resolver
+                  </button>
+                  <button onClick={onPromover} disabled={promovendo}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50">
+                    <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                    {promovendo ? 'Promovendo...' : 'Promover'}
+                  </button>
+                  <button onClick={onAbrirEncaminhar}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft">
+                    <Share2 className="h-4 w-4" strokeWidth={2} />
+                    Encaminhar
+                  </button>
+                  <button onClick={onAbrirArquivar}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft">
+                    <Archive className="h-4 w-4" strokeWidth={2} />
+                    Arquivar
+                  </button>
+                </>
+              )}
             </div>
           </>
         )}
@@ -859,6 +993,471 @@ function ArquivarModal({
         <p className="text-sm text-ink leading-relaxed">
           A conversa com <span className="font-medium">{nome}</span> será arquivada. Você pode consultá-la no Arquivo e reabrir se precisar.
         </p>
+      </div>
+    </Modal>
+  );
+}
+
+
+// ─────────────────────────────────────────────
+// BOTÕES POR ESTADO
+// ─────────────────────────────────────────────
+
+{/*
+function BotoesAprovacaoSimples({
+  onAprovar, onRecusar, onPedirInfo,
+}: { onAprovar: () => void; onRecusar: () => void; onPedirInfo: () => void }) {
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <button onClick={onAprovar}
+        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm text-surface transition-opacity hover:opacity-90">
+        <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+        Aprovar
+      </button>
+      <button onClick={onPedirInfo}
+        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface-soft">
+        <Send className="h-4 w-4" strokeWidth={2} />
+        Pedir mais informações
+      </button>
+      <button onClick={onRecusar}
+        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-danger/30 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger-soft">
+        <XCircle className="h-4 w-4" strokeWidth={2} />
+        Recusar
+      </button>
+    </div>
+  );
+}
+
+function BotoesPendenteTriagem({
+  onRegistrarTriagem, onRecusar,
+}: { onRegistrarTriagem: () => void; onRecusar: () => void }) {
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <button onClick={onRegistrarTriagem}
+        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm text-surface transition-opacity hover:opacity-90">
+        <ClipboardCheck className="h-4 w-4" strokeWidth={2} />
+        Registrar triagem oral
+      </button>
+      <button onClick={onRecusar}
+        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-danger/30 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger-soft">
+        <XCircle className="h-4 w-4" strokeWidth={2} />
+        Recusar
+      </button>
+    </div>
+  );
+}
+
+function BotoesAposTriagem({
+  triagem, modo, onAprovar, onRecusar,
+}: {
+  triagem: TriagemOral;
+  modo: 'apta' | 'nao-apta';
+  onAprovar: () => void;
+  onRecusar: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className={`rounded-xl border p-3 ${
+        modo === 'apta' ? 'border-success/30 bg-success-soft' : 'border-warning/30 bg-warning-soft'
+      }`}>
+        <p className={`text-xs font-semibold uppercase tracking-wide ${modo === 'apta' ? 'text-success' : 'text-warning'}`}>
+          Triagem oral registrada · {modo === 'apta' ? 'APTA' : 'NÃO APTA'}
+        </p>
+        <p className="mt-1 text-xs text-ink">
+          {triagem.realizadaPor} · {new Date(triagem.realizadaEm + 'T12:00:00').toLocaleDateString('pt-BR')} ·
+          severidade {triagem.severidade}
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {modo === 'apta' && (
+          <button onClick={onAprovar}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm text-surface transition-opacity hover:opacity-90">
+            <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+            Aprovar
+          </button>
+        )}
+        <button onClick={onRecusar}
+          className={`${modo === 'apta' ? 'flex-1' : 'w-full'} inline-flex items-center justify-center gap-2 rounded-xl border border-danger/30 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger-soft`}>
+          <XCircle className="h-4 w-4" strokeWidth={2} />
+          Recusar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+*/}
+
+// ─────────────────────────────────────────────
+// MODAL — TRIAGEM ORAL (com upload de fotos)
+// ─────────────────────────────────────────────
+
+function TriagemOralModal({
+  open, solicitacao, onClose, onConfirmar, processando,
+}: {
+  open: boolean;
+  solicitacao: Solicitacao | null;
+  onClose: () => void;
+  onConfirmar: (triagem: TriagemOral) => Promise<void>;
+  processando: boolean;
+}) {
+  const [houveDano, setHouveDano] = useState<boolean | null>(null);
+  const [severidade, setSeveridade] = useState<TriagemOral['severidade']>('moderado');
+  const [tratamento, setTratamento] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [realizadaPor, setRealizadaPor] = useState('Admin TdB');
+  const [fotos, setFotos] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      setHouveDano(null);
+      setSeveridade('moderado');
+      setTratamento('');
+      setObservacoes('');
+      setRealizadaPor('Admin TdB');
+      setFotos([]);
+    }
+  }, [open]);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    const novasFotos: string[] = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} não é uma imagem`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} excede 5MB`);
+        continue;
+      }
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      novasFotos.push(base64);
+    }
+    setFotos((f) => [...f, ...novasFotos]);
+    e.target.value = '';
+  }
+
+  function removerFoto(idx: number) {
+    setFotos((f) => f.filter((_, i) => i !== idx));
+  }
+
+  async function submeter(recomendacao: 'apta' | 'nao-apta') {
+    if (houveDano === null) {
+      toast.error('Indique se houve dano dentário');
+      return;
+    }
+    if (!tratamento.trim()) {
+      toast.error('Descreva o tratamento sugerido');
+      return;
+    }
+    const triagem: TriagemOral = {
+      realizadaEm: new Date().toISOString().slice(0, 10),
+      realizadaPor,
+      houveDano,
+      severidade,
+      tratamentoSugerido: tratamento,
+      observacoes,
+      recomendacao,
+      fotos,
+    };
+    await onConfirmar(triagem);
+  }
+
+  if (!solicitacao) return null;
+
+  return (
+    <Modal
+      open={open} onClose={onClose}
+      title="Registrar triagem oral"
+      description={`${solicitacao.nome} · Apolônias do Bem`}
+      size="lg"
+      footer={
+        <>
+          <button onClick={onClose} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl border border-line text-ink hover:bg-surface-soft transition-colors disabled:opacity-50">
+            Cancelar
+          </button>
+          <button onClick={() => submeter('nao-apta')} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl border border-warning/30 text-warning hover:bg-warning-soft transition-colors inline-flex items-center gap-2 disabled:opacity-50">
+            <XCircle className="w-4 h-4" strokeWidth={2} />
+            Registrar · Não apta
+          </button>
+          <button onClick={() => submeter('apta')} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl bg-success text-surface hover:opacity-90 inline-flex items-center gap-2 disabled:opacity-50">
+            <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
+            {processando ? 'Registrando...' : 'Registrar · Apta'}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {/* Houve dano */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+            Houve dano dentário pela violência? *
+          </label>
+          <div className="flex gap-2">
+            {[{ v: true, label: 'Sim' }, { v: false, label: 'Não' }].map((opt) => (
+              <button key={String(opt.v)} type="button" onClick={() => setHouveDano(opt.v)}
+                className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                  houveDano === opt.v
+                    ? opt.v ? 'border-warning bg-warning-soft text-warning' : 'border-success bg-success-soft text-success'
+                    : 'border-line text-ink hover:bg-surface-soft'
+                }`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Severidade */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+            Severidade *
+          </label>
+          <div className="flex gap-2">
+            {(['urgente', 'moderado', 'leve'] as const).map((s) => (
+              <button key={s} type="button" onClick={() => setSeveridade(s)}
+                className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors capitalize ${
+                  severidade === s
+                    ? s === 'urgente' ? 'border-danger bg-danger-soft text-danger'
+                    : s === 'moderado' ? 'border-warning bg-warning-soft text-warning'
+                    : 'border-info bg-info-soft text-info'
+                    : 'border-line text-ink hover:bg-surface-soft'
+                }`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tratamento sugerido */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Tratamento sugerido *
+          </label>
+          <input value={tratamento} onChange={(e) => setTratamento(e.target.value)}
+            placeholder="Ex: Implante anterior + restauração estética"
+            className="w-full bg-surface border border-line text-ink rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+
+        {/* Observações */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Observações da triagem
+          </label>
+          <textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3}
+            placeholder="Detalhes técnicos, condição geral da boca, fatores relevantes..."
+            className="w-full bg-surface border border-line text-ink placeholder:text-subtle rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+
+        {/* Quem fez */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Realizada por
+          </label>
+          <input value={realizadaPor} onChange={(e) => setRealizadaPor(e.target.value)}
+            className="w-full bg-surface border border-line text-ink rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+
+        {/* Fotos */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+            Fotos da triagem oral
+          </label>
+          <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-line text-sm text-ink hover:bg-surface-soft transition-colors">
+            <Upload className="h-4 w-4" strokeWidth={2} />
+            Adicionar fotos
+            <input type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+          </label>
+          {fotos.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
+              {fotos.map((src, idx) => (
+                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-line group">
+                  <img src={src} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  <button onClick={() => removerFoto(idx)}
+                    className="absolute top-1 right-1 p-1 rounded-md bg-danger text-surface opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Trash2 className="h-3 w-3" strokeWidth={2.5} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl bg-info-soft p-3 text-xs text-info">
+          <Camera className="inline h-3.5 w-3.5 mr-1" strokeWidth={2} />
+          <strong>LGPD:</strong> as fotos serão usadas apenas para fins de triagem médica e ficam restritas à equipe da Turma do Bem.
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MODAL — APROVAR
+// ─────────────────────────────────────────────
+
+function AprovarSolicitacaoModal({
+  open, solicitacao, onClose, onConfirmar, processando,
+}: {
+  open: boolean;
+  solicitacao: Solicitacao | null;
+  onClose: () => void;
+  onConfirmar: (aprovadaPor: string) => Promise<void>;
+  processando: boolean;
+}) {
+  const [aprovadaPor, setAprovadaPor] = useState('Admin TdB');
+
+  useEffect(() => { if (open) setAprovadaPor('Admin TdB'); }, [open]);
+
+  if (!solicitacao) return null;
+
+  return (
+    <Modal
+      open={open} onClose={onClose}
+      title="Aprovar solicitação"
+      size="sm"
+      footer={
+        <>
+          <button onClick={onClose} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl border border-line text-ink hover:bg-surface-soft transition-colors disabled:opacity-50">
+            Cancelar
+          </button>
+          <button onClick={() => onConfirmar(aprovadaPor)} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl bg-success text-surface hover:opacity-90 inline-flex items-center gap-2 disabled:opacity-50">
+            <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
+            {processando ? 'Aprovando...' : 'Confirmar aprovação'}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" strokeWidth={2} />
+          <p className="text-sm text-ink leading-relaxed">
+            <span className="font-medium">{solicitacao.nome}</span> será aprovado(a) e encaminhado(a) para a fila de Triagens
+            (matching de dentista). A conversa na Central será fechada.
+          </p>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Aprovado por
+          </label>
+          <input value={aprovadaPor} onChange={(e) => setAprovadaPor(e.target.value)}
+            className="w-full bg-surface border border-line text-ink rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MODAL — RECUSAR
+// ─────────────────────────────────────────────
+
+function RecusarSolicitacaoModal({
+  open, solicitacao, sugerirMotivo, onClose, onConfirmar, processando,
+}: {
+  open: boolean;
+  solicitacao: Solicitacao | null;
+  sugerirMotivo?: MotivoRecusa;
+  onClose: () => void;
+  onConfirmar: (info: InfoRecusa) => Promise<void>;
+  processando: boolean;
+}) {
+  const [motivo, setMotivo] = useState<MotivoRecusa>('fora-perfil-renda');
+  const [detalhe, setDetalhe] = useState('');
+  const [recusadaPor, setRecusadaPor] = useState('Admin TdB');
+
+  useEffect(() => {
+    if (open) {
+      setMotivo(sugerirMotivo ?? 'fora-perfil-renda');
+      setDetalhe('');
+      setRecusadaPor('Admin TdB');
+    }
+  }, [open, sugerirMotivo]);
+
+  async function submeter() {
+    if (motivo === 'outro' && !detalhe.trim()) {
+      toast.error('Descreva o motivo no campo de detalhe');
+      return;
+    }
+    const info: InfoRecusa = {
+      motivo,
+      detalhe: detalhe.trim() || undefined,
+      recusadaEm: new Date().toISOString().slice(0, 10),
+      recusadaPor,
+    };
+    await onConfirmar(info);
+  }
+
+  if (!solicitacao) return null;
+
+  return (
+    <Modal
+      open={open} onClose={onClose}
+      title="Recusar solicitação"
+      description={solicitacao.nome}
+      size="md"
+      footer={
+        <>
+          <button onClick={onClose} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl border border-line text-ink hover:bg-surface-soft transition-colors disabled:opacity-50">
+            Cancelar
+          </button>
+          <button onClick={submeter} disabled={processando}
+            className="px-4 py-2.5 text-sm rounded-xl bg-danger text-surface hover:opacity-90 inline-flex items-center gap-2 disabled:opacity-50">
+            <XCircle className="w-4 h-4" strokeWidth={2} />
+            {processando ? 'Recusando...' : 'Confirmar recusa'}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Motivo da recusa *
+          </label>
+          <select value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoRecusa)}
+            className="w-full bg-surface border border-line text-ink rounded-lg px-3 py-2.5 text-sm cursor-pointer focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+            {(Object.keys(MOTIVOS_RECUSA_LABEL) as MotivoRecusa[]).map((m) => (
+              <option key={m} value={m}>{MOTIVOS_RECUSA_LABEL[m]}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Detalhes {motivo === 'outro' ? '*' : '(opcional)'}
+          </label>
+          <textarea value={detalhe} onChange={(e) => setDetalhe(e.target.value)} rows={3}
+            placeholder="Contexto adicional pra histórico interno..."
+            className="w-full bg-surface border border-line text-ink placeholder:text-subtle rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+            Recusada por
+          </label>
+          <input value={recusadaPor} onChange={(e) => setRecusadaPor(e.target.value)}
+            className="w-full bg-surface border border-line text-ink rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+        <div className="rounded-xl bg-warning-soft p-3 text-xs text-warning">
+          <AlertCircle className="inline h-3.5 w-3.5 mr-1" strokeWidth={2} />
+          A recusa ficará registrada com seu nome e poderá ser consultada no Arquivo.
+        </div>
       </div>
     </Modal>
   );
