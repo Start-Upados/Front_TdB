@@ -63,6 +63,39 @@ function formatTelefone(value: string): string {
   return nums
 }
 
+function calcularIdade(dataNasc: string): number {
+  if (!dataNasc) return 0;
+  const nasc = new Date(dataNasc);
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+}
+
+interface EnderecoViaCEP {
+  cidade: string;
+  endereco: string;
+}
+
+async function buscarEnderecoCEP(cep: string): Promise<EnderecoViaCEP> {
+  try {
+    const cepLimpo = cep.replace(/\D/g, '');
+    if (cepLimpo.length !== 8) return { cidade: '', endereco: '' };
+    const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+    if (!res.ok) return { cidade: '', endereco: '' };
+    const data = await res.json();
+    if (data.erro) return { cidade: '', endereco: '' };
+    const endereco = [data.logradouro, data.bairro].filter(Boolean).join(', ');
+    return {
+      cidade: data.localidade ?? '',
+      endereco: endereco || '',
+    };
+  } catch {
+    return { cidade: '', endereco: '' };
+  }
+}
+
 
 // === ESTILOS COMPARTILHADOS ===
 const inputCls  = "w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 transition-all duration-200"
@@ -317,6 +350,9 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
     const agora   = new Date()
     const dataStr = agora.toLocaleDateString('pt-BR')
     const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    // Calcula idade e busca cidade/endereço via ViaCEP
+    const idade = calcularIdade(data.dataNascimento);
+    const { cidade, endereco } = await buscarEnderecoCEP(data.cep);
 
     try {
       await solicitacaoService.cadastrar({
@@ -348,9 +384,23 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
         'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
       ]])
       await appendSheet('Pacientes!A:Q', [[
-        data.nomeAdolescente, '', 'Dentista do Bem', 'Aguardando',
-        dataStr, '', '', '', '', '', '0', '0', data.necessidade,
-        data.observacoes ?? '', prot,
+        data.nomeAdolescente,           // A — Nome
+        idade > 0 ? String(idade) : '', // B — Idade
+        cidade,                         // C — Cidade
+        'Dentista do Bem',              // D — Programa
+        'Aguardando',                   // E — Status
+        dataStr,                        // F — Data Cadastro
+        '',                             // G — ?
+        '',                             // H — ?
+        '',                             // I — ?
+        '',                             // J — Próx. Hora (vazio)
+        '',                             // K — Clínica (vazio)
+        endereco,                       // L — Endereço
+        '0',                            // M — # Sessão Atual
+        '0',                            // N — Total Sessões
+        data.necessidade,               // O — Procedimento Atual
+        data.observacoes ?? '',         // P — Observações
+        prot,                           // Q — Protocolo
       ]])
     } catch (err) {
       console.error('Erro ao salvar no Sheets:', err)
