@@ -175,7 +175,7 @@ export default function ConfiguracoesPage() {
             return (
               <div
                 key={i.id}
-                className="rounded-2xl border border-line bg-surface p-4 md:p-5"
+                className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5"
               >
 
                 <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -215,7 +215,7 @@ export default function ConfiguracoesPage() {
 
       {/* ORGANIZAÇÃO */}
       {aba === 'organizacao' && (
-        <div className="rounded-2xl border border-line bg-surface p-4 md:max-w-[700px] md:p-5">
+        <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:max-w-[700px] md:p-5">
 
           <h2 className="mb-5 text-base font-semibold text-ink md:text-sm">
             Dados da organização
@@ -291,7 +291,7 @@ function AbaEquipe({
     useState(false);
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+    <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
       {/* HEADER */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -346,7 +346,7 @@ function AbaEquipe({
                 Papel
               </label>
 
-              <select className="w-full cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink">
+              <select className="w-full cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink">
 
                 <option>
                   Coordenador
@@ -367,7 +367,7 @@ function AbaEquipe({
                 Região
               </label>
 
-              <select className="w-full cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink">
+              <select className="w-full cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink">
 
                 <option>
                   Sudeste
@@ -509,7 +509,7 @@ function AbaPreferencias() {
     <div className="flex max-w-[700px] flex-col gap-5">
 
       {/* APARÊNCIA */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         <h2 className="mb-1 text-base font-semibold text-ink md:text-sm">
           Aparência
@@ -562,7 +562,7 @@ function AbaPreferencias() {
       </div>
 
       {/* NOTIFICAÇÕES */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         <h2 className="mb-5 text-base font-semibold text-ink md:text-sm">
           Notificações
@@ -616,7 +616,7 @@ function CampoForm({
         type="text"
         defaultValue={defaultValue}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+        className="w-full rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
       />
     </div>
   );

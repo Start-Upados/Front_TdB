@@ -43,7 +43,7 @@ module.exports = {
         '2xs': '0.6875rem',
       },
       boxShadow: {                                                                          // ← NOVO
-        card: '0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.03)',
+        card: '0 2px 4px -1px rgb(15 23 42 / 0.08), 0 8px 24px -4px rgb(15 23 42 / 0.06)',
       },
     },
   },

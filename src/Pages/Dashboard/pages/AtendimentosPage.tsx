@@ -277,7 +277,7 @@ export default function AtendimentosPage() {
           <select
             value={filtroPrograma}
             onChange={(e) => setFiltroPrograma(e.target.value)}
-            className="cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink"
+            className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
           >
             {PROGRAMAS_FILTRO.map((p) => (
               <option key={p} value={p}>{p === 'Todos' ? 'Todos programas' : p}</option>
@@ -287,7 +287,7 @@ export default function AtendimentosPage() {
           <select
             value={filtroRegiao}
             onChange={(e) => setFiltroRegiao(e.target.value)}
-            className="cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink"
+            className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
           >
             {REGIOES.map((r) => (
               <option key={r} value={r}>{r === 'Todas' ? 'Todas regiões' : r}</option>
@@ -297,7 +297,7 @@ export default function AtendimentosPage() {
           <select
             value={filtroDentista}
             onChange={(e) => setFiltroDentista(e.target.value)}
-            className="cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink"
+            className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
           >
             <option value="Todos">Todos dentistas</option>
             {dentistasFiltro.map((d) => (
@@ -316,7 +316,7 @@ export default function AtendimentosPage() {
       </div>
 
       {/* LISTA */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-base font-medium text-ink md:text-sm">
             {formatarDataLonga(dataSelecionada)} · {atendimentos.length} atendimento{atendimentos.length === 1 ? '' : 's'}

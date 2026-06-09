@@ -80,7 +80,7 @@ export default function VoluntariosPage() {
       </div>
 
       {/* APROVAÇÕES */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-ink md:text-sm">
@@ -143,7 +143,7 @@ export default function VoluntariosPage() {
       </div>
 
       {/* REGIÕES */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-ink md:text-sm">
@@ -207,7 +207,7 @@ export default function VoluntariosPage() {
       </div>
 
       {/* DIRETÓRIO */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         {/* TOP */}
         <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center">
@@ -227,7 +227,7 @@ export default function VoluntariosPage() {
               placeholder="Buscar dentista..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              className="w-full rounded-xl border border-line bg-surface shadow-cardpy-3 pl-10 pr-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
           </div>
 
@@ -236,7 +236,7 @@ export default function VoluntariosPage() {
             <select
               value={filtroEspecialidade}
               onChange={(e) => setFiltEsp(e.target.value)}
-              className="cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink"
+              className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
             >
               <option value="Todas">
                 Todas especialidades
@@ -252,7 +252,7 @@ export default function VoluntariosPage() {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltStatus(e.target.value)}
-              className="cursor-pointer rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink"
+              className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
             >
               <option value="Todos">Status</option>
               <option value="Ativa">Ativa</option>

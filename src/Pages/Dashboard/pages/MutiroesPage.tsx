@@ -113,7 +113,7 @@ export default function MutiroesPage() {
         </div>
 
         {proximos.length === 0 ? (
-          <p className="rounded-2xl border border-line bg-surface py-10 text-center text-sm text-muted">
+          <p className="rounded-2xl border border-line bg-surface shadow-cardpy-10 text-center text-sm text-muted">
             Nenhum mutirão agendado.
           </p>
         ) : (
@@ -129,7 +129,7 @@ export default function MutiroesPage() {
       </div>
 
       {/* RECENTES */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
         <div className="mb-5 flex items-center justify-between gap-3">
           <p className="text-base font-medium text-ink md:text-sm">Mutirões recentes</p>
           <button className="inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-ink">

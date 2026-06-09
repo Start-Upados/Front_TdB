@@ -570,7 +570,7 @@ export default function FinanceiroPage() {
       </div>
 
       {/* CHART */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-base font-semibold text-ink md:text-sm">
             Receita vs custos · últimos 6 meses
@@ -600,7 +600,7 @@ export default function FinanceiroPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 
         {/* DOAÇÕES */}
-        <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+        <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
           <div className="mb-5 flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-ink md:text-sm inline-flex items-center gap-2">
               <HandHeart className="h-4 w-4 text-success" strokeWidth={2} />
@@ -627,7 +627,7 @@ export default function FinanceiroPage() {
         </div>
 
         {/* DESPESAS */}
-        <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+        <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
           <div className="mb-5 flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-ink md:text-sm inline-flex items-center gap-2">
               <Wallet className="h-4 w-4 text-warning" strokeWidth={2} />
@@ -648,7 +648,7 @@ export default function FinanceiroPage() {
       </div>
 
       {/* PARCEIROS (full width) */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-ink md:text-sm">Parceiros e mantenedores</h2>
           <button className="inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-ink">

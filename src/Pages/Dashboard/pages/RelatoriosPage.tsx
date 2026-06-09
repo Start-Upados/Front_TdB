@@ -180,7 +180,7 @@ export default function RelatoriosPage() {
       </div>
 
       {/* HERO */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         {/* HEADER */}
         <div className="mb-6 flex items-start gap-3">
@@ -261,7 +261,7 @@ export default function RelatoriosPage() {
                       className={`rounded-2xl p-4 text-left transition-all ${
                         isSelected
                           ? 'border-2 border-info bg-info-soft'
-                          : 'border border-line bg-surface hover:bg-surface-soft'
+                          : 'border border-line bg-surface shadow-cardhover:bg-surface-soft'
                       }`}
                     >
 
@@ -362,7 +362,7 @@ export default function RelatoriosPage() {
       </div>
 
       {/* ODS */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
@@ -380,7 +380,7 @@ export default function RelatoriosPage() {
           {ods.map((o) => (
             <div
               key={o.numero}
-              className="rounded-2xl border border-line bg-surface p-4"
+              className="rounded-2xl border border-line bg-surface shadow-cardp-4"
             >
 
               <div className="mb-3 flex items-center gap-3">
@@ -412,7 +412,7 @@ export default function RelatoriosPage() {
       </div>
 
       {/* HISTÓRICO */}
-      <div className="rounded-2xl border border-line bg-surface p-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
 
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
