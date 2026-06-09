@@ -239,6 +239,13 @@ export function obterHistoricoDoador(nome: string): HistoricoDoador {
   };
 }
 
+export function listarDoacoesPorDoador(nome: string): Doacao[] {
+  const alvo = nome.trim().toLowerCase();
+  return [...doacoes]
+    .filter((d) => d.doador.trim().toLowerCase() === alvo)
+    .sort((a, b) => b.data.localeCompare(a.data));    // mais recentes primeiro
+}
+
 export async function iniciarNegociacaoParceiro(id: string): Promise<void> {
   await new Promise((r) => setTimeout(r, 150));
   parceirosMutavel = parceirosMutavel.map((p) =>

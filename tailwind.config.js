@@ -33,12 +33,17 @@ module.exports = {
         'danger-soft':  'rgb(var(--danger-soft) / <alpha-value>)',
         info:           'rgb(var(--info) / <alpha-value>)',
         'info-soft':    'rgb(var(--info-soft) / <alpha-value>)',
+
+
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       fontSize: {
         '2xs': '0.6875rem',
+      },
+      boxShadow: {                                                                          // ← NOVO
+        card: '0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.03)',
       },
     },
   },

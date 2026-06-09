@@ -7,6 +7,7 @@ import {
   Mail, Copy, Check,
   FileText, Download,
   Handshake, Clock,
+  Eye,
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line,
@@ -27,7 +28,8 @@ import {
   marcarComoAgradecida,
   marcarReciboGerado,
   obterHistoricoDoador,               
-  iniciarNegociacaoParceiro,          
+  iniciarNegociacaoParceiro,
+  listarDoacoesPorDoador,          
   type HistoricoDoador,               
 } from '../services/financeiro';
 
@@ -421,10 +423,11 @@ function DespesaRow({ d }: { d: Despesa }) {
 }
 
 function ParceiroRow({
-  p, onRenovar,
+  p, onRenovar, onVer,
 }: {
   p: Parceiro;
   onRenovar: (p: Parceiro) => void;
+  onVer: (p: Parceiro) => void;
 }) {
   const urg = p.proximaRenovacao?.urgencia;
   const isAlerta = urg === 'iminente';
@@ -435,6 +438,7 @@ function ParceiroRow({
     if (isEmNegociacao) {
       return (
         <button
+          onClick={() => onVer(p)}
           disabled
           title={p.negociacaoIniciadaEm ? `Iniciada em ${new Date(p.negociacaoIniciadaEm + 'T12:00:00').toLocaleDateString('pt-BR')}` : undefined}
           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-info/30 bg-info-soft px-4 py-2 text-sm text-info font-medium sm:w-auto cursor-default"
@@ -442,6 +446,7 @@ function ParceiroRow({
           <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
           Em negociação
         </button>
+        
       );
     }
 
@@ -458,9 +463,13 @@ function ParceiroRow({
       );
     }
 
-    // Futura → Ver (placeholder, próxima rodada)
+    // Futura → Ver (funcional agora)
     return (
-      <button className="w-full rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft sm:w-auto">
+      <button
+        onClick={() => onVer(p)}
+        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft sm:w-auto"
+      >
+        <Eye className="h-3.5 w-3.5" strokeWidth={2} />
         Ver
       </button>
     );
@@ -516,6 +525,7 @@ export default function FinanceiroPage() {
   const despesas  = useMemo(() => listarDespesasRecentes(),  [versao]);
   const parceiros = useMemo(() => listarParceiros(),         [versao]);
   const [parceiroRenovar, setParceiroRenovar] = useState<Parceiro | null>(null);
+  const [parceiroVer, setParceiroVer] = useState<Parceiro | null>(null);
 
   function refresh() { setVersao((v) => v + 1); }
 
@@ -648,7 +658,7 @@ export default function FinanceiroPage() {
         </div>
         <div>
           {parceiros.map((p) => (
-            <ParceiroRow key={p.id} p={p} onRenovar={setParceiroRenovar} />
+            <ParceiroRow key={p.id} p={p} onRenovar={setParceiroRenovar} onVer={setParceiroVer} />
           ))}
         </div>
       </div>
@@ -679,6 +689,11 @@ export default function FinanceiroPage() {
         parceiro={parceiroRenovar}
         onClose={() => setParceiroRenovar(null)}
         onFinalizado={() => { refresh(); setParceiroRenovar(null); }}
+      />
+      <VerParceiroModal
+        open={parceiroVer !== null}
+        parceiro={parceiroVer}
+        onClose={() => setParceiroVer(null)}
       />
     </div>
   );
@@ -1258,6 +1273,161 @@ Turma do Bem`
         <div className="rounded-xl bg-info-soft p-3 text-xs text-info">
           <strong>Como funciona:</strong> qualquer um dos 3 botões (Copiar, E-mail ou PDF) marca a parceria como
           <em> em negociação</em>. A "Carta" é texto editável; o "PDF de proposta" é um documento formal com resumo e próximos passos.
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MODAL — VER PARCEIRO (read-only)
+// ─────────────────────────────────────────────
+
+function VerParceiroModal({
+  open, parceiro, onClose,
+}: {
+  open: boolean;
+  parceiro: Parceiro | null;
+  onClose: () => void;
+}) {
+  const historico = useMemo(
+    () => (parceiro ? obterHistoricoDoador(parceiro.nome) : null),
+    [parceiro, open],
+  );
+  const doacoesDoador = useMemo(
+    () => (parceiro ? listarDoacoesPorDoador(parceiro.nome) : []),
+    [parceiro, open],
+  );
+
+  if (!parceiro || !historico) return null;
+
+  const urg = parceiro.proximaRenovacao?.urgencia;
+  const statusBadge =
+    urg === 'iminente'      ? { label: 'Renovação iminente', cls: 'bg-warning-soft text-warning' } :
+    urg === 'em-negociacao' ? { label: 'Em negociação',      cls: 'bg-info-soft text-info' } :
+                              { label: 'Ativa',              cls: 'bg-success-soft text-success' };
+
+  const valorAnualFmt = parceiro.valorAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const totalFmt = historico.totalContribuido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  return (
+    <Modal
+      open={open} onClose={onClose}
+      title={parceiro.nome}
+      description={`${parceiro.tipoLabel} · ${valorAnualFmt}/ano`}
+      size="lg"
+      footer={
+        <button onClick={onClose}
+          className="px-4 py-2.5 text-sm rounded-xl border border-line text-ink hover:bg-surface-soft transition-colors">
+          Fechar
+        </button>
+      }
+    >
+      <div className="space-y-5">
+        {/* HEADER COM STATUS */}
+        <div className="flex items-center gap-3">
+          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${
+            parceiro.isConsolidado ? 'bg-info-soft text-info' : 'bg-brand-soft text-brand'
+          }`}>
+            {parceiro.isConsolidado ? <Users className="h-6 w-6" strokeWidth={2} /> : parceiro.iniciais}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-semibold text-ink">{parceiro.nome}</p>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-2xs font-medium mt-1 ${statusBadge.cls}`}>
+              {statusBadge.label}
+            </span>
+          </div>
+        </div>
+
+        {/* DADOS DA PARCERIA */}
+        <div className="rounded-xl border border-line p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-3">Dados da parceria</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-muted">Tipo</p>
+              <p className="text-ink mt-0.5">{parceiro.tipoLabel}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Valor anual contratado</p>
+              <p className="text-ink mt-0.5">{valorAnualFmt}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Duração da parceria</p>
+              <p className="text-ink mt-0.5">{historico.duracaoLabel}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Próxima renovação</p>
+              <p className={`mt-0.5 ${urg === 'iminente' ? 'text-warning font-medium' : 'text-ink'}`}>
+                {parceiro.proximaRenovacao?.label ?? '—'}
+              </p>
+            </div>
+            {parceiro.negociacaoIniciadaEm && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted">Negociação iniciada</p>
+                <p className="text-info mt-0.5">
+                  {new Date(parceiro.negociacaoIniciadaEm + 'T12:00:00').toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* STATS */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-line p-3">
+            <p className="text-xs text-muted">Total contribuído</p>
+            <p className="mt-1 text-base font-semibold text-success">{totalFmt}</p>
+          </div>
+          <div className="rounded-xl border border-line p-3">
+            <p className="text-xs text-muted">Doações</p>
+            <p className="mt-1 text-base font-semibold text-ink">{historico.qtdDoacoes}</p>
+          </div>
+          <div className="rounded-xl border border-line p-3">
+            <p className="text-xs text-muted">Primeira</p>
+            <p className="mt-1 text-sm font-medium text-ink">
+              {historico.primeiraDoacao ? new Date(historico.primeiraDoacao + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+            </p>
+          </div>
+          <div className="rounded-xl border border-line p-3">
+            <p className="text-xs text-muted">Última</p>
+            <p className="mt-1 text-sm font-medium text-ink">
+              {historico.ultimaDoacao ? new Date(historico.ultimaDoacao + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* HISTÓRICO DE CONTRIBUIÇÕES */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+            Histórico de contribuições ({doacoesDoador.length})
+          </p>
+          {doacoesDoador.length === 0 ? (
+            <p className="text-sm text-muted py-6 text-center border border-dashed border-line rounded-xl">
+              Nenhuma doação registrada para este parceiro ainda.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {doacoesDoador.map((d) => (
+                <div key={d.id} className="flex items-center gap-3 p-3 rounded-xl border border-line">
+                  <div className="min-w-[72px] text-xs text-muted">
+                    {new Date(d.data + 'T12:00:00').toLocaleDateString('pt-BR')}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-ink truncate">{d.descricao}</p>
+                    {d.isRecorrente && (
+                      <span className="inline-flex items-center gap-1 text-2xs text-info mt-0.5">
+                        <Repeat className="h-3 w-3" strokeWidth={2} />
+                        recorrente
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-success">
+                    {d.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Modal>

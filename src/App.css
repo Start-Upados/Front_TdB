@@ -6,7 +6,7 @@
 @layer base {
   :root {
     /* Surfaces */
-    --canvas:        250 251 253;
+    --canvas:        243 245 248;
     --surface:       255 255 255;
     --surface-soft:  246 247 249;
     --elevated:      255 255 255;
