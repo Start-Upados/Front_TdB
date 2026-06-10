@@ -396,8 +396,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
         '',                             // J — Próx. Hora (vazio)
         '',                             // K — Clínica (vazio)
         endereco,                       // L — Endereço
-        '0',                            // M — # Sessão Atual
-        '0',                            // N — Total Sessões
+        '',                            // M — # Sessão Atual
+        '',                            // N — Total Sessões
         data.necessidade,               // O — Procedimento Atual
         data.observacoes ?? '',         // P — Observações
         prot,                           // Q — Protocolo
@@ -590,57 +590,72 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
   }
 
   async function enviar() {
-    const valid = await trigger(['foiVitima', 'comoSoube', 'aceitaTermos'])
-    if (!valid) return
-    const data = getValues()
-    setEnviando(true)
-    const prot    = gerarProtocolo('mulher')
-    const senha   = gerarSenha(data.nome)
-    const agora   = new Date()
-    const dataStr = agora.toLocaleDateString('pt-BR')
-    const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const valid = await trigger(['foiVitima', 'comoSoube', 'aceitaTermos'])
+  if (!valid) return
+  const data = getValues()
+  setEnviando(true)
+  const prot    = gerarProtocolo('mulher')
+  const senha   = gerarSenha(data.nome)
+  const agora   = new Date()
+  const dataStr = agora.toLocaleDateString('pt-BR')
+  const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-    try {
-      await solicitacaoService.cadastrar({
-        nome:        data.nome,
-        rgCpf:       data.rgCpf.replace(/\D/g, ''),
-        protocolo:   prot,
-        email:       data.email,
-        senha:       senha,
-        telefone:    (whatsapp || telefone).replace(/\D/g, ''),
-        cep:         data.cep.replace(/\D/g, ''),
-        necessidade: data.foiVitima === 'Sim'
-          ? 'Vitima de violencia com denticao afetada'
-          : 'Triagem odontologica',
-        sexo:        'feminino',
-        descricao:   data.observacoes ?? '',
-        dataNasc:    data.dataNascimento,
-        renda:       'Nao se aplica',
-        responsavel: data.nome,
-        comoSoube:   data.comoSoube,
-        parentesco:  'Nao se aplica',
-      })
-    } catch (err) {
-      console.warn('Backend indisponivel, salvando no Sheets:', err)
-    }
+  try {
+  await solicitacaoService.cadastrar({
+    nome:        data.nome,
+    rgCpf:       data.rgCpf.replace(/\D/g, ''),
+    protocolo:   prot,
+    email:       data.email,
+    senha:       senha,
+    telefone:    (whatsapp || telefone).replace(/\D/g, ''),
+    cep:         data.cep.replace(/\D/g, ''),
+    necessidade: data.foiVitima === 'Sim'
+      ? 'Vitima de violencia com denticao afetada'
+      : 'Triagem odontologica',
+    sexo:        'feminino',
+    descricao:   data.observacoes ?? '',
+    dataNasc:    data.dataNascimento,
+    renda:       'Nao se aplica',
+    responsavel: data.nome,
+    comoSoube:   data.comoSoube,
+    parentesco:  'Nao se aplica',
+  })
+} catch (err) {
+  console.warn('Backend indisponivel, salvando no Sheets:', err)
+}
 
-    try {
-      await appendSheet('Mensagens!A:N', [[
-        prot, data.nome, data.email, whatsapp, telefone,
-        'Solicitacao de Atendimento — Apolonas do Bem',
-        `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep} | Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
-        'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
-      ]])
-    } catch (err) {
-      console.error('Erro ao salvar no Sheets:', err)
-      alert('Erro ao enviar. Tente novamente.')
-      setEnviando(false)
-      return
-    }
+  const idade = calcularIdade(data.dataNascimento)
+  const { cidade, endereco } = await buscarEnderecoCEP(data.cep)
+  const procedimentoAtual = data.foiVitima === 'Sim'
+    ? 'Vitima de violencia com denticao afetada'
+    : 'Triagem odontologica'
 
-    onSucesso(prot, senha)
+  try {
+    
+    await appendSheet('Pacientes!A:Q', [[
+      data.nome, String(idade ?? ''), cidade,
+      'Apolônias do Bem', 'Pendente Triagem', dataStr,
+      '', '', '', '', '', endereco,
+      '', '', procedimentoAtual, data.observacoes ?? '', prot,
+    ]])
+
+  
+    await appendSheet('Mensagens!A:N', [[
+      prot, data.nome, data.email, whatsapp, telefone,
+      'Solicitacao de Atendimento — Apolonas do Bem',
+      `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep} | Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
+      'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
+    ]])
+  } catch (err) {
+    console.error('Erro ao salvar no Sheets:', err)
+    alert('Erro ao enviar. Tente novamente.')
     setEnviando(false)
+    return
   }
+
+  onSucesso(prot, senha)
+  setEnviando(false)
+}
 
   return (
     <div className="w-full max-w-lg">

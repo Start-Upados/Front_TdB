@@ -181,11 +181,15 @@ function fechar(id: string, motivo: MotivoFechamento, destinatario?: string): vo
 }
 
 /**
- * Puxa todas as solicitações do backend Java e SUBSTITUI o array em memória.
- * Se o backend falhar ou retornar vazio, mantém o que já está (mock como fallback).
+ * Puxa solicitações do backend Java e MESCLA com o estado local.
  *
- * Importante: como o backend ainda não tem endpoint de mensagens, os threads de chat
- * (respostas do admin/paciente) continuam vivendo só em memória do navegador.
+ * Estratégia: preserva mudanças locais (aprovações, recusas, mensagens, triagens),
+ * adicionando apenas solicitações novas vindas do backend. Isso evita perder
+ * o estado de aprovação/recusa no F5, já que o backend ainda não conhece
+ * essas transições (que vivem só no localStorage do navegador).
+ *
+ * Quando o backend ganhar endpoints de status, podemos voltar a sobrescrever
+ * sem perda de dados.
  */
 export async function carregarSolicitacoesReais(): Promise<{
   count: number;
@@ -194,7 +198,15 @@ export async function carregarSolicitacoesReais(): Promise<{
   try {
     const lista = await solicitacaoService.listar();
     if (Array.isArray(lista) && lista.length > 0) {
-      solicitacoes = lista.map(mapearSolicitacaoBackend);
+      const doBackend = lista.map(mapearSolicitacaoBackend);
+
+      // MERGE: pra cada solicitação que vem do backend:
+      //   - Se já existe localmente → mantém o LOCAL (com todas as mudanças)
+      //   - Se NÃO existe localmente → adiciona como nova
+      const idsLocais = new Set(solicitacoes.map((s) => s.id));
+      const novasDoBackend = doBackend.filter((s) => !idsLocais.has(s.id));
+
+      solicitacoes = [...solicitacoes, ...novasDoBackend];
       persistir();
       return { count: solicitacoes.length, fonte: 'backend' };
     }
@@ -207,7 +219,7 @@ export async function carregarSolicitacoesReais(): Promise<{
 
 // ─── Backend Java (real) ─────────────────────────
 // Conecta com solicitacaoService.listar() do backend Java + Oracle.
-// Substitui o array `solicitacoes` em memória pelos dados reais.
+// Faz MERGE com estado local (preserva aprovações/recusas/mensagens locais).
 
 
 

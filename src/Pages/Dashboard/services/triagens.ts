@@ -26,8 +26,28 @@ export interface SugestaoDentista {
   match: MatchResult;
 }
 
+// ─── Persistência localStorage ────────────────────
+const LS_TRIAGENS = 'tdb_triagens';
+
+function persistir(): void {
+  try {
+    localStorage.setItem(LS_TRIAGENS, JSON.stringify(pacientes));
+  } catch (err) {
+    console.warn('[triagens] erro ao persistir:', err);
+  }
+}
+
+function hidratar(): Paciente[] | null {
+  try {
+    const raw = localStorage.getItem(LS_TRIAGENS);
+    return raw ? (JSON.parse(raw) as Paciente[]) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Estado mutável em memória — simula o estado do backend.
-let pacientes: Paciente[] = [...PACIENTES_FILA_MOCK];
+let pacientes: Paciente[] = hidratar() ?? [...PACIENTES_FILA_MOCK];
 
 // Coordenadas aproximadas das capitais por UF — usadas no matching de pacientes novos.
 const COORDS_POR_ESTADO: Record<string, { lat: number; lng: number }> = {
@@ -92,6 +112,7 @@ export async function convidarDentista(pacienteId: string, dentistaId: string): 
       ? { ...p, statusVinculacao: 'convite-enviado', dentistaConvidadoId: dentistaId }
       : p,
   );
+  persistir();
 }
 
 /** Cancela o convite ativo de um paciente. Volta pra status 'aguardando'. */
@@ -102,6 +123,7 @@ export async function cancelarConvite(pacienteId: string): Promise<void> {
       ? { ...p, statusVinculacao: 'aguardando', dentistaConvidadoId: undefined }
       : p,
   );
+  persistir();
 }
 
 export interface NovaTriagemInput {
@@ -149,5 +171,6 @@ export async function criarTriagem(data: NovaTriagemInput): Promise<Paciente> {
   };
 
   pacientes = [novo, ...pacientes];
+  persistir();
   return novo;
 }
