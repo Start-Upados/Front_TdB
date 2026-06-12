@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   Search, Plus, MessageSquare, School, Clock,
   MapPin, CalendarDays, Star, ChevronDown, ChevronUp,
-  ArrowRight, CheckCircle2,
+  ArrowRight, CheckCircle2, X,
 } from 'lucide-react';
 import { KpiCard } from '../components/KpiCard';
 import { Avatar } from '../components/Avatar';
@@ -66,6 +66,7 @@ export default function TriagensPage() {
   const [filtroPrograma, setPrograma] = useState('Todos');
   const [filtroTempo, setFiltroTempo] = useState('Todos');
   const [expandido, setExpandido] = useState(false);
+  const [dentistaSelecionado, setDentistaSelecionado] = useState<string | null>(null);
 
   // Modais
   const [conviteAlvo, setConviteAlvo] = useState<{ dentista: SugestaoDentista['dentista']; match: SugestaoDentista['match'] } | null>(null);
@@ -278,8 +279,14 @@ export default function TriagensPage() {
                       <SeverityPill severidade={p.severidade} />
                     </div>
                     <p className="text-xs text-muted truncate mt-0.5">{p.programa} · {p.cidade}-{p.estado}</p>
-                    <div className="mt-1.5">
+                    <div className="mt-1.5 flex flex-col gap-1">
                       <OrigemBadge origem={p.origem} statusVinculacao={p.statusVinculacao} />
+                      {p.historicoConvites && p.historicoConvites.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-2xs text-danger">
+                          <X className="w-3 h-3" strokeWidth={2} />
+                          <span>{p.historicoConvites.length} {p.historicoConvites.length === 1 ? 'recusa' : 'recusas'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -334,14 +341,34 @@ export default function TriagensPage() {
             </div>
           )}
 
+          {/* Histórico de convites recusados */}
+          {selected.historicoConvites && selected.historicoConvites.length > 0 && (
+            <div className="bg-danger-soft/40 border border-danger/20 rounded-xl p-3 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <X className="w-4 h-4 text-danger" strokeWidth={2} />
+                <p className="text-xs font-semibold uppercase tracking-wide text-danger">
+                  Histórico de recusas ({selected.historicoConvites.length})
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {selected.historicoConvites.map((h, idx) => (
+                  <div key={idx} className="text-2xs text-ink">
+                    <span className="font-medium">{h.dentistaNome}</span>
+                    <span className="text-muted"> · {new Date(h.dataResposta).toLocaleDateString('pt-BR')}</span>
+                    {h.motivoRecusa && <span className="text-muted"> · {h.motivoRecusa}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Sugeridos */}
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-ink">Dentistas sugeridos</p>
             <span className="text-2xs text-subtle">Ordenado por compatibilidade</span>
           </div>
 
-          {dentistasSugeridos.map(({ dentista, match }, idx) => {
-            const [dentistaSelecionado, setDentistaSelecionado] = useState<string | null>(null);
+          {dentistasSugeridos.map(({ dentista, match }, idx) => {            
             const isTop = idx === 0;
             const ehConvidado = dentista.id === dentistaConvidadoId;
             const desabilitado = conviteAtivo && !ehConvidado;

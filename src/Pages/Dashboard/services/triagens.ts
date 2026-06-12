@@ -1,3 +1,6 @@
+import { criarAtendimentoDeTriagem } from './atendimentos';
+import type { Atendimento } from '../data/atendimentos';
+
 import {
   KPIS_TRIAGENS_MOCK,
   PACIENTES_FILA_MOCK,
@@ -7,6 +10,7 @@ import {
   type Dentista,
   type Programa,
   type Severidade,
+  type RespostaConvite,
 } from '../data/triagens';
 
 import { calcularMatch, type MatchResult } from '../Utils/Geo';
@@ -173,4 +177,118 @@ export async function criarTriagem(data: NovaTriagemInput): Promise<Paciente> {
   pacientes = [novo, ...pacientes];
   persistir();
   return novo;
+}
+
+// ─── Aceitar/Recusar convite (vindo da página do dentista) ────────────
+
+export interface AceitarConviteInput {
+  pacienteId: string;
+  dataAtendimento: string;       // YYYY-MM-DD
+  horaAtendimento: string;       // HH:MM
+  duracaoMinutos?: number;       // default: 60
+  observacoes?: string;
+  local?: string;                // default: "{cidade do dentista}-{UF}"
+  especialidade?: string;        // default: especialidade do dentista
+}
+
+/** Dentista aceita o convite → cria primeiro atendimento + remove paciente da fila. */
+export async function aceitarConvite(input: AceitarConviteInput): Promise<Atendimento> {
+  // PROD: POST /api/triagens/{pacienteId}/convites/aceitar { dataAtendimento, ... }
+  const paciente = pacientes.find((p) => p.id === input.pacienteId);
+  if (!paciente) throw new Error('Paciente não encontrado');
+  if (paciente.statusVinculacao !== 'convite-enviado' || !paciente.dentistaConvidadoId) {
+    throw new Error('Paciente não tem convite ativo');
+  }
+
+  const dentistaId = paciente.dentistaConvidadoId;
+  const dentistaTriagem = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
+  const dentistaNome = dentistaTriagem?.nome ?? 'Dentista';
+  const dentistaCidade = dentistaTriagem?.cidade ?? paciente.cidade;
+  const dentistaEstado = dentistaTriagem?.estado ?? paciente.estado;
+
+  // Cria o primeiro atendimento (chama service de atendimentos)
+  const atendimento = await criarAtendimentoDeTriagem({
+    pacienteId: paciente.id,
+    pacienteNome: paciente.nome,
+    pacienteIdade: paciente.idade,
+    pacienteIniciais: paciente.iniciais,
+    dentistaId,
+    dentistaNome,
+    data: input.dataAtendimento,
+    hora: input.horaAtendimento,
+    duracaoMinutos: input.duracaoMinutos ?? 60,
+    programa: paciente.programa,
+    especialidade: input.especialidade ?? dentistaTriagem?.especialidade ?? paciente.especialidadeNecessaria,
+    local: input.local ?? `${dentistaCidade}-${dentistaEstado}`,
+    observacoes: input.observacoes,
+  });
+
+  // Remove paciente da fila de triagens (já está em Atendimentos)
+  pacientes = pacientes.filter((p) => p.id !== input.pacienteId);
+  persistir();
+
+  return atendimento;
+}
+
+/** Dentista recusa o convite → registra no histórico + volta paciente pra 'aguardando'. */
+export async function recusarConvite(input: {
+  pacienteId: string;
+  motivo: string;
+}): Promise<void> {
+  // PROD: POST /api/triagens/{pacienteId}/convites/recusar { motivo }
+  const paciente = pacientes.find((p) => p.id === input.pacienteId);
+  if (!paciente) throw new Error('Paciente não encontrado');
+  if (paciente.statusVinculacao !== 'convite-enviado' || !paciente.dentistaConvidadoId) {
+    throw new Error('Paciente não tem convite ativo');
+  }
+
+  const dentistaId = paciente.dentistaConvidadoId;
+  const dentistaTriagem = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
+  const dentistaNome = dentistaTriagem?.nome ?? 'Dentista';
+
+  const novoRegistro: RespostaConvite = {
+    dentistaId,
+    dentistaNome,
+    resposta: 'recusado',
+    dataResposta: new Date().toISOString(),
+    motivoRecusa: input.motivo,
+  };
+
+  pacientes = pacientes.map((p) =>
+    p.id === input.pacienteId
+      ? {
+          ...p,
+          statusVinculacao: 'aguardando',
+          dentistaConvidadoId: undefined,
+          historicoConvites: [...(p.historicoConvites ?? []), novoRegistro],
+        }
+      : p,
+  );
+  persistir();
+}
+
+/** Lista convites pendentes que um dentista específico precisa responder. */
+export function listarConvitesParaDentista(dentistaId: string): Paciente[] {
+  // PROD: GET /api/dentistas/{dentistaId}/convites
+  return pacientes.filter(
+    (p) => p.statusVinculacao === 'convite-enviado' && p.dentistaConvidadoId === dentistaId,
+  );
+}
+
+/**
+ * Variante que aceita o NOME do dentista (usado pela página /meu-painel,
+ * onde o dentista logado é identificado por rgCpf/nome, não pelo id interno).
+ *
+ * Faz matching tolerante: normaliza "Dr./Dra." e busca interseção de nomes.
+ * Em produção, esse mapeamento sai porque backend e frontend compartilharão IDs.
+ */
+export function listarConvitesParaDentistaPorNome(nomeDentista: string): Paciente[] {
+  const nomeNorm = nomeDentista.toLowerCase().replace(/^dra?\.?\s+/, '').trim();
+  if (!nomeNorm) return [];
+  const dent = DENTISTAS_MOCK.find((d) => {
+    const dNorm = d.nome.toLowerCase().replace(/^dra?\.?\s+/, '').trim();
+    return dNorm.includes(nomeNorm) || nomeNorm.includes(dNorm);
+  });
+  if (!dent) return [];
+  return listarConvitesParaDentista(dent.id);
 }

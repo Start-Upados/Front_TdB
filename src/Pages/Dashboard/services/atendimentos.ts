@@ -23,8 +23,39 @@ import {
   A página NÃO precisa ser refatorada quando isso acontecer.
 */
 
-let atendimentos: Atendimento[] = [...ATENDIMENTOS_MOCK];
-const contagens: Record<string, number> = { ...CONTAGENS_SEMANA_MOCK };
+// ─── Persistência localStorage ────────────────────
+const LS_ATENDIMENTOS = 'tdb_atendimentos';
+const LS_CONTAGENS    = 'tdb_atendimentos_contagens';
+
+function persistir(): void {
+  try {
+    localStorage.setItem(LS_ATENDIMENTOS, JSON.stringify(atendimentos));
+    localStorage.setItem(LS_CONTAGENS,    JSON.stringify(contagens));
+  } catch (err) {
+    console.warn('[atendimentos] erro ao persistir:', err);
+  }
+}
+
+function hidratarAtendimentos(): Atendimento[] | null {
+  try {
+    const raw = localStorage.getItem(LS_ATENDIMENTOS);
+    return raw ? (JSON.parse(raw) as Atendimento[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function hidratarContagens(): Record<string, number> | null {
+  try {
+    const raw = localStorage.getItem(LS_CONTAGENS);
+    return raw ? (JSON.parse(raw) as Record<string, number>) : null;
+  } catch {
+    return null;
+  }
+}
+
+let atendimentos: Atendimento[]              = hidratarAtendimentos() ?? [...ATENDIMENTOS_MOCK];
+const contagens: Record<string, number>      = hidratarContagens()    ?? { ...CONTAGENS_SEMANA_MOCK };
 
 function recalcularContagem(data: string) {
   contagens[data] = atendimentos.filter((a) => a.data === data).length;
@@ -92,12 +123,14 @@ export async function marcarConfirmado(id: string): Promise<void> {
   atendimentos = atendimentos.map((a) =>
     a.id === id ? { ...a, status: 'confirmado' as const } : a,
   );
+  persistir();
 }
 
 export async function iniciarAtendimento(id: string): Promise<void> {
   atendimentos = atendimentos.map((a) =>
     a.id === id ? { ...a, status: 'em-andamento' as const } : a,
   );
+  persistir();
 }
 
 export async function finalizarAtendimento(
@@ -107,6 +140,7 @@ export async function finalizarAtendimento(
   atendimentos = atendimentos.map((a) =>
     a.id === id ? { ...a, status: 'realizado' as const, observacoesPos } : a,
   );
+  persistir();
 }
 
 // ─── Reagendamento ────────────────────────────────
@@ -130,6 +164,7 @@ export async function reagendarAtendimento(input: ReagendarInput): Promise<Atend
       ? { ...a, motivoNoShow: input.motivoNoShow ?? a.motivoNoShow, reagendado: true }
       : a,
   );
+  
 
   const novo: Atendimento = {
     ...original,
@@ -145,6 +180,7 @@ export async function reagendarAtendimento(input: ReagendarInput): Promise<Atend
 
   atendimentos = [...atendimentos, novo];
   recalcularContagem(input.novaData);
+  persistir();
   return novo;
 }
 
@@ -184,6 +220,7 @@ export async function criarAtendimento(input: NovoAtendimentoInput): Promise<Ate
 
   atendimentos = [...atendimentos, novo];
   recalcularContagem(input.data);
+  persistir();
   return novo;
 }
 
@@ -197,4 +234,53 @@ export function listarProximosPorDentista(dentistaId: string, limite = 10): Aten
       return a.hora.localeCompare(b.hora);
     })
     .slice(0, limite);
+}
+
+// ─── Criar atendimento a partir de uma triagem aceita ────────────
+// Diferente de criarAtendimento(): aceita dados completos do paciente/dentista
+// (não busca em PACIENTES_LISTA/DENTISTAS_LISTA), porque o paciente vem da fila
+// de Triagens e tem ID dinâmico (ex: 't1733...').
+
+export interface NovoAtendimentoDeTriagemInput {
+  pacienteId: string;
+  pacienteNome: string;
+  pacienteIdade: number;
+  pacienteIniciais: string;
+  dentistaId: string;
+  dentistaNome: string;
+  data: string;
+  hora: string;
+  duracaoMinutos: number;
+  programa: ProgramaAtendimento;
+  especialidade: string;
+  local: string;
+  observacoes?: string;
+}
+
+export async function criarAtendimentoDeTriagem(
+  input: NovoAtendimentoDeTriagemInput,
+): Promise<Atendimento> {
+  const novo: Atendimento = {
+    id: `a${Date.now()}`,
+    data: input.data,
+    hora: input.hora,
+    duracaoMinutos: input.duracaoMinutos,
+    paciente: {
+      id: input.pacienteId,
+      nome: input.pacienteNome,
+      idade: input.pacienteIdade,
+      iniciais: input.pacienteIniciais,
+    },
+    dentista: { id: input.dentistaId, nome: input.dentistaNome },
+    especialidade: input.especialidade,
+    local: input.local,
+    programa: input.programa,
+    status: 'aguardando',
+    observacoesPre: input.observacoes,
+  };
+
+  atendimentos = [...atendimentos, novo];
+  recalcularContagem(input.data);
+  persistir();
+  return novo;
 }

@@ -29,10 +29,21 @@ export interface Paciente {
     detalhe: string;
   };
   statusVinculacao: StatusVinculacao;
-  dentistaConvidadoId?: string;  // NOVO — rastreia qual dentista foi convidado
+  dentistaConvidadoId?: string;
+  historicoConvites?: RespostaConvite[];
 }
 
-export interface Dentista {
+export interface RespostaConvite {
+  dentistaId: string;
+  dentistaNome: string;
+  resposta: 'aceito' | 'recusado';
+  dataResposta: string;        // ISO timestamp
+  dataAtendimento?: string;    // YYYY-MM-DD (apenas se aceito)
+  horaAtendimento?: string;    // HH:MM (apenas se aceito)
+  motivoRecusa?: string;       // apenas se recusado
+}
+
+export interface Dentista { 
   id: string;
   nome: string;
   iniciais: string;

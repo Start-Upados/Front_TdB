@@ -4,13 +4,15 @@ import {
   Stethoscope, Star, Award, QrCode,
   Building, LogOut, MessageSquare,
   Inbox, Send, ArrowRight,
+  CalendarHeart, Calendar, Activity, Check,
+  ClipboardCheck, CheckCircle2, XCircle, AlertCircle,
 } from 'lucide-react'
+
 import { dentistaService, type DentistaBody } from '../../Services/api'
 // NOVO ↓ — ajusta o caminho se a pasta do Dashboard for diferente
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
 
-import { CalendarHeart, Calendar, Activity, Check } from 'lucide-react'   // ← junta com os outros
 import {
   listarProximosPorCidade,
   dentistaEstaConfirmado,
@@ -18,6 +20,13 @@ import {
   cancelarPresencaDentista,
 } from '../Dashboard/services/mutiroes'
 import type { Mutirao } from '../Dashboard/data/mutiroes'
+
+import {
+  listarConvitesParaDentistaPorNome,
+  aceitarConvite,
+  recusarConvite,
+} from '../Dashboard/services/triagens'
+import type { Paciente } from '../Dashboard/data/triagens'
 
 
 interface Dentista {
@@ -355,6 +364,393 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
   )
 }
 
+// ═══════════════════════════════════════════════
+// NOVO: SEÇÃO CONVITES PENDENTES + MODAIS
+// ═══════════════════════════════════════════════
+
+function SecaoConvitesPendentes({ dentistaNome }: { dentistaNome: string }) {
+  const [versao, setVersao] = useState(0)
+  const [acaoModal, setAcaoModal] = useState<'aceitar' | 'recusar' | null>(null)
+  const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null)
+  const [processando, setProcessando] = useState(false)
+
+  const convites = useMemo<Paciente[]>(
+    () => listarConvitesParaDentistaPorNome(dentistaNome),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dentistaNome, versao],
+  )
+
+  function abrirAceitar(p: Paciente) {
+    setPacienteSelecionado(p)
+    setAcaoModal('aceitar')
+  }
+  function abrirRecusar(p: Paciente) {
+    setPacienteSelecionado(p)
+    setAcaoModal('recusar')
+  }
+  function fecharModal() {
+    if (processando) return
+    setAcaoModal(null)
+    setPacienteSelecionado(null)
+  }
+
+  async function handleAceitar(dados: { data: string; hora: string; duracao: number; observacoes: string }) {
+    if (!pacienteSelecionado) return
+    setProcessando(true)
+    try {
+      await aceitarConvite({
+        pacienteId: pacienteSelecionado.id,
+        dataAtendimento: dados.data,
+        horaAtendimento: dados.hora,
+        duracaoMinutos: dados.duracao,
+        observacoes: dados.observacoes,
+      })
+      setVersao((v) => v + 1)
+      fecharModal()
+    } catch (err) {
+      console.error('Erro ao aceitar:', err)
+      alert('Não foi possível aceitar o convite. Tente novamente.')
+    } finally {
+      setProcessando(false)
+    }
+  }
+
+  async function handleRecusar(motivo: string) {
+    if (!pacienteSelecionado) return
+    setProcessando(true)
+    try {
+      await recusarConvite({ pacienteId: pacienteSelecionado.id, motivo })
+      setVersao((v) => v + 1)
+      fecharModal()
+    } catch (err) {
+      console.error('Erro ao recusar:', err)
+      alert('Não foi possível recusar o convite. Tente novamente.')
+    } finally {
+      setProcessando(false)
+    }
+  }
+
+  if (convites.length === 0) return null   // não mostra a seção se não tem convite
+
+  return (
+    <>
+      <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck size={18} className="text-[#E88407]" strokeWidth={2} />
+            <h2 className="font-bold text-[#0F172A] text-[16px]">Convites pendentes</h2>
+          </div>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E88407] text-white text-[11px] font-semibold">
+            {convites.length} {convites.length === 1 ? 'paciente' : 'pacientes'}
+          </span>
+        </div>
+
+        <p className="text-[#475569] text-[12px] mb-4">
+          Pacientes esperando sua resposta. Aceite para agendar atendimento ou recuse para liberar outro voluntário.
+        </p>
+
+        <div className="space-y-3">
+          {convites.map((p) => {
+            const corSeveridade =
+              p.severidade === 'Alta'  ? 'bg-red-100 text-red-700'
+              : p.severidade === 'Media' ? 'bg-orange-100 text-orange-700'
+              :                            'bg-blue-100 text-blue-700'
+            return (
+              <div key={p.id} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[#0F172A] text-[14px]">{p.nome}, {p.idade} anos</p>
+                    <p className="text-[#475569] text-[12px] mt-0.5">
+                      {p.cidade}-{p.estado} · {p.programa}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${corSeveridade}`}>
+                    {p.severidade === 'Media' ? 'Média' : p.severidade}
+                  </span>
+                </div>
+
+                <div className="text-[12px] text-[#475569] mb-3 space-y-1">
+                  <p>
+                    <span className="font-semibold">Necessidade:</span> {p.necessidade}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Especialidade:</span> {p.especialidadeNecessaria}
+                  </p>
+                  <p className="text-[11px] text-[#94A3B8]">
+                    Na fila há {p.diasNaFila} {p.diasNaFila === 1 ? 'dia' : 'dias'}
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => abrirAceitar(p)}
+                    className="flex-1 bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] inline-flex items-center justify-center gap-2 border-none cursor-pointer"
+                  >
+                    <CheckCircle2 size={14} strokeWidth={2.5} />
+                    Aceitar
+                  </button>
+                  <button
+                    onClick={() => abrirRecusar(p)}
+                    className="flex-1 bg-white border border-red-300 text-red-600 font-semibold py-2.5 rounded-lg hover:bg-red-50 transition-colors text-[13px] inline-flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <XCircle size={14} strokeWidth={2} />
+                    Recusar
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {acaoModal === 'aceitar' && pacienteSelecionado && (
+        <AceitarConviteModal
+          paciente={pacienteSelecionado}
+          onClose={fecharModal}
+          onConfirmar={handleAceitar}
+          processando={processando}
+        />
+      )}
+      {acaoModal === 'recusar' && pacienteSelecionado && (
+        <RecusarConviteModal
+          paciente={pacienteSelecionado}
+          onClose={fecharModal}
+          onConfirmar={handleRecusar}
+          processando={processando}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── MODAL ACEITAR ───
+
+function AceitarConviteModal({
+  paciente, onClose, onConfirmar, processando,
+}: {
+  paciente: Paciente
+  onClose: () => void
+  onConfirmar: (dados: { data: string; hora: string; duracao: number; observacoes: string }) => Promise<void>
+  processando: boolean
+}) {
+  const [data, setData] = useState('')
+  const [hora, setHora] = useState('')
+  const [duracao, setDuracao] = useState(60)
+  const [observacoes, setObservacoes] = useState('')
+
+  // Default: amanhã às 09:00
+  useEffect(() => {
+    const amanha = new Date()
+    amanha.setDate(amanha.getDate() + 1)
+    setData(amanha.toISOString().slice(0, 10))
+    setHora('09:00')
+  }, [])
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!data || !hora) {
+      alert('Preencha data e hora')
+      return
+    }
+    await onConfirmar({ data, hora, duracao, observacoes })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-lg"
+      >
+        <div className="p-6 border-b border-[#E2E8F0]">
+          <h3 className="font-bold text-[#0F172A] text-[18px]">Aceitar convite</h3>
+          <p className="text-[#475569] text-[13px] mt-1">
+            Atendimento de <span className="font-semibold">{paciente.nome}</span>
+          </p>
+        </div>
+
+        <form onSubmit={submit} className="p-6 space-y-4">
+          <div className="bg-[#F8FAFC] rounded-xl p-3 text-[12px] text-[#475569] border border-[#E2E8F0]">
+            <p className="font-semibold text-[#0F172A]">{paciente.necessidade}</p>
+            <p className="mt-1">
+              {paciente.especialidadeNecessaria} · {paciente.cidade}-{paciente.estado}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#475569] mb-1.5">
+              Data do atendimento *
+            </label>
+            <input
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              min={new Date().toISOString().slice(0, 10)}
+              required
+              className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#475569] mb-1.5">
+                Hora *
+              </label>
+              <input
+                type="time"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                required
+                className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#475569] mb-1.5">
+                Duração
+              </label>
+              <select
+                value={duracao}
+                onChange={(e) => setDuracao(Number(e.target.value))}
+                className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 cursor-pointer"
+              >
+                <option value={30}>30 min</option>
+                <option value={45}>45 min</option>
+                <option value={60}>60 min</option>
+                <option value={90}>90 min</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#475569] mb-1.5">
+              Observações pro paciente
+            </label>
+            <textarea
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              rows={3}
+              placeholder="Orientações pré-consulta, documentos a trazer..."
+              className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 resize-none"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={processando}
+              className="flex-1 bg-white border border-[#E2E8F0] text-[#475569] font-semibold py-2.5 rounded-lg hover:bg-[#F8FAFC] transition-colors text-[13px] cursor-pointer disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={processando}
+              className="flex-1 bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] inline-flex items-center justify-center gap-2 border-none cursor-pointer disabled:opacity-50"
+            >
+              <CheckCircle2 size={14} strokeWidth={2.5} />
+              {processando ? 'Aceitando...' : 'Confirmar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL RECUSAR ───
+
+function RecusarConviteModal({
+  paciente, onClose, onConfirmar, processando,
+}: {
+  paciente: Paciente
+  onClose: () => void
+  onConfirmar: (motivo: string) => Promise<void>
+  processando: boolean
+}) {
+  const [motivoSelect, setMotivoSelect] = useState('Sem disponibilidade na agenda')
+  const [detalhes, setDetalhes] = useState('')
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    const motivoFinal = detalhes ? `${motivoSelect} — ${detalhes}` : motivoSelect
+    await onConfirmar(motivoFinal)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-lg"
+      >
+        <div className="p-6 border-b border-[#E2E8F0]">
+          <h3 className="font-bold text-[#0F172A] text-[18px]">Recusar convite</h3>
+          <p className="text-[#475569] text-[13px] mt-1">
+            Convite de <span className="font-semibold">{paciente.nome}</span>
+          </p>
+        </div>
+
+        <form onSubmit={submit} className="p-6 space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex gap-2 items-start">
+            <AlertCircle size={16} className="text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
+            <p className="text-[12px] text-yellow-900 leading-relaxed">
+              Ao recusar, o paciente volta pra fila e a equipe TdB poderá convidar outro voluntário.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#475569] mb-1.5">
+              Motivo *
+            </label>
+            <select
+              value={motivoSelect}
+              onChange={(e) => setMotivoSelect(e.target.value)}
+              className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 cursor-pointer"
+            >
+              <option>Sem disponibilidade na agenda</option>
+              <option>Fora da minha especialidade</option>
+              <option>Distância incompatível</option>
+              <option>Período de férias/afastamento</option>
+              <option>Outro motivo</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#475569] mb-1.5">
+              Detalhes (opcional)
+            </label>
+            <textarea
+              value={detalhes}
+              onChange={(e) => setDetalhes(e.target.value)}
+              rows={3}
+              placeholder="Contexto adicional pra equipe TdB..."
+              className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 resize-none"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={processando}
+              className="flex-1 bg-white border border-[#E2E8F0] text-[#475569] font-semibold py-2.5 rounded-lg hover:bg-[#F8FAFC] transition-colors text-[13px] cursor-pointer disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={processando}
+              className="flex-1 bg-red-600 text-white font-semibold py-2.5 rounded-lg hover:bg-red-700 transition-colors text-[13px] inline-flex items-center justify-center gap-2 border-none cursor-pointer disabled:opacity-50"
+            >
+              <XCircle size={14} strokeWidth={2.5} />
+              {processando ? 'Recusando...' : 'Confirmar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 
 // ─── PAINEL DO DENTISTA (visual TdB) ──────────
 function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () => void }) {
@@ -403,6 +799,8 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           <QrCode size={18} strokeWidth={2.5} />
           Validar paciente por QR Code
         </Link>
+
+        <SecaoConvitesPendentes dentistaNome={dentista.nome} />
 
         {/* NOVO ↓ — Mensagens com a equipe TdB */}
         <SecaoMensagens dentistaNome={dentista.nome} />
