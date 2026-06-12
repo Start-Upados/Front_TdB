@@ -14,12 +14,12 @@ import {
 
 const NAV_ITEMS = [
   { path: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard },
+  { path: 'comunicacoes', label: 'Central de canais', icon: MessageSquare },
   { path: 'triagens', label: 'Triagens', icon: UserCheck },
   { path: 'atendimentos', label: 'Atendimentos', icon: CalendarDays },
-  { path: 'voluntarios', label: 'Voluntários', icon: Users },
   { path: 'mutiroes', label: 'Mutirões', icon: Megaphone },
-  { path: 'financeiro', label: 'Financeiro', icon: Wallet },
-  { path: 'comunicacoes', label: 'Central de canais', icon: MessageSquare },
+  { path: 'voluntarios', label: 'Voluntários', icon: Users },  
+  { path: 'financeiro', label: 'Financeiro', icon: Wallet },  
   { path: 'relatorios', label: 'Relatórios e impacto', icon: FileBarChart },
 ];
 

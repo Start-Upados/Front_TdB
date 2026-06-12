@@ -380,7 +380,7 @@ async function handleRecusar(info: InfoRecusa) {
             }`}
           >
             <Inbox className="h-3.5 w-3.5" strokeWidth={2} />
-            Ativas
+            Em aberto
             <span className={`text-xs ${vista === 'ativas' ? 'text-surface/70' : 'text-subtle'}`}>
               {listarAtivas().length}
             </span>
@@ -392,7 +392,7 @@ async function handleRecusar(info: InfoRecusa) {
             }`}
           >
             <FileCheck className="h-3.5 w-3.5" strokeWidth={2} />
-            Arquivo
+            Encaminhadas
             <span className={`text-xs ${vista === 'arquivo' ? 'text-surface/70' : 'text-subtle'}`}>
               {listarArquivo().length}
             </span>
