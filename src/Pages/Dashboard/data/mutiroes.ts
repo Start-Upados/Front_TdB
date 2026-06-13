@@ -75,7 +75,7 @@ export const MUTIROES_MOCK: Mutirao[] = [
   {
     id: 'm1',
     nome: 'Triagem E.M. Maria Silva',
-    data: '2025-10-26', horaInicio: '09:00', horaFim: '17:00', horario: '09h às 17h',
+    data: '2026-06-21', horaInicio: '09:00', horaFim: '17:00', horario: '09h às 17h',
     local: 'E.M. Profa. Maria Silva',
     endereco: 'Rua das Acácias, 142 — Boa Viagem',
     cidade: 'Recife', estado: 'PE', cep: '51020-000',
@@ -92,7 +92,7 @@ export const MUTIROES_MOCK: Mutirao[] = [
   {
     id: 'm2',
     nome: 'Atendimento Vila Nova',
-    data: '2025-11-02', horaInicio: '08:00', horaFim: '16:00', horario: '08h às 16h',
+    data: '2026-11-01', horaInicio: '08:00', horaFim: '16:00', horario: '08h às 16h',
     local: 'Centro Social Vila Nova',
     endereco: 'Av. Brigadeiro Faria Lima, 1500',
     cidade: 'São Paulo', estado: 'SP', cep: '01451-001',
@@ -109,7 +109,7 @@ export const MUTIROES_MOCK: Mutirao[] = [
   {
     id: 'm3',
     nome: 'Praça Central de Belém',
-    data: '2025-11-09', horaInicio: '08:00', horaFim: '18:00', horario: '08h às 18h',
+    data: '2026-11-08', horaInicio: '08:00', horaFim: '18:00', horario: '08h às 18h',
     local: 'Praça Central de Belém',
     endereco: 'Praça da República, s/n — Centro',
     cidade: 'Belém', estado: 'PA',
@@ -125,7 +125,7 @@ export const MUTIROES_MOCK: Mutirao[] = [
   {
     id: 'm4',
     nome: 'Triagem E.M. José Souza',
-    data: '2025-10-12', horaInicio: '08:00', horaFim: '16:00', horario: '08h às 16h',
+    data: '2026-10-11', horaInicio: '08:00', horaFim: '16:00', horario: '08h às 16h',
     local: 'E.M. José Souza',
     cidade: 'Curitiba', estado: 'PR',
     tipo: 'Triagem em escola', programa: 'Dentista do Bem',
@@ -142,7 +142,7 @@ export const MUTIROES_MOCK: Mutirao[] = [
   {
     id: 'm5',
     nome: 'Centro Comunitário Sudeste',
-    data: '2025-09-28', horaInicio: '09:00', horaFim: '17:00', horario: '09h às 17h',
+    data: '2026-09-27', horaInicio: '09:00', horaFim: '17:00', horario: '09h às 17h',
     local: 'Centro Comunitário Sudeste',
     cidade: 'Salvador', estado: 'BA',
     tipo: 'Atendimento em comunidade', programa: 'Apolônias do Bem',
@@ -162,7 +162,7 @@ export const MUTIROES_MOCK: Mutirao[] = [
   {
     id: 'm6',
     nome: 'Praça da Estação',
-    data: '2025-09-14', horaInicio: '08:00', horaFim: '18:00', horario: '08h às 18h',
+    data: '2026-09-13', horaInicio: '08:00', horaFim: '18:00', horario: '08h às 18h',
     local: 'Praça da Estação',
     cidade: 'Belo Horizonte', estado: 'MG',
     tipo: 'Atendimento em comunidade', programa: 'Dentista do Bem',
