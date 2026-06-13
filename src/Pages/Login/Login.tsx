@@ -280,7 +280,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
     setErro(false);
 
     try {
-      const ok = await authService.loginDentista(rgCpf, senha);
+      const ok = await authService.loginPaciente(rgCpf, senha);
       console.log(ok);
       if (ok) {
         sessionStorage.setItem('tdb_rgCpf', rgCpf);
