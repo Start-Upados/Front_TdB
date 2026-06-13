@@ -76,23 +76,25 @@ function calcularIdade(dataNasc: string): number {
 interface EnderecoViaCEP {
   cidade: string;
   endereco: string;
+  uf: string;
 }
 
 async function buscarEnderecoCEP(cep: string): Promise<EnderecoViaCEP> {
   try {
     const cepLimpo = cep.replace(/\D/g, '');
-    if (cepLimpo.length !== 8) return { cidade: '', endereco: '' };
+    if (cepLimpo.length !== 8) return { cidade: '', endereco: '', uf: '' };
     const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-    if (!res.ok) return { cidade: '', endereco: '' };
+    if (!res.ok) return { cidade: '', endereco: '', uf: '' };
     const data = await res.json();
-    if (data.erro) return { cidade: '', endereco: '' };
+    if (data.erro) return { cidade: '', endereco: '', uf: '' };
     const endereco = [data.logradouro, data.bairro].filter(Boolean).join(', ');
     return {
       cidade: data.localidade ?? '',
       endereco: endereco || '',
+      uf: data.uf ?? '',
     };
   } catch {
-    return { cidade: '', endereco: '' };
+    return { cidade: '', endereco: '', uf: '' };
   }
 }
 
@@ -352,7 +354,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
     const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     // Calcula idade e busca cidade/endereço via ViaCEP
     const idade = calcularIdade(data.dataNascimento);
-    const { cidade, endereco } = await buscarEnderecoCEP(data.cep);
+    const { cidade, endereco, uf } = await buscarEnderecoCEP(data.cep);
 
     try {
       await solicitacaoService.cadastrar({
@@ -377,11 +379,13 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
     }
 
     try {
-      await appendSheet('Mensagens!A:Q', [[
+      await appendSheet('Mensagens!A:N', [[
         prot, data.nomeResponsavel, data.email, whatsapp, telefone,
         'Solicitacao de Atendimento — Dentista do Bem',
         `Adolescente: ${data.nomeAdolescente} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep} | Renda: ${data.rendaFamiliar} | Necessidade: ${data.necessidade} | Responsavel: ${data.nomeResponsavel} (${data.parentesco}) | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
         'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
+        cidade,   // M — Cidade
+        uf,       // N — UF
       ]])
       await appendSheet('Pacientes!A:Q', [[
         data.nomeAdolescente,           // A — Nome
@@ -396,8 +400,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
         '',                             // J — Próx. Hora (vazio)
         '',                             // K — Clínica (vazio)
         endereco,                       // L — Endereço
-        '',                            // M — # Sessão Atual
-        '',                            // N — Total Sessões
+        '',                             // M — # Sessão Atual
+        '',                             // N — Total Sessões
         data.necessidade,               // O — Procedimento Atual
         data.observacoes ?? '',         // P — Observações
         prot,                           // Q — Protocolo
@@ -625,7 +629,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
 }
 
   const idade = calcularIdade(data.dataNascimento)
-  const { cidade, endereco } = await buscarEnderecoCEP(data.cep)
+  const { cidade, endereco, uf } = await buscarEnderecoCEP(data.cep)
   const procedimentoAtual = data.foiVitima === 'Sim'
     ? 'Vitima de violencia com denticao afetada'
     : 'Triagem odontologica'
@@ -645,6 +649,8 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
       'Solicitacao de Atendimento — Apolonas do Bem',
       `Beneficiaria: ${data.nome} | Nascimento: ${data.dataNascimento} | Cep: ${data.cep} | Foi vitima: ${data.foiVitima} | Como soube: ${data.comoSoube} | Obs: ${data.observacoes || 'Nenhuma'}`,
       'Site', 'Solicitacao', 'Aguardando', dataStr, horaStr,
+      cidade,   // M — Cidade
+      uf,       // N — UF
     ]])
   } catch (err) {
     console.error('Erro ao salvar no Sheets:', err)

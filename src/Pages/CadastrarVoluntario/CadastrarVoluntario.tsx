@@ -235,6 +235,9 @@ export default function CadastrarVoluntario() {
         data.especializacao,
         data.email,
         whatsapp,
+        '',                   // Cidade  (não há campo no form ainda)
+        '',                   // Estado  (idem)
+        '',                   // Clinica (idem)
         data.disponibilidade,
         data.participouAntes,
         'Aguardando analise',
