@@ -53,7 +53,7 @@ const Home = () =>{
               </p>
               <Link
                 to="/SobreNos"
-                className="inline-block bg-accent text-white font-bold px-8 py-3 rounded-lg hover:bg-accent-dark hover:-translate-y-0.5 transition-all duration-200"
+                className="inline-block bg-[#EAB308] text-white font-bold px-8 py-3 rounded-lg hover:bg-accent-dark hover:-translate-y-0.5 transition-all duration-200"
               >
                 Saiba mais
               </Link>

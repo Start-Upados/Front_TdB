@@ -13,8 +13,9 @@
     <script>
       (function () {
         try {
+          var noDashboard = location.pathname.startsWith('/dashboard');
           var tema = localStorage.getItem('tdb_tema');
-          if (tema === 'escuro') {
+          if (noDashboard && tema === 'escuro') {
             document.documentElement.classList.add('dark');
           }
         } catch (e) { /* localStorage pode estar bloqueado em modo privado */ }

@@ -1,12 +1,26 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../Dashboard/components/Sidebar';
 import { TopBar } from '../Dashboard/components/Topbar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Dark mode só vale dentro do dashboard.
+  // Aplica ao montar, remove ao desmontar (quando o usuário sai pra home, login, etc).
+  useEffect(() => {
+    const tema = localStorage.getItem('tdb_tema');
+    if (tema === 'escuro') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    return () => {
+      document.documentElement.classList.remove('dark');
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-canvas text-white text-sm overflow-hidden">
