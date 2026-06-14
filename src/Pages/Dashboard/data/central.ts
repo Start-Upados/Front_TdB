@@ -53,9 +53,8 @@ export interface Mensagem {
 export interface KpiData {
   label: string;
   value: string;
-  valueTone?: 'default' | 'danger' | 'warning' | 'success';
   sub?: string;
-  subTone?: 'default' | 'success' | 'warning' | 'danger';
+  tone?: 'success' | 'danger' | 'warning';
 }
 
 // ─── NOVOS TIPOS: Triagem Oral e Recusa ───────────
@@ -82,6 +81,7 @@ export interface InfoRecusa {
 
 export interface Solicitacao {
   id: string;
+  protocolo?: string;
   nome: string;
   iniciais: string;
   idade?: number;
@@ -109,9 +109,9 @@ export interface Solicitacao {
 
 export const KPIS_CENTRAL_MOCK: KpiData[] = [
   { label: 'Solicitações novas hoje', value: '23', sub: '+8 vs ontem' },
-  { label: 'Alta sem resposta +24h',  value: '5', valueTone: 'danger', sub: 'Atenção urgente', subTone: 'danger' },
-  { label: 'Tempo médio resposta',    value: '2.4h', sub: '−12% vs semana', subTone: 'success' },
-  { label: 'Acurácia ML (30 dias)',   value: '92%', sub: '+3pp com overrides', subTone: 'success' },
+  { label: 'Alta sem resposta +24h',  value: '5', sub: 'Atenção urgente', tone: 'danger' },
+  { label: 'Tempo médio resposta',    value: '2.4h', sub: '−12% vs semana', tone: 'success' },
+  { label: 'Acurácia ML (30 dias)',   value: '92%', sub: '+3pp com overrides', tone: 'success' },
 ];
 
 const agora = new Date();

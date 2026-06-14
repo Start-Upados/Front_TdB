@@ -46,7 +46,50 @@ export function listarArquivo(): Solicitacao[] {
 }
 
 export function obterKpis(): KpiData[] {
-  return KPIS_CENTRAL_MOCK;
+  const hoje  = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD
+  const ontem = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  // 1. Solicitações novas hoje (+ delta vs ontem)
+  const novasHoje = solicitacoes.filter(
+    (s) => s.ultimaAtualizacao?.slice(0, 10) === hoje,
+  ).length;
+  const novasOntem = solicitacoes.filter(
+    (s) => s.ultimaAtualizacao?.slice(0, 10) === ontem,
+  ).length;
+  const delta = novasHoje - novasOntem;
+  const sinal = delta >= 0 ? '+' : '';
+
+  // 2. Alta sem resposta há mais de 24h (última msg não é do admin)
+  const limite24h = Date.now() - 86_400_000;
+  const PENDENTES_DE_ADMIN: Solicitacao['status'][] = [
+    'aberta', 'pendente-aprovacao', 'pendente-triagem',
+    'triagem-apta', 'triagem-nao-apta',
+  ];
+  const altaSemResposta = solicitacoes.filter((s) => {
+    if (s.prioridade !== 'Alta') return false;
+    if (!PENDENTES_DE_ADMIN.includes(s.status)) return false;
+    const ultima = s.mensagens[s.mensagens.length - 1];
+    const semRespostaAdmin = !ultima || ultima.autor !== 'admin';
+    const velhaPra24h = new Date(s.ultimaAtualizacao).getTime() < limite24h;
+    return semRespostaAdmin && velhaPra24h;
+  }).length;
+
+  return [
+    {
+      label: 'Solicitações novas hoje',
+      value: String(novasHoje),
+      sub: `${sinal}${delta} vs ontem`,
+    },
+    {
+      label: 'Alta sem resposta +24h',
+      value: String(altaSemResposta),
+      sub: altaSemResposta > 0 ? 'Atenção urgente' : 'Tudo em dia',
+      tone: altaSemResposta > 0 ? 'danger' : 'success',
+    },
+    // Os 2 abaixo ficam mock até backend emitir telemetria
+    KPIS_CENTRAL_MOCK[2],  // Tempo médio resposta
+    KPIS_CENTRAL_MOCK[3],  // Acurácia ML (30 dias)
+  ];
 }
 
 export function obterSolicitacao(id: string): Solicitacao | undefined {
@@ -80,12 +123,40 @@ export async function atualizarClassificacao(
     featuresUsadas?: Solicitacao['featuresUsadas'];
   },
 ): Promise<void> {
+  const sol = solicitacoes.find((s) => s.id === id);
+  if (sol?.protocolo) {
+    try {
+      await solicitacaoService.classificar(
+        sol.protocolo,
+        novaClassificacao.prioridade,
+        novaClassificacao.score,
+      );
+    } catch (err) {
+      console.error('[central] erro ao classificar no backend:', err);
+      // Não bloqueia: classificação é refinamento, não crítico
+    }
+  }
   patch(id, (s) => ({ ...s, ...novaClassificacao }));
 }
 
 export async function responderSolicitacao(id: string, texto: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 400));
+  const sol = solicitacoes.find((s) => s.id === id);
   const ts = new Date().toISOString();
+
+  if (sol?.protocolo) {
+    try {
+      await solicitacaoService.inserirMensagem(sol.protocolo, {
+        autor: 'admin',
+        nomeAutor: 'Admin TdB',
+        conteudo: texto,
+        dataEnvio: ts,
+      });
+    } catch (err) {
+      console.error('[central] erro ao gravar mensagem no backend:', err);
+      // Não bloqueia: deixa salvar local mesmo se backend falhar
+    }
+  }
+
   const novaMsg: Mensagem = {
     id: `msg-${id}-${Date.now()}`,
     autor: 'admin',
@@ -134,13 +205,28 @@ export async function responderComoPaciente(id: string, texto: string): Promise<
   });
 }
 
+async function chamarBackendComProtocolo(
+  id: string,
+  acao: (protocolo: string) => Promise<unknown>,
+  rotuloErro: string,
+): Promise<void> {
+  const sol = solicitacoes.find((s) => s.id === id);
+  if (!sol?.protocolo) return;       // mock local — só atualiza estado
+  try {
+    await acao(sol.protocolo);
+  } catch (err) {
+    console.error(`[central] erro ao ${rotuloErro} no backend:`, err);
+    throw new Error(`Não foi possível ${rotuloErro} no servidor. Tente novamente.`);
+  }
+}
+
 export async function resolverSolicitacao(id: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 300));
+  await chamarBackendComProtocolo(id, solicitacaoService.resolver, 'resolver');
   fechar(id, 'resolvida');
 }
 
 export async function arquivarSolicitacao(id: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 300));
+  await chamarBackendComProtocolo(id, solicitacaoService.arquivar, 'arquivar');
   fechar(id, 'arquivada');
 }
 
@@ -149,17 +235,18 @@ export async function encaminharSolicitacao(
   destinatario: string,
   _nota?: string,
 ): Promise<void> {
-  await new Promise((r) => setTimeout(r, 400));
+  // Backend ainda não tem endpoint /encaminhar — fica só local
+  await new Promise((r) => setTimeout(r, 200));
   fechar(id, 'encaminhada', destinatario);
 }
 
 export async function promoverParaTriagem(id: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 400));
+  await chamarBackendComProtocolo(id, solicitacaoService.promover, 'promover');
   fechar(id, 'promovida');
 }
 
 export async function reabrirSolicitacao(id: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 300));
+  await chamarBackendComProtocolo(id, solicitacaoService.reabrir, 'reabrir');
   patch(id, (s) => ({
     ...s,
     status: 'aberta',
@@ -257,7 +344,8 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): Solicitacao {
     : body.necessidade;
 
   return {
-    id: body.rgCpf,                         // backend usa rgCpf como PK
+    id: body.rgCpf, // PK backend
+    protocolo: body.protocolo,                         
     nome: body.nome,
     iniciais: gerarIniciais(body.nome),
     idade: calcularIdade(body.dataNasc),
@@ -300,9 +388,18 @@ export async function aprovarSolicitacao(
   id: string,
   aprovadaPor: string,
 ): Promise<void> {
-  await new Promise((r) => setTimeout(r, 400));
   const sol = solicitacoes.find((s) => s.id === id);
   if (!sol) throw new Error('Solicitação não encontrada');
+
+  // Backend first: se tem protocolo (veio do Oracle), persiste a aprovação
+  if (sol.protocolo) {
+    try {
+      await solicitacaoService.aprovar(sol.protocolo, aprovadaPor);
+    } catch (err) {
+      console.error('[central] erro ao aprovar no backend:', err);
+      throw new Error('Não foi possível aprovar no servidor. Tente novamente.');
+    }
+  }
 
   // Monta input pra criar entrada em Triagens
   const [cidadeNome, estadoSigla] = (sol.cidade ?? 'São Paulo, SP').split(',').map((p) => p.trim());
@@ -343,7 +440,21 @@ export async function recusarSolicitacao(
   id: string,
   infoRecusa: InfoRecusa,
 ): Promise<void> {
-  await new Promise((r) => setTimeout(r, 300));
+  const sol = solicitacoes.find((s) => s.id === id);
+  if (sol?.protocolo) {
+    try {
+      await solicitacaoService.recusar(
+        sol.protocolo,
+        'Admin TdB',
+        infoRecusa.motivo,
+        infoRecusa.detalhe,
+      );
+    } catch (err) {
+      console.error('[central] erro ao recusar no backend:', err);
+      throw new Error('Não foi possível recusar no servidor. Tente novamente.');
+    }
+  }
+
   patch(id, (s) => ({
     ...s,
     infoRecusa,

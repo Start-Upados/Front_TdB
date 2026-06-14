@@ -146,7 +146,7 @@ export default function VisaoGeralPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h1 className="text-2xl md:text-xl font-extrabold text-[#CED600]">
           Bem vindo(a)!
-          <p className="text-2xl md:text-xl font-extrabold text-[#E88407]">Renata</p>
+          <p className="text-2xl md:text-xl font-extrabold text-[#E88407]">Admin</p>
         </h1>
 
         <p className="text-sm md:text-xs text-muted">

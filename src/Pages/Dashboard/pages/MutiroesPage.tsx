@@ -18,6 +18,7 @@ import {
   cancelarPresencaPaciente, listarVoluntariosDisponiveis, listarEspecialidadesParaFiltro,
   type NovoMutiraoInput,
 } from '../services/mutiroes';
+import { appendSheet } from '../../../Services/googleSheets';
 
 import type { Mutirao, StatusMutirao } from '../data/mutiroes';
 import { ESPECIALIDADES_MUTIRAO } from '../data/mutiroes';
@@ -356,7 +357,29 @@ function CadastrarMutiraoModal({
         dentistasNecessarios: Number(data.dentistasNecessarios),
         pacientesEsperados: Number(data.pacientesEsperados),
       };
+      
       await criarMutirao(input);
+
+      // Backup no Google Sheets — 11 colunas alinhadas com o cabeçalho da aba Mutiroes
+      try {
+        const dataStr = new Date().toLocaleDateString('pt-BR');
+        await appendSheet('Mutiroes!A:K', [[
+          data.nome,                              // A — Nome
+          data.observacoes || '',                 // B — Descricao
+          String(data.pacientesEsperados),        // C — Meta Atendidos
+          '0',                                    // D — Num Atendimentos (inicia em 0)
+          String(data.dentistasNecessarios),      // E — Num Dentistas
+          data.endereco || '',                    // F — Rua
+          '',                                     // G — Bairro
+          data.cidade,                            // H — Cidade
+          data.estado,                            // I — Estado
+          data.estado,                            // J — UF (mesmo valor)
+          dataStr,                                // K — Data Cadastro
+        ]]);
+      } catch (err) {
+        console.warn('Não foi possível salvar no Sheets:', err);
+      }
+
       toast.success('Mutirão cadastrado', { description: `${data.nome} agendado para ${formatarDataLonga(data.data)}.` });
       onCriado();
     } catch {

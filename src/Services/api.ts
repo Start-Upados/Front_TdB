@@ -63,6 +63,16 @@ export interface CampanhaBody {
   cidade:           string
   numeroLogradouro: number
 }
+
+// ─── MENSAGEM (Mensagem.java) ─────────────────
+export interface MensagemBody {
+  idMensagem?: number
+  idConversa?: number
+  autor:       string  // 'admin' | 'paciente'
+  nomeAutor?:  string
+  conteudo:    string
+  dataEnvio?:  string
+}
  
 // ─── HELPER ───────────────────────────────────
 async function request<T>(
@@ -113,7 +123,7 @@ export const beneficiarioService = {
   deletar: (rgCpf: string) =>
     request<unknown>(`/beneficiario/${rgCpf}`, 'DELETE'),
 }
- 
+
 // ─── SOLICITAÇÃO ──────────────────────────────
 export const solicitacaoService = {
   cadastrar: (body: SolicitacaoBody) =>
@@ -126,6 +136,32 @@ export const solicitacaoService = {
     request<unknown>(`/solicitacao/${rgCpf}`, 'PUT', body),
   deletar: (rgCpf: string) =>
     request<unknown>(`/solicitacao/${rgCpf}`, 'DELETE'),
+
+  // ─── Ações por protocolo ────────────────────
+  buscarPorProtocolo: (protocolo: string) =>
+    request<SolicitacaoBody>(`/solicitacao/protocolo/${protocolo}`),
+  listarPorStatus: (status: string) =>
+    request<SolicitacaoBody[]>('/solicitacao/status', 'GET', undefined, { status }),
+  aprovar: (protocolo: string, aprovadoPor: string) =>
+    request<unknown>(`/solicitacao/${protocolo}/aprovar`, 'PUT', { aprovadoPor }),
+  recusar: (protocolo: string, recusadoPor: string, motivo: string, detalhe?: string) =>
+    request<unknown>(`/solicitacao/${protocolo}/recusar`, 'PUT', { recusadoPor, motivo, detalhe }),
+  resolver: (protocolo: string) =>
+    request<unknown>(`/solicitacao/${protocolo}/resolver`, 'PUT'),
+  arquivar: (protocolo: string) =>
+    request<unknown>(`/solicitacao/${protocolo}/arquivar`, 'PUT'),
+  promover: (protocolo: string) =>
+    request<unknown>(`/solicitacao/${protocolo}/promover`, 'PUT'),
+  reabrir: (protocolo: string) =>
+    request<unknown>(`/solicitacao/${protocolo}/reabrir`, 'PUT'),
+  classificar: (protocolo: string, prioridade: string, scoreMl: number) =>
+    request<unknown>(`/solicitacao/${protocolo}/classificar`, 'PUT', { prioridade, scoreMl }),
+
+  // ─── Mensagens (thread interno por solicitação) ─
+  listarMensagens: (protocolo: string) =>
+    request<MensagemBody[]>(`/solicitacao/${protocolo}/mensagens`),
+  inserirMensagem: (protocolo: string, mensagem: MensagemBody) =>
+    request<unknown>(`/solicitacao/${protocolo}/mensagens`, 'POST', mensagem),
 }
  
 // ─── FUNCIONÁRIO ──────────────────────────────
