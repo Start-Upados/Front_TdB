@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
@@ -15,6 +15,7 @@ import {
   adicionarMembro, atualizarMembro, removerMembro,
   atualizarStatusIntegracao, salvarOrganizacao,
   obterPreferenciasNotificacao, salvarPreferenciasNotificacao,
+  carregarEquipeReal,
   type PreferenciasNotificacao,
 } from '../services/configuracoes';
 
@@ -63,6 +64,13 @@ export default function ConfiguracoesPage() {
   const equipe = useMemo(() => listarEquipe(), [versao]);
   const integracoes = useMemo(() => listarIntegracoes(), [versao]);
   const org = useMemo(() => obterOrganizacao(), [versao]);
+
+  // Puxa equipe do backend uma vez no mount + recarrega ao trocar pra aba Equipe
+  useEffect(() => {
+    if (aba === 'equipe') {
+      carregarEquipeReal().then(() => refresh()).catch(() => { /* silencioso */ });
+    }
+  }, [aba]);
 
   return (
     <div className="flex w-full max-w-full flex-col gap-5">

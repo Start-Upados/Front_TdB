@@ -18,6 +18,7 @@ import {
   cancelarPresencaPaciente, listarVoluntariosDisponiveis, listarEspecialidadesParaFiltro,
   type NovoMutiraoInput,
 } from '../services/mutiroes';
+import { campanhaService } from '../../../Services/api';
 import { appendSheet } from '../../../Services/googleSheets';
 
 import type { Mutirao, StatusMutirao } from '../data/mutiroes';
@@ -45,7 +46,7 @@ function formatarDataLonga(iso: string) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-// ─────────────────────────────────────────────
+
 // STATUS CONFIG
 // ─────────────────────────────────────────────
 
@@ -360,10 +361,36 @@ function CadastrarMutiraoModal({
       
       await criarMutirao(input);
 
-      // Backup no Google Sheets — 11 colunas alinhadas com o cabeçalho da aba Mutiroes
+      // ─── 1. Oracle (fonte de verdade) ──────────────────────
+      let salvoNoOracle = false;
+      try {
+        // Extrai número do endereço se houver (ex: "Rua das Flores, 123, Centro" → 123)
+        const matchNumero = data.endereco?.match(/\d+/);
+        const numeroLogradouro = matchNumero ? parseInt(matchNumero[0], 10) : 0;
+
+        await campanhaService.cadastrar({
+          nome:             data.nome,
+          metaAtendidos:    Number(data.pacientesEsperados),
+          nAtendidos:       0,
+          nDentistas:       Number(data.dentistasNecessarios),
+          descricao:        data.observacoes || data.publicoAlvo || `${data.tipo} — ${data.programa}`,
+          logradouro:       data.endereco || data.local,
+          bairro:           '',
+          cidade:           data.cidade,
+          estado:           data.estado,
+          numeroLogradouro,
+        });
+        salvoNoOracle = true;
+      } catch (err) {
+        console.warn('[mutirao] erro ao salvar no Oracle, vai continuar pro Sheets:', err);
+      }
+
+      // ─── 2. Google Sheets (backup auditável, sempre roda) ──
       try {
         const dataStr = new Date().toLocaleDateString('pt-BR');
-        await appendSheet('Mutiroes!A:K', [[
+        const [anoEv, mesEv, diaEv] = data.data.split('-');
+        const dataEventoStr = `${diaEv}/${mesEv}/${anoEv}`;
+        await appendSheet('Mutiroes!A:R', [[
           data.nome,                              // A — Nome
           data.observacoes || '',                 // B — Descricao
           String(data.pacientesEsperados),        // C — Meta Atendidos
@@ -375,12 +402,28 @@ function CadastrarMutiraoModal({
           data.estado,                            // I — Estado
           data.estado,                            // J — UF (mesmo valor)
           dataStr,                                // K — Data Cadastro
+          data.programa,                          // L — Programa
+          data.tipo,                              // M — Tipo
+          dataEventoStr,                          // N — Data Evento
+          `${data.horaInicio} - ${data.horaFim}`, // O — Horario
+          data.cep || '',                         // P — CEP
+          data.publicoAlvo || '',                 // Q — Publico Alvo
+          especialidades.join(', '),              // R — Especialidades
         ]]);
       } catch (err) {
-        console.warn('Não foi possível salvar no Sheets:', err);
+        console.warn('[mutirao] erro ao salvar no Sheets:', err);
       }
 
-      toast.success('Mutirão cadastrado', { description: `${data.nome} agendado para ${formatarDataLonga(data.data)}.` });
+      // Toast adapta-se: avisa se Oracle falhou (Matheus pode não ver até reconectar)
+      if (salvoNoOracle) {
+        toast.success('Mutirão cadastrado', {
+          description: `${data.nome} agendado para ${formatarDataLonga(data.data)}.`,
+        });
+      } else {
+        toast.warning('Mutirão salvo localmente', {
+          description: 'Backend offline. Foi pro Sheets como backup, mas Matheus pode não ver até o backend voltar.',
+        });
+      }
       onCriado();
     } catch {
       toast.error('Não foi possível cadastrar o mutirão');

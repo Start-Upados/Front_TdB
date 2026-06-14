@@ -198,11 +198,11 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
             <label className="block text-[11px] text-[#475569] font-semibold mb-1.5 uppercase tracking-[0.6px]">
-              RG ou CPF
+              CPF
             </label>
             <input type="text" value={rgCpf}
               onChange={e => setRgCpf(formatCPF(e.target.value))}
-              placeholder="123.456.789-00"
+              placeholder="123.456.789-10"
               className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 transition-all duration-200"
             />
           </div>
@@ -314,11 +314,11 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
             <label className="block text-[11px] text-[#475569] font-semibold mb-1.5 uppercase tracking-[0.6px]">
-              RG ou CPF
+              CPF
             </label>
             <input type="text" value={rgCpf}
               onChange={e => setRgCpf(formatCPF(e.target.value))}
-              placeholder="123.456.789-00"
+              placeholder="123.456.789-10"
               className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15 transition-all duration-200"
             />
           </div>
