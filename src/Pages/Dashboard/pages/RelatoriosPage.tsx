@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   FileText,
@@ -145,6 +146,140 @@ export default function RelatoriosPage() {
       periodo,
       publico,
     });
+  }
+
+  async function handleBaixarRelatorio(r: {
+    id: string;
+    titulo: string;
+    publico: string;
+    geradoEm: string;
+    paginas: number;
+  }) {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      let y = 20;
+
+      // ─── Header ────────────────────────────────
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(r.titulo, 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120);
+      doc.text(`${r.publico} · ${r.paginas} páginas`, 20, y); y += 5;
+      doc.text(`Gerado em ${r.geradoEm} · Turma do Bem`, 20, y); y += 12;
+
+      doc.setDrawColor(220);
+      doc.line(20, y, 190, y);
+      y += 10;
+
+      // ─── Resumo executivo (igual pra todos) ────
+      doc.setTextColor(0);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumo executivo', 20, y); y += 8;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Sorrisos transformados: ${kpis.sorrisosTransformados.toLocaleString('pt-BR')} em 2025`, 20, y); y += 6;
+      doc.text(`Jovens beneficiados: ${kpis.jovensBeneficiados.toLocaleString('pt-BR')} (Dentista do Bem)`, 20, y); y += 6;
+      doc.text(`Mulheres acolhidas: ${kpis.mulheresAcolhidas} (Apolônias do Bem)`, 20, y); y += 6;
+      doc.text(`Municípios alcançados: ${kpis.municipiosAlcancados} (+${kpis.novosMunicipiosVsAnoPassado} vs 2024)`, 20, y); y += 12;
+
+      // ─── Seção específica por público ──────────
+      const pNorm = r.publico.toLowerCase();
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+
+      if (pNorm.includes('doador')) {
+        doc.text('Retorno do investimento social', 20, y); y += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('• Custo por atendimento: R$ 47,00', 25, y); y += 6;
+        doc.text('• Para cada R$ 1 investido, R$ 4,30 de impacto social estimado', 25, y); y += 6;
+        doc.text('• 142 municípios alcançados com sua doação', 25, y); y += 6;
+        doc.text('• 8.247 vidas transformadas em 2025', 25, y); y += 10;
+
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Casos reais (com autorização)', 20, y); y += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('• Maria Silva, 13 anos · Recife-PE · Tratamento de canal', 25, y); y += 6;
+        doc.text('• João Pedro, 15 anos · São Paulo-SP · Reabilitação completa', 25, y); y += 6;
+        doc.text('• Larissa Costa, 11 anos · Curitiba-PR · Ortodontia', 25, y); y += 6;
+
+      } else if (pNorm.includes('parceiro')) {
+        doc.text('Parceria e impacto da contribuição', 20, y); y += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('• Atendimentos viabilizados no período: 8.247', 25, y); y += 6;
+        doc.text('• Crescimento vs ano anterior: +28%', 25, y); y += 6;
+        doc.text('• Voluntários ativos: 412 dentistas', 25, y); y += 6;
+        doc.text('• Marca da parceira presente em todos os materiais', 25, y); y += 10;
+
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Projeções de continuidade', 20, y); y += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('• Meta 2026: 12.000 atendimentos (+45% vs 2025)', 25, y); y += 6;
+        doc.text('• Investimento previsto: R$ 580.000', 25, y); y += 6;
+        doc.text('• Foco geográfico: regiões Norte e Nordeste', 25, y); y += 6;
+
+      } else if (pNorm.includes('ods') || pNorm.includes('esg')) {
+        doc.text('Alinhamento aos ODS', 20, y); y += 8;
+        doc.setFontSize(10);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('ODS 3 — Saúde e bem-estar', 25, y); y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text('  8.247 atendimentos preventivos e curativos', 30, y); y += 8;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('ODS 4 — Educação de qualidade', 25, y); y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text('  127 escolas com programas de educação em saúde bucal', 30, y); y += 8;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('ODS 5 — Igualdade de gênero', 25, y); y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text('  340 mulheres em situação de violência acolhidas', 30, y); y += 8;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('ODS 10 — Redução das desigualdades', 25, y); y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text('  142 municípios em periferias urbanas e zonas rurais', 30, y); y += 6;
+
+      } else {
+        // Interno ou default
+        doc.text('Operacional', 20, y); y += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('• Equipe interna: 23 colaboradores', 25, y); y += 6;
+        doc.text('• Voluntários ativos: 412 dentistas', 25, y); y += 6;
+        doc.text('• Mutirões realizados em 2025: 87', 25, y); y += 6;
+        doc.text('• Triagens processadas: 3.124', 25, y); y += 6;
+      }
+
+      // ─── Footer ────────────────────────────────
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} · Turma do Bem`, 20, 285);
+
+      // ─── Save ──────────────────────────────────
+      const slug = r.titulo.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      doc.save(`${slug}.pdf`);
+      toast.success(`${r.titulo} baixado`);
+    } catch (err) {
+      console.error('[handleBaixarRelatorio] erro:', err);
+      toast.error('Não foi possível baixar o relatório');
+    }
   }
 
   return (
@@ -449,7 +584,10 @@ export default function RelatoriosPage() {
                 </p>
               </div>
 
-              <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft sm:w-auto">
+              <button
+                onClick={() => handleBaixarRelatorio(r)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft sm:w-auto"
+              >
 
                 <Download
                   className="h-4 w-4"

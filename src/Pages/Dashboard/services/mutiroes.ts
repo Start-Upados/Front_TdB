@@ -9,20 +9,34 @@ import { dataDeHoje } from './atendimentos';
 import { listarDentistas } from './voluntarios';
 import type { DentistaCompleto } from '../data/dentistas';
 import type { /* ... existentes ..., */ PacienteConfirmado } from '../data/mutiroes';
-
-
+import { campanhaService, type CampanhaBody } from '../../../Services/api';
 
 /*
-  HOJE: estado mutável em memória.
-  AMANHÃ — endpoints sugeridos:
-    listarTodos()          → GET    /api/mutiroes
-    obterMutirao(id)       → GET    /api/mutiroes/{id}
-    criarMutirao(input)    → POST   /api/mutiroes
-    convocarVoluntarios()  → POST   /api/mutiroes/{id}/convocacoes
-    cancelarConvocacao()   → DELETE /api/mutiroes/{id}/convocacoes/{dentistaId}
+  HOJE: estado mutável em memória + cache em localStorage (tdb_mutiroes).
+  Backend Oracle via campanhaService. Cross-browser via carregarMutiroesReais().
 */
 
-let mutiroes: Mutirao[] = [...MUTIROES_MOCK];
+// ─── Persistência localStorage ────────────────────
+const LS_MUTIROES = 'tdb_mutiroes';
+
+function persistir(): void {
+  try {
+    localStorage.setItem(LS_MUTIROES, JSON.stringify(mutiroes));
+  } catch (err) {
+    console.warn('[mutiroes] erro ao persistir:', err);
+  }
+}
+
+function hidratar(): Mutirao[] | null {
+  try {
+    const raw = localStorage.getItem(LS_MUTIROES);
+    return raw ? (JSON.parse(raw) as Mutirao[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+let mutiroes: Mutirao[] = hidratar() ?? [...MUTIROES_MOCK];
 
 // ──────────────────────────────────────────────
 // HELPERS
@@ -52,8 +66,82 @@ function calcularStatus(m: Pick<Mutirao, 'data' | 'dentistasConfirmados' | 'dent
 // LEITURA
 // ──────────────────────────────────────────────
 
+// ──────────────────────────────────────────────
+// MAPEAMENTO BACKEND ↔ FRONTEND
+// ──────────────────────────────────────────────
+
+function gerarIdDeNome(nome: string): string {
+  return 'mb-' + (nome ?? 'sem-nome').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // remove acentos
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 50);
+}
+
+/**
+ * Backend CampanhaBody é minimalista (só tem nome/endereço/meta/contagens).
+ * Esse mapper aplica defaults pros campos que o backend ainda não armazena
+ * (data, horários, especialidades, programa, tipo). Quando o backend expandir,
+ * atualiza só este mapper.
+ */
+function mapearCampanhaBackend(c: CampanhaBody): Mutirao {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return {
+    id: gerarIdDeNome(c.nome),
+    nome: c.nome,
+    data: hoje,                                          // backend não tem data evento
+    horaInicio: '08:00',
+    horaFim: '17:00',
+    horario: '8h às 17h',
+    local: c.logradouro || c.nome,
+    endereco: c.logradouro,
+    cidade: c.cidade,
+    estado: c.estado,
+    tipo: 'Atendimento em comunidade',                   // default
+    programa: 'Dentista do Bem',                         // default
+    especialidades: ['Clínico geral'],                   // default
+    observacoes: c.descricao,
+    dentistasNecessarios: c.nDentistas,
+    dentistasConfirmados: 0,
+    pacientesEsperados: c.metaAtendidos,
+    voluntariosConvocados: [],
+    status: 'em-preparacao',
+    atendimentosRealizados: c.nAtendidos,
+  } as Mutirao;
+}
+
+// ──────────────────────────────────────────────
+// LEITURA
+// ──────────────────────────────────────────────
+
 export function listarTodos(): Mutirao[] {
   return mutiroes;
+}
+
+/**
+ * Puxa mutirões do Oracle e MESCLA com o estado local (mocks + cadastros offline).
+ * Dedup por NOME (backend usa nome como PK; frontend pode ter gerado um id local
+ * antes do backend responder). Mesma estratégia da Central e de Triagens.
+ */
+export async function carregarMutiroesReais(): Promise<{
+  count: number;
+  fonte: 'backend' | 'mock';
+}> {
+  try {
+    const lista = await campanhaService.listar();
+    if (Array.isArray(lista) && lista.length > 0) {
+      const doBackend = lista.map(mapearCampanhaBackend);
+      const nomesBackend = new Set(doBackend.map((m) => (m.nome ?? '').toLowerCase()));
+      const apenasLocais = mutiroes.filter((m) => !nomesBackend.has((m.nome ?? '').toLowerCase()));
+      mutiroes = [...doBackend, ...apenasLocais];
+      persistir();
+      return { count: mutiroes.length, fonte: 'backend' };
+    }
+    return { count: mutiroes.length, fonte: 'mock' };
+  } catch (err) {
+    console.warn('[mutiroes] backend indisponível, mantendo dados locais:', err);
+    return { count: mutiroes.length, fonte: 'mock' };
+  }
 }
 
 export function listarProximos(): Mutirao[] {
@@ -131,6 +219,7 @@ export async function criarMutirao(input: NovoMutiraoInput): Promise<Mutirao> {
   };
   novo.status = calcularStatus(novo);
   mutiroes = [novo, ...mutiroes];
+  persistir();
   return novo;
 }
 
@@ -167,6 +256,7 @@ export async function convocarVoluntarios(
     atualizado.status = calcularStatus(atualizado);
     return atualizado;
   });
+  persistir();
 }
 
 export async function cancelarConvocacao(mutiraoId: string, dentistaId: string): Promise<void> {
@@ -181,6 +271,7 @@ export async function cancelarConvocacao(mutiraoId: string, dentistaId: string):
     atualizado.status = calcularStatus(atualizado);
     return atualizado;
   });
+  persistir();
 }
 
 // ──────────────────────────────────────────────
@@ -259,6 +350,7 @@ export async function confirmarPresencaPaciente(
     };
     return { ...m, pacientesConfirmados: [...atuais, novo] };
   });
+  persistir();
 }
 
 export async function cancelarPresencaPaciente(mutiraoId: string, pacienteCpf: string): Promise<void> {
@@ -270,6 +362,7 @@ export async function cancelarPresencaPaciente(mutiraoId: string, pacienteCpf: s
       pacientesConfirmados: (m.pacientesConfirmados ?? []).filter((p) => p.pacienteCpf !== pacienteCpf),
     };
   });
+  persistir();
 }
 
 // ─── Dentistas ───
@@ -306,6 +399,7 @@ export async function autoInscreverDentista(
     };
     return atualizado;
   });
+  persistir();
 }
 
 export async function cancelarPresencaDentista(mutiraoId: string, dentistaId: string): Promise<void> {

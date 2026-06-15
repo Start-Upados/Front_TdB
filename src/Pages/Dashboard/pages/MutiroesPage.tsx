@@ -16,6 +16,7 @@ import {
   listarProximos, listarRecentes, obterMutirao, diasAte,
   criarMutirao, convocarVoluntarios, cancelarConvocacao,
   cancelarPresencaPaciente, listarVoluntariosDisponiveis, listarEspecialidadesParaFiltro,
+  carregarMutiroesReais,
   type NovoMutiraoInput,
 } from '../services/mutiroes';
 import { campanhaService } from '../../../Services/api';
@@ -85,6 +86,13 @@ export default function MutiroesPage() {
 
   function refresh() { setVersao((v) => v + 1); }
   function fechar()  { if (!processando) setAcao(null); }
+
+  // Carrega mutirões do backend no mount + sincroniza estado local
+  useEffect(() => {
+    carregarMutiroesReais()
+      .then(() => refresh())
+      .catch(() => { /* silencioso — fallback pro localStorage */ });
+  }, []);
 
   return (
     <div className="flex w-full max-w-full flex-col gap-5">
@@ -995,83 +1003,89 @@ function RelatorioMutiraoModal({
   };
 
   async function exportarPDF() {
-    const { jsPDF } = await import("jspdf");
+    console.log('[exportarPDF] clicou no botão');
+    try {
+      const { jsPDF } = await import("jspdf");
 
-    const doc = new jsPDF();
-    let y = 20;
+      const doc = new jsPDF();
+      let y = 20;
 
-    // Header
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Relatório de Mutirão', 20, y);
-    y += 7;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(120);
-    doc.text('Turma do Bem', 20, y);
-    y += 12;
+      // Header
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório de Mutirão', 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120);
+      doc.text('Turma do Bem', 20, y);
+      y += 12;
 
-    // Linha divisória
-    doc.setDrawColor(220);
-    doc.line(20, y, 190, y);
-    y += 10;
+      // Linha divisória
+      doc.setDrawColor(220);
+      doc.line(20, y, 190, y);
+      y += 10;
 
-    // Dados do evento
-    doc.setTextColor(0);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(m!.nome || m!.local, 20, y);
-    y += 7;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${m!.tipo} · ${m!.programa}`, 20, y); y += 6;
-    doc.text(`Data: ${formatarDataLonga(m!.data)} · ${m!.horario}`, 20, y); y += 6;
-    doc.text(`Local: ${m!.local}, ${m!.cidade}-${m!.estado}`, 20, y); y += 10;
-
-    // Estatísticas
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Resultados', 20, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Pacientes atendidos: ${stats.pacientesAtendidos}`, 20, y); y += 6;
-    doc.text(`Pacientes inscritos pelo portal: ${(m!.pacientesConfirmados ?? []).length}`, 20, y); y += 6;
-    doc.text(`Encaminhados para tratamento: ${stats.vinculosCriados}`, 20, y); y += 6;
-    doc.text(`Taxa de comparecimento: ${stats.taxaComparecimento}%`, 20, y); y += 6;
-    doc.text(`Voluntários presentes: ${m!.dentistasConfirmados}`, 20, y); y += 6;
-    doc.text(`Duração efetiva: ${stats.duracaoEfetivaHoras}h`, 20, y); y += 10;
-
-    // Breakdown
-    if (stats.porEspecialidade.length > 0) {
+      // Dados do evento
+      doc.setTextColor(0);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Atendimentos por especialidade', 20, y);
+      doc.text(m!.nome || m!.local, 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${m!.tipo} · ${m!.programa}`, 20, y); y += 6;
+      doc.text(`Data: ${formatarDataLonga(m!.data)} · ${m!.horario}`, 20, y); y += 6;
+      doc.text(`Local: ${m!.local}, ${m!.cidade}-${m!.estado}`, 20, y); y += 10;
+
+      // Estatísticas
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resultados', 20, y);
       y += 8;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      stats.porEspecialidade.forEach((s) => {
-        doc.text(`• ${s.especialidade}: ${s.quantidade}`, 25, y);
-        y += 6;
-      });
+      doc.text(`Pacientes atendidos: ${stats.pacientesAtendidos}`, 20, y); y += 6;
+      doc.text(`Pacientes inscritos pelo portal: ${(m!.pacientesConfirmados ?? []).length}`, 20, y); y += 6;
+      doc.text(`Encaminhados para tratamento: ${stats.vinculosCriados}`, 20, y); y += 6;
+      doc.text(`Taxa de comparecimento: ${stats.taxaComparecimento}%`, 20, y); y += 6;
+      doc.text(`Voluntários presentes: ${m!.dentistasConfirmados}`, 20, y); y += 6;
+      doc.text(`Duração efetiva: ${stats.duracaoEfetivaHoras}h`, 20, y); y += 10;
+
+      // Breakdown
+      if (stats.porEspecialidade.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Atendimentos por especialidade', 20, y);
+        y += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        stats.porEspecialidade.forEach((s) => {
+          doc.text(`• ${s.especialidade}: ${s.quantidade}`, 25, y);
+          y += 6;
+        });
+      }
+
+      // Footer
+      y = 280;
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} · Turma do Bem`, 20, y);
+
+      const slug = (m!.nome || m!.local).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      doc.save(`relatorio-${slug}-${m!.data}.pdf`);
+      toast.success('PDF gerado');
+    } catch (err) {
+      console.error('[exportarPDF] erro:', err);
+      toast.error('Não foi possível gerar o PDF');
     }
-
-    // Footer
-    y = 280;
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} · Turma do Bem`, 20, y);
-
-    const slug = (m!.nome || m!.local).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    doc.save(`relatorio-${slug}-${m!.data}.pdf`);
-    toast.success('PDF gerado');
   }
 
   return (
     <Modal
       open={open} onClose={onClose}
       title="Relatório do mutirão"
-      description={`${m.nome || m.local} · ${formatarDataLonga(m.data)}`}
+      description={`${m!.nome || m!.local} · ${formatarDataLonga(m!.data)}`}
       size="lg"
       footer={
         <>
@@ -1090,11 +1104,11 @@ function RelatorioMutiraoModal({
       <div className="space-y-4">
         {/* Cards de stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Inscritos" value={(m.pacientesConfirmados ?? []).length} sub="pelo portal" />
+          <StatCard label="Inscritos" value={(m!.pacientesConfirmados ?? []).length} sub="pelo portal" />
           <StatCard label="Pacientes" value={stats.pacientesAtendidos} sub="atendidos" />
           <StatCard label="Encaminhados" value={stats.vinculosCriados} sub="para tratamento" tone="success" />
-          <StatCard label="Comparecimento" value={`${stats.taxaComparecimento}%`} sub={`de ~${m.pacientesEsperados} esperados`} />
-          <StatCard label="Voluntários" value={m.dentistasConfirmados} sub="presentes" />
+          <StatCard label="Comparecimento" value={`${stats.taxaComparecimento}%`} sub={`de ~${m!.pacientesEsperados} esperados`} />
+          <StatCard label="Voluntários" value={m!.dentistasConfirmados} sub="presentes" />
         </div>
 
         {/* Dados do evento */}
@@ -1103,19 +1117,19 @@ function RelatorioMutiraoModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div>
               <span className="text-muted">Programa:</span>{' '}
-              <span className="text-ink">{m.programa}</span>
+              <span className="text-ink">{m!.programa}</span>
             </div>
             <div>
               <span className="text-muted">Tipo:</span>{' '}
-              <span className="text-ink">{m.tipo}</span>
+              <span className="text-ink">{m!.tipo}</span>
             </div>
             <div>
               <span className="text-muted">Local:</span>{' '}
-              <span className="text-ink">{m.local}, {m.cidade}-{m.estado}</span>
+              <span className="text-ink">{m!.local}, {m!.cidade}-{m!.estado}</span>
             </div>
             <div>
               <span className="text-muted">Duração:</span>{' '}
-              <span className="text-ink">{stats.duracaoEfetivaHoras}h ({m.horario})</span>
+              <span className="text-ink">{stats.duracaoEfetivaHoras}h ({m!.horario})</span>
             </div>
           </div>
         </div>
