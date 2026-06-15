@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
 import SessionWarning from '../../Components/SessionWarning/SessionWarning'
-import { solicitacaoService } from '../../Services/api'
+import { beneficiarioService } from '../../Services/api'
 // NOVO ↓ — ajusta o caminho se a pasta do seu Dashboard for diferente
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
@@ -725,7 +725,7 @@ const PortalBeneficiario = () => {
 
     async function carregarDados() {
       try {
-        const dados = await solicitacaoService.buscar(cpfSalvo!)
+        const dados = await beneficiarioService.buscar(cpfSalvo!)
         console.log('DADOS API:', dados)
         if (dados) {
           console.log('DADOS RECEBIDOS:', dados);
