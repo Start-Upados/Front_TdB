@@ -48,7 +48,7 @@ const PERIODOS: {
 
   {
     value: 'ano',
-    label: 'Ano (2025)',
+    label: 'Ano (2026)',
   },
 
   {
@@ -94,7 +94,7 @@ const PUBLICOS: {
 
 const CONTEUDO_PDF = [
   'Capa personalizada com logo do destinatário',
-  'Resumo executivo: 8.247 sorrisos em 2025',
+  'Resumo executivo: 8.247 sorrisos em 2026',
   'Impacto por programa (DdB + Apolônias)',
   'Distribuição geográfica · 142 municípios',
   'Casos reais (antes/depois com autorização)',
@@ -183,7 +183,7 @@ export default function RelatoriosPage() {
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Sorrisos transformados: ${kpis.sorrisosTransformados.toLocaleString('pt-BR')} em 2025`, 20, y); y += 6;
+      doc.text(`Sorrisos transformados: ${kpis.sorrisosTransformados.toLocaleString('pt-BR')} em 2026`, 20, y); y += 6;
       doc.text(`Jovens beneficiados: ${kpis.jovensBeneficiados.toLocaleString('pt-BR')} (Dentista do Bem)`, 20, y); y += 6;
       doc.text(`Mulheres acolhidas: ${kpis.mulheresAcolhidas} (Apolônias do Bem)`, 20, y); y += 6;
       doc.text(`Municípios alcançados: ${kpis.municipiosAlcancados} (+${kpis.novosMunicipiosVsAnoPassado} vs 2024)`, 20, y); y += 12;
@@ -200,7 +200,7 @@ export default function RelatoriosPage() {
         doc.text('• Custo por atendimento: R$ 47,00', 25, y); y += 6;
         doc.text('• Para cada R$ 1 investido, R$ 4,30 de impacto social estimado', 25, y); y += 6;
         doc.text('• 142 municípios alcançados com sua doação', 25, y); y += 6;
-        doc.text('• 8.247 vidas transformadas em 2025', 25, y); y += 10;
+        doc.text('• 8.247 vidas transformadas em 2026', 25, y); y += 10;
 
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
@@ -291,7 +291,7 @@ export default function RelatoriosPage() {
         <KpiCard
           label="Sorrisos transformados"
           value={kpis.sorrisosTransformados.toLocaleString('pt-BR')}
-          sub={`em 2025 · meta ${kpis.metaAnual.toLocaleString('pt-BR')}`}
+          sub={`em 2026 · meta ${kpis.metaAnual.toLocaleString('pt-BR')}`}
         />
 
         <KpiCard
@@ -309,7 +309,7 @@ export default function RelatoriosPage() {
         <KpiCard
           label="Municípios alcançados"
           value={kpis.municipiosAlcancados.toString()}
-          sub={`+${kpis.novosMunicipiosVsAnoPassado} vs 2024`}
+          sub={`+${kpis.novosMunicipiosVsAnoPassado} vs 2025`}
           subTone="success"
         />
       </div>

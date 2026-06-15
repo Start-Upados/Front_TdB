@@ -186,9 +186,10 @@ export default function CadastrarVoluntario() {
   const TOTAL_STEPS = 3
   const stepLabels  = ['Pessoais', 'Profissional', 'Atuação']
 
-  async function nextStep() {
+  // DEPOIS - retirado 'rgCpf' e 'telefone'
+async function nextStep() {
     const fieldsPerStep: (keyof FormData)[][] = [
-      ['nome', 'rgCpf', 'email', 'telefone'],
+      ['nome', 'email'],
       ['cro', 'especializacao', 'cep', 'nConsultorio'],
       ['disponibilidade', 'aceitaTermos'],
     ]
@@ -311,7 +312,7 @@ export default function CadastrarVoluntario() {
                 </Campo>
 
                 <Campo label="CPF">
-                  <input {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })}
+                  <input  //{...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })}
                     type="text"
                     value={cpf}
                     onChange={e => setCpf(formatCPF(e.target.value))}

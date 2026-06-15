@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { Smile, HeartHandshake, ArrowRight, ArrowLeft, Check, CheckCircle2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { appendSheet } from '../../Services/googleSheets'
-import { solicitacaoService } from '../../Services/api'
+import { solicitacaoService, beneficiarioService } from '../../Services/api'
 
 
 type TipoAtendimento = 'selecao' | 'jovem' | 'mulher'
@@ -380,6 +380,22 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
     }
 
     try {
+      await beneficiarioService.cadastrar({
+        nome:       data.nomeAdolescente,
+        rgCpf:      data.rgCpf,            // formatado (000.000.000-00) — tem que bater com o login
+        email:      data.email,
+        senha:      senha,                // mesma senha mostrada na tela de sucesso
+        telefone:   whatsapp || telefone,
+        cep:        data.cep,
+        sexo:       'masculino',
+        dataNasc:   data.dataNascimento,
+        numeroCasa: 0,                    // o form não coleta número da casa
+      })
+    } catch (err) {
+      console.warn('Backend indisponivel ao criar beneficiario (login):', err)
+    }
+
+    try {
       await appendSheet('Mensagens!A:N', [[
         prot, data.nomeResponsavel, data.email, whatsapp, telefone,
         'Solicitacao de Atendimento — Dentista do Bem',
@@ -446,7 +462,15 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
                 <input {...register('nomeAdolescente', { required: 'Campo obrigatório' })} placeholder="Nome completo" className={inputCls} />
               </Campo>
               <Campo label="Data de nascimento" error={errors.dataNascimento?.message}>
-                <input type="date" {...register('dataNascimento', { required: 'Campo obrigatório' })} className={inputCls} />
+                <input type="date" {...register('dataNascimento', { 
+                  required: 'Campo obrigatório', 
+                  validate: v => {
+                    const idade = calcularIdade(v)
+                    if (idade < 11 || idade > 17) return 'O jovem precisa ter entre 11 e 17 anos'
+                    return true
+                  },
+                 })} className={inputCls}
+                />
               </Campo>
               <Campo label="Renda familiar" error={errors.rendaFamiliar?.message}>
                 <select {...register('rendaFamiliar', { required: 'Campo obrigatório' })} className={selectCls}>
@@ -640,6 +664,22 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
   console.warn('Backend indisponivel, salvando no Sheets:', err)
 }
 
+  try {
+    await beneficiarioService.cadastrar({
+      nome:       data.nome,
+      rgCpf:      data.rgCpf,            // formatado — NÃO use o .replace(/\D/g,'') aqui; precisa bater com o login
+      email:      data.email,
+      senha:      senha,
+      telefone:   whatsapp || telefone,
+      cep:        data.cep,
+      sexo:       'feminino',
+      dataNasc:   data.dataNascimento,
+      numeroCasa: 0,
+    })
+  } catch (err) {
+    console.warn('Backend indisponivel ao criar beneficiario (login):', err)
+  }
+
   const idade = calcularIdade(data.dataNascimento)
   const { cidade, endereco, uf } = await buscarEnderecoCEP(data.cep)
   const procedimentoAtual = data.foiVitima === 'Sim'
@@ -710,7 +750,15 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
                 <input {...register('nome', { required: 'Campo obrigatório' })} placeholder="Seu nome completo" className={inputCls} />
               </Campo>
               <Campo label="Data de nascimento" error={errors.dataNascimento?.message}>
-                <input type="date" {...register('dataNascimento', { required: 'Campo obrigatório' })} className={inputCls} />
+                <input type="date" {...register('dataNascimento', { 
+                  required: 'Campo obrigatório',
+                  validate: v => {
+                    const idade = calcularIdade(v)
+                    if (idade < 15 || idade > 100) return 'A idade deve estar entre 18 e 100 anos'
+                    return true
+                  },
+                 })} className={inputCls}
+                />
               </Campo>
               <div className="grid grid-cols-2 gap-3">
                 <Campo label="WhatsApp" required={false}>

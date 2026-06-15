@@ -73,8 +73,8 @@ export function Sidebar() {
         {/* META */}
         <div className="px-5 py-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm md:text-xs text-muted">
-              Meta anual
+            <span className="text-sm md:text-xs text-black">
+              Meta TdB
             </span>
 
             <span className="text-sm md:text-xs font-semibold text-ink">
@@ -89,7 +89,7 @@ export function Sidebar() {
             />
           </div>
 
-          <p className="text-xs text-subtle mt-2 leading-relaxed">
+          <p className="text-xs text-black mt-2 leading-relaxed">
             82.000 de 100.000 atendimentos
           </p>
         </div>
