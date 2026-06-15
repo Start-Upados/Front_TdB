@@ -281,10 +281,11 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
 
     try {
       const ok = await authService.loginPaciente(rgCpf, senha);
-      console.log(ok);
+      console.log('CPF DIGITADO NO LOGIN:', rgCpf);
+      console.log('LOGIN RETORNOU:', ok);
       if (ok) {
         sessionStorage.setItem('tdb_rgCpf', rgCpf);
-        navigate('/meu-painel');
+        navigate('/meu-atendimento');
       }
     } catch (error) {
       console.log(error);

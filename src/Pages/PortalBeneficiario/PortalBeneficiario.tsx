@@ -708,24 +708,27 @@ const PortalBeneficiario = () => {
   const { showWarning, minutesLeft, resetTimer } = useSessionTimeout({
     timeoutMinutes: 30,
     warningMinutes: 1,
-    storageKey: 'tdb_cpf',
+    storageKey: 'tdb_rgCpf',
   })
   const [paciente,   setPaciente]   = useState<Paciente | null>(null)
   const [carregando, setCarregando] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
-    const cpfSalvo = sessionStorage.getItem('tdb_cpf')
+    const cpfSalvo = sessionStorage.getItem('tdb_rgCpf')
+    console.log('CPF DA SESSAO:', cpfSalvo)
 
     if (!cpfSalvo) {
-      navigate('/login')
+      navigate('/meu-atendimento')
       return
     }
 
     async function carregarDados() {
       try {
         const dados = await solicitacaoService.buscar(cpfSalvo!)
+        console.log('DADOS API:', dados)
         if (dados) {
+          console.log('DADOS RECEBIDOS:', dados);
           setPaciente(mapearBackend(dados as unknown as Record<string, string>))
           return
         }

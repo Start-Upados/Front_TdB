@@ -5,10 +5,10 @@ interface Props {
 }
 
 export default function ProtectedRoutePaciente({ children }: Props) {
-  const cpfSalvo = sessionStorage.getItem('tdb_cpf')
+  const cpfSalvo = sessionStorage.getItem('tdb_rgCpf')
 
   if (!cpfSalvo) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/meu-atendimento" replace />
   }
 
   return <>{children}</>
