@@ -63,6 +63,20 @@ function formatTelefone(value: string): string {
   return nums
 }
 
+function formatCPF(value: string): string {
+  const nums = value.replace(/\D/g, '').slice(0, 11)
+  if (nums.length <= 3) return nums
+  if (nums.length <= 6) return `${nums.slice(0, 3)}.${nums.slice(3)}`
+  if (nums.length <= 9) return `${nums.slice(0, 3)}.${nums.slice(3, 6)}.${nums.slice(6)}`
+  return `${nums.slice(0, 3)}.${nums.slice(3, 6)}.${nums.slice(6, 9)}-${nums.slice(9)}`
+}
+
+function formatCEP(value: string): string {
+  const nums = value.replace(/\D/g, '').slice(0, 8)
+  if (nums.length <= 5) return nums
+  return `${nums.slice(0, 5)}-${nums.slice(5)}`
+}
+
 function calcularIdade(dataNasc: string): number {
   if (!dataNasc) return 0;
   const nasc = new Date(dataNasc);
@@ -328,7 +342,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
   const [telefone, setTelefone] = useState('')
   
 
-  const { register, trigger, formState: { errors }, getValues } = useForm<FormJovem>()
+  
+  const { register, trigger, setValue, formState: { errors }, getValues } = useForm<FormJovem>()
 
   const TOTAL_STEPS = 3
   const stepLabels  = ['Adolescente', 'Responsável', 'Atendimento']
@@ -493,7 +508,13 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
                 </select>
               </Campo>
               <Campo label="CPF" error={errors.rgCpf?.message}>
-                <input {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })} placeholder="000.000.000-00" className={inputCls} />
+                <input
+                  {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })}
+                  onChange={e => setValue('rgCpf', formatCPF(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className={inputCls}
+                />
               </Campo>
             </>
           )}
@@ -525,17 +546,12 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
                 <input type="email" {...register('email', { required: 'Campo obrigatório', pattern: { value: /^\S+@\S+$/i, message: 'Email inválido' } })} placeholder="seu@email.com" className={inputCls} />
               </Campo>
               <Campo label="CEP" error={errors.cep?.message}>
-                <input 
-                {...register('cep', {
-                      required: 'Obrigatório',
-                      pattern: {
-                        value: /^\d{5}-\d{3}$/,
-                        message: 'Formato inválido. Ex.: 12345-000',
-                      },
-                    })}
-                    placeholder="Digite seu CEP"
-                    maxLength={9}
-                    className={inputCls}
+                <input
+                  {...register('cep', { required: 'Obrigatório', pattern: { value: /^\d{5}-\d{3}$/, message: 'Formato inválido. Ex.: 12345-000' } })}
+                  onChange={e => setValue('cep', formatCEP(e.target.value))}
+                  placeholder="Digite seu CEP"
+                  maxLength={9}
+                  className={inputCls}
                 />
               </Campo>
             </>
@@ -615,7 +631,8 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
   const [whatsapp, setWhatsapp] = useState('')
   const [telefone, setTelefone] = useState('')
 
-  const { register, trigger, formState: { errors }, getValues } = useForm<FormMulher>()
+  // DEPOIS
+  const { register, trigger, watch, setValue, formState: { errors }, getValues } = useForm<FormMulher>()
 
   const TOTAL_STEPS = 2
   const stepLabels  = ['Dados pessoais', 'Atendimento']
@@ -769,21 +786,25 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
                 </Campo>
               </div>
               <Campo label="CPF" error={errors.rgCpf?.message}>
-                <input {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })} placeholder="000.000.000-00" className={inputCls} />
+                <input
+                  {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })}
+                  onChange={e => setValue('rgCpf', formatCPF(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className={inputCls}
+                />
               </Campo>
               <Campo label="Email" error={errors.email?.message}>
                 <input type="email" {...register('email', { required: 'Campo obrigatório', pattern: { value: /^\S+@\S+$/i, message: 'Email inválido' } })} placeholder="seu@email.com" className={inputCls} />
               </Campo>
               <Campo label="CEP" error={errors.cep?.message}>
-                <input {...register('cep', { required: 'Campo obrigatório', pattern: {
-                        value: /^\d{5}-\d{3}$/,
-                        message: 'Formato inválido. Ex.: 12345-000',
-                      },
-                      })} 
-                      placeholder="12345-000"
-                      maxLength={9}
-                      className={inputCls}
-                    />
+                <input
+                  {...register('cep', { required: 'Campo obrigatório', pattern: { value: /^\d{5}-\d{3}$/, message: 'Formato inválido. Ex.: 12345-000' } })}
+                  onChange={e => setValue('cep', formatCEP(e.target.value))}
+                  placeholder="12345-000"
+                  maxLength={9}
+                  className={inputCls}
+                />
               </Campo>
             </>
           )}
@@ -804,7 +825,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
                         className="sr-only"
                       />
                       <div className={`w-full py-3 rounded-xl border-2 text-center font-semibold text-[14px] transition-all duration-200 ${
-                        getValues('foiVitima') === opcao
+                        watch('foiVitima') === opcao
                           ? opcao === 'Sim'
                             ? 'border-[#CED600] bg-[#CED600] text-[#1A2E05]'
                             : 'border-[#94A3B8] bg-[#F1F5F9] text-[#475569]'
