@@ -17,6 +17,7 @@ import {
   convidarDentista,
   cancelarConvite,
   criarTriagem,
+  carregarTriagensReais,
   type SugestaoDentista,
 } from '../services/triagens';
 import type { Paciente, StatusVinculacao, Programa, Severidade } from '../data/triagens';
@@ -76,6 +77,13 @@ export default function TriagensPage() {
   function refreshFila() {
     setPacientes(listarFila());
   }
+
+  // Carrega triagens do backend uma vez no mount + sincroniza estado local
+  useEffect(() => {
+    carregarTriagensReais()
+      .then(() => refreshFila())
+      .catch(() => { /* silencioso — fallback pro localStorage */ });
+  }, []);
 
   // Reset da expansão ao trocar de paciente
   useEffect(() => {
@@ -251,7 +259,7 @@ export default function TriagensPage() {
       </div>
 
       {/* Fila + Matching */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 border border-line rounded-2xl overflow-hidden bg-surface">
+      <div className="grid grid-cols-1 xl:grid-cols-12 border border-line rounded-2xl overflow-hidden bg-surface gap-6">
 
         {/* Lista de pacientes */}
         <div className="xl:col-span-5 border-b xl:border-b-0 xl:border-r border-line overflow-y-auto max-h-[420px] xl:max-h-[720px]">

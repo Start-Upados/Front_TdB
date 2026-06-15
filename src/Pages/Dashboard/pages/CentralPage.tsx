@@ -445,7 +445,7 @@ async function handleRecusar(info: InfoRecusa) {
       </div>
 
       {/* GRID */}
-      <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line bg-surface shadow-cardxl:grid-cols-12">
+      <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line bg-surface shadow-cardxl:grid-cols-12 gap-6">
 
         {/* LIST */}
         <div className="max-h-[420px] overflow-y-auto border-b border-line xl:col-span-5 xl:max-h-[760px] xl:border-b-0 xl:border-r">

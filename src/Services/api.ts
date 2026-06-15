@@ -65,6 +65,7 @@ export interface CampanhaBody {
 }
 
 // ─── MENSAGEM (Mensagem.java) ─────────────────
+/*
 export interface MensagemBody {
   idMensagem?: number
   idConversa?: number
@@ -73,6 +74,54 @@ export interface MensagemBody {
   conteudo:    string
   dataEnvio?:  string
 }
+  */
+
+// ─── TRIAGEM (Triagem.java) ───────────────────
+export interface TriagemBody {
+  idTriagem?:                number   // gerado pelo backend
+  status?:                   string   // 'pendente' | 'em-andamento' | 'concluida' | etc
+  protocolo?:                string
+  pacienteNome:              string
+  pacienteRgCpf:             string
+  programa:                  string   // 'Dentista do Bem' | 'Apolônias do Bem'
+  scoreMl?:                  number
+  prioridade?:               string   // 'Alta' | 'Media' | 'Baixa'
+  cep?:                      string
+  especialidadeNescessaria?: string   // sic — typo está no backend, manter
+  observacaoAdmin?:          string
+}
+
+// ─── CONVITE (Convite.java) — para dentistas em triagens ──
+export interface ConviteBody {
+  idConvite?:        number
+  idTriagem?:        number
+  dentistaRgCpf:     string
+  dentistaNome?:     string
+  mensagem?:         string
+  status?:           string   // 'pendente' | 'aceito' | 'recusado'
+  detalhesRecusado?: string
+  motivoRecusado?:   string
+}
+
+// ─── ATENDIMENTO (Atendimento.java) — gerado ao aceitar convite ──
+export interface AtendimentoBody {
+  idAtendimento?:  number
+  idConvite?:      number
+  dataAtendimento: string   // 'YYYY-MM-DD'
+  horario:         string   // 'HH:MM'
+  observacoes?:    string
+}
+
+// ─── MENSAGEM (Mensagem.java) ─────────────────
+export interface MensagemBody {
+  idMensagem?: number
+  idConversa?: number
+  autor:       string  // 'admin' | 'paciente'
+  nomeAutor?:  string
+  conteudo:    string
+  dataEnvio?:  string
+}
+
  
 // ─── HELPER ───────────────────────────────────
 async function request<T>(
@@ -212,6 +261,41 @@ export const campanhaService = {
     request<unknown>(`/campanha/${nome}`, 'DELETE'),
   addAtendimentos: (nome: string, nAtendimentos: number) =>
     request<unknown>(`/campanha/${nome}/addAtendimento`, 'PUT', undefined, { nAtendimentos }),
+}
+
+// ─── TRIAGEM ──────────────────────────────────
+export const triagemService = {
+  cadastrar: (body: TriagemBody) =>
+    request<{ idTriagem: string; Status: string }>('/triagem', 'POST', body),
+  listar: () =>
+    request<TriagemBody[]>('/triagem'),
+  buscar: (idTriagem: number) =>
+    request<TriagemBody>(`/triagem/${idTriagem}`),
+  buscarPorProtocolo: (protocolo: string) =>
+    request<TriagemBody>(`/triagem/protocolo/${protocolo}`),
+  atualizar: (idTriagem: number, body: Partial<TriagemBody>) =>
+    request<unknown>(`/triagem/${idTriagem}`, 'PUT', body),
+  deletar: (idTriagem: number) =>
+    request<unknown>(`/triagem/${idTriagem}`, 'DELETE'),
+
+  // ─── Convites a dentistas ───────────────────
+  convidar: (idTriagem: number, convite: ConviteBody) =>
+    request<{ conviteId: number }>(`/triagem/convite/${idTriagem}`, 'POST', convite),
+  listarConvitesDaTriagem: (idTriagem: number) =>
+    request<ConviteBody[]>(`/triagem/convite/${idTriagem}`),
+  listarConvitesDoDentista: (dentistaRgCpf: string) =>
+    request<ConviteBody[]>(`/triagem/dentista/${dentistaRgCpf}/convites`),
+  excluirConvite: (idConvite: number) =>
+    request<unknown>(`/triagem/convite/${idConvite}`, 'DELETE'),
+
+  // ─── Ações do dentista no convite ───────────
+  aceitarConvite: (idConvite: number, atendimento: AtendimentoBody) =>
+    request<{ idAtendimento: number }>(`/triagem/convite/${idConvite}/aceitar`, 'POST', atendimento),
+  recusarConvite: (idConvite: number, motivoRecusado: string, detalhesRecusado?: string) =>
+    request<unknown>(`/triagem/convite/${idConvite}/recusar`, 'POST', {
+      motivoRecusado,
+      detalhesRecusado,
+    }),
 }
  
 export const authService = {

@@ -12,6 +12,8 @@ export interface KpiData {
 
 export interface Paciente {
   id: string;
+  idTriagem?: number;       // ← ADICIONAR — PK do backend Oracle
+  idConviteAtivo?: number;  // ← ADICIONAR — id do convite ativo (pra cancelar/aceitar/recusar)
   nome: string;
   iniciais: string;
   idade: number;

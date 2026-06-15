@@ -1,5 +1,9 @@
 import { criarAtendimentoDeTriagem } from './atendimentos';
 import type { Atendimento } from '../data/atendimentos';
+import {
+  triagemService,
+  type TriagemBody,
+} from '../../../Services/api';
 
 import {
   KPIS_TRIAGENS_MOCK,
@@ -14,6 +18,54 @@ import {
 } from '../data/triagens';
 
 import { calcularMatch, type MatchResult } from '../Utils/Geo';
+
+// ─── Helpers de mapeamento Backend ↔ Frontend ────
+function gerarIniciaisDoNome(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s));
+  if (partes.length === 0) return 'XX';
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function gerarRgCpfTemporario(): string {
+  // Backend exige pacienteRgCpf como string; ainda não capturamos CPF real no form
+  return `t${Date.now()}${Math.floor(Math.random() * 999)}`;
+}
+
+function mapearTriagemBackend(t: TriagemBody): Paciente {
+  // Backend pode mandar EnderecoDTO com cidade/estado; se não vier, usa defaults
+  const dto = (t as TriagemBody & { dto?: { cidade?: string; estado?: string; uf?: string } }).dto;
+  const cidade = dto?.cidade ?? 'São Paulo';
+  const estado = (dto?.estado ?? dto?.uf ?? 'SP').toUpperCase();
+  const coords = COORDS_POR_ESTADO[estado] ?? COORDS_POR_ESTADO.SP;
+
+  // Mapeia prioridade (backend) → severidade (frontend) — mesmo conceito, nomes diferentes
+  const severidade: Severidade =
+    t.prioridade === 'Alta'  ? 'Alta'  :
+    t.prioridade === 'Baixa' ? 'Baixa' : 'Media';
+
+  const programa: Programa =
+    t.programa === 'Apolônias do Bem' ? 'Apolônias do Bem' : 'Dentista do Bem';
+
+  return {
+    id: t.pacienteRgCpf || `t${t.idTriagem ?? Date.now()}`,
+    idTriagem: t.idTriagem,
+    nome: t.pacienteNome,
+    iniciais: gerarIniciaisDoNome(t.pacienteNome),
+    idade: 0,                                                    // backend não armazena ainda
+    cidade,
+    estado,
+    cep: t.cep ?? '',
+    coords,
+    programa,
+    necessidade: t.observacaoAdmin ?? t.especialidadeNescessaria ?? 'A definir',
+    especialidadeNecessaria: t.especialidadeNescessaria ?? 'Clínico geral',
+    severidade,
+    diasNaFila: 0,
+    origem: { tipo: 'manual', detalhe: 'Importado do backend' },
+    statusVinculacao: 'aguardando',
+  };
+}
 
 /* HOJE: mock + matching local (haversine) com estado mutável em memória.
    AMANHÃ: cada função vira fetch ao backend.
@@ -72,8 +124,63 @@ const COORDS_POR_ESTADO: Record<string, { lat: number; lng: number }> = {
 };
 
 export function obterKpis(): KpiData[] {
-  // PROD: GET /api/triagens/kpis
-  return KPIS_TRIAGENS_MOCK;
+  // ─── HOJE: cálculo dinâmico sobre o estado real da fila ───
+  // Mesma estratégia da Central: KPIs calculados sobre o array `pacientes`
+  // (que já reflete os dados do Oracle via carregarTriagensReais).
+  //
+  // FUTURO: GET /api/triagens/kpis (endpoint dedicado consolidando tudo,
+  // inclusive vinculações da semana e tendências mês a mês).
+
+  const totalNaFila = pacientes.length;
+
+  const tempoMedio = totalNaFila > 0
+    ? Math.round(pacientes.reduce((sum, p) => sum + p.diasNaFila, 0) / totalNaFila)
+    : 0;
+
+  const fila60Dias = pacientes.filter((p) => p.diasNaFila > 60).length;
+
+  return [
+    // [0] Pacientes na fila — DINÂMICO
+    { ...KPIS_TRIAGENS_MOCK[0], value: String(totalNaFila) },
+
+    // [1] Tempo médio na fila — DINÂMICO
+    { ...KPIS_TRIAGENS_MOCK[1], value: `${tempoMedio} dias` },
+
+    // [2] Vinculações esta semana — MOCK por enquanto
+    //     (precisa de histórico de convites aceitos com timestamp no Oracle)
+    KPIS_TRIAGENS_MOCK[2],
+
+    // [3] Fila +60 dias — DINÂMICO
+    { ...KPIS_TRIAGENS_MOCK[3], value: String(fila60Dias) },
+  ];
+}
+
+/**
+ * Puxa triagens do backend Java/Oracle e MESCLA com o estado local.
+ *
+ * Mesma estratégia do central.ts: preserva pacientes locais (mocks ou cadastros offline)
+ * e adiciona/atualiza com os que vieram do Oracle. A UI deve chamar isso no mount
+ * da TriagensPage pra garantir consistência entre navegadores (você ↔ Matheus).
+ */
+export async function carregarTriagensReais(): Promise<{
+  count: number;
+  fonte: 'backend' | 'mock';
+}> {
+  try {
+    const lista = await triagemService.listar();
+    if (Array.isArray(lista) && lista.length > 0) {
+      const doBackend = lista.map(mapearTriagemBackend);
+      const idsBackend = new Set(doBackend.map((p) => p.id));
+      const apenasLocais = pacientes.filter((p) => !idsBackend.has(p.id));
+      pacientes = [...doBackend, ...apenasLocais];
+      persistir();
+      return { count: pacientes.length, fonte: 'backend' };
+    }
+    return { count: pacientes.length, fonte: 'mock' };
+  } catch (err) {
+    console.warn('[triagens] backend indisponível, mantendo dados locais:', err);
+    return { count: pacientes.length, fonte: 'mock' };
+  }
 }
 
 export function listarFila(): Paciente[] {
@@ -110,10 +217,33 @@ export function sugerirDentistas(paciente: Paciente, limite = 3): SugestaoDentis
 
 /** Envia convite de um dentista para um paciente. Paciente passa pra status 'convite-enviado'. */
 export async function convidarDentista(pacienteId: string, dentistaId: string): Promise<void> {
-  // PROD: POST /api/triagens/{pacienteId}/convites { dentistaId }
+  const paciente = pacientes.find((p) => p.id === pacienteId);
+  if (!paciente) throw new Error('Paciente não encontrado');
+  const dentista = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
+
+  // Backend-first: se a triagem existe no Oracle, registra o convite lá e captura o conviteId
+  let idConviteAtivo: number | undefined;
+  if (paciente.idTriagem && dentista) {
+    try {
+      const res = await triagemService.convidar(paciente.idTriagem, {
+        dentistaRgCpf: dentistaId,                // o id local serve como rgCpf
+        dentistaNome: dentista.nome,
+        mensagem: 'Convite gerado via Central de Triagens',
+      });
+      idConviteAtivo = res.conviteId;
+    } catch (err) {
+      console.warn('[triagens] erro ao convidar no backend:', err);
+    }
+  }
+
   pacientes = pacientes.map((p) =>
     p.id === pacienteId
-      ? { ...p, statusVinculacao: 'convite-enviado', dentistaConvidadoId: dentistaId }
+      ? {
+          ...p,
+          statusVinculacao: 'convite-enviado',
+          dentistaConvidadoId: dentistaId,
+          idConviteAtivo,
+        }
       : p,
   );
   persistir();
@@ -121,10 +251,25 @@ export async function convidarDentista(pacienteId: string, dentistaId: string): 
 
 /** Cancela o convite ativo de um paciente. Volta pra status 'aguardando'. */
 export async function cancelarConvite(pacienteId: string): Promise<void> {
-  // PROD: DELETE /api/triagens/{pacienteId}/convites
+  const paciente = pacientes.find((p) => p.id === pacienteId);
+
+  // Backend-first: se tem idConviteAtivo, exclui o convite no Oracle
+  if (paciente?.idConviteAtivo) {
+    try {
+      await triagemService.excluirConvite(paciente.idConviteAtivo);
+    } catch (err) {
+      console.warn('[triagens] erro ao excluir convite no backend:', err);
+    }
+  }
+
   pacientes = pacientes.map((p) =>
     p.id === pacienteId
-      ? { ...p, statusVinculacao: 'aguardando', dentistaConvidadoId: undefined }
+      ? {
+          ...p,
+          statusVinculacao: 'aguardando',
+          dentistaConvidadoId: undefined,
+          idConviteAtivo: undefined,
+        }
       : p,
   );
   persistir();
@@ -146,18 +291,31 @@ export interface NovaTriagemInput {
 
 /** Cria uma nova entrada de triagem na fila. Retorna o paciente criado. */
 export async function criarTriagem(data: NovaTriagemInput): Promise<Paciente> {
-  // PROD: POST /api/triagens { ...data }
-  const iniciais = data.nome
-    .split(' ')
-    .filter((n) => n.length > 0)
-    .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
-    .join('');
-
+  const iniciais = gerarIniciaisDoNome(data.nome);
   const coords = COORDS_POR_ESTADO[data.estado.toUpperCase()] ?? { lat: -23.55, lng: -46.64 };
+  const pacienteRgCpf = gerarRgCpfTemporario();
+
+  // Backend-first: persiste no Oracle e captura o idTriagem
+  let idTriagem: number | undefined;
+  try {
+    const res = await triagemService.cadastrar({
+      pacienteNome: data.nome,
+      pacienteRgCpf,
+      programa: data.programa,
+      prioridade: data.severidade,
+      cep: data.cep,
+      especialidadeNescessaria: data.especialidadeNecessaria,  // sic typo backend
+      observacaoAdmin: data.necessidade + (data.origemDetalhe ? ` · ${data.origemDetalhe}` : ''),
+    });
+    const parsed = parseInt(res.idTriagem, 10);
+    if (!isNaN(parsed)) idTriagem = parsed;
+  } catch (err) {
+    console.warn('[triagens] erro ao cadastrar no backend, salvando só local:', err);
+  }
 
   const novo: Paciente = {
-    id: `t${Date.now()}`,
+    id: pacienteRgCpf,
+    idTriagem,
     nome: data.nome,
     iniciais,
     idade: data.idade,
@@ -193,7 +351,6 @@ export interface AceitarConviteInput {
 
 /** Dentista aceita o convite → cria primeiro atendimento + remove paciente da fila. */
 export async function aceitarConvite(input: AceitarConviteInput): Promise<Atendimento> {
-  // PROD: POST /api/triagens/{pacienteId}/convites/aceitar { dataAtendimento, ... }
   const paciente = pacientes.find((p) => p.id === input.pacienteId);
   if (!paciente) throw new Error('Paciente não encontrado');
   if (paciente.statusVinculacao !== 'convite-enviado' || !paciente.dentistaConvidadoId) {
@@ -205,6 +362,19 @@ export async function aceitarConvite(input: AceitarConviteInput): Promise<Atendi
   const dentistaNome = dentistaTriagem?.nome ?? 'Dentista';
   const dentistaCidade = dentistaTriagem?.cidade ?? paciente.cidade;
   const dentistaEstado = dentistaTriagem?.estado ?? paciente.estado;
+
+  // Backend-first: se tem idConviteAtivo, cria o atendimento no Oracle
+  if (paciente.idConviteAtivo) {
+    try {
+      await triagemService.aceitarConvite(paciente.idConviteAtivo, {
+        dataAtendimento: input.dataAtendimento,
+        horario: input.horaAtendimento,
+        observacoes: input.observacoes,
+      });
+    } catch (err) {
+      console.warn('[triagens] erro ao aceitar convite no backend:', err);
+    }
+  }
 
   // Cria o primeiro atendimento (chama service de atendimentos)
   const atendimento = await criarAtendimentoDeTriagem({
@@ -231,11 +401,11 @@ export async function aceitarConvite(input: AceitarConviteInput): Promise<Atendi
 }
 
 /** Dentista recusa o convite → registra no histórico + volta paciente pra 'aguardando'. */
+/** Dentista recusa o convite → registra no histórico + volta paciente pra 'aguardando'. */
 export async function recusarConvite(input: {
   pacienteId: string;
   motivo: string;
 }): Promise<void> {
-  // PROD: POST /api/triagens/{pacienteId}/convites/recusar { motivo }
   const paciente = pacientes.find((p) => p.id === input.pacienteId);
   if (!paciente) throw new Error('Paciente não encontrado');
   if (paciente.statusVinculacao !== 'convite-enviado' || !paciente.dentistaConvidadoId) {
@@ -245,6 +415,15 @@ export async function recusarConvite(input: {
   const dentistaId = paciente.dentistaConvidadoId;
   const dentistaTriagem = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
   const dentistaNome = dentistaTriagem?.nome ?? 'Dentista';
+
+  // Backend-first: se tem idConviteAtivo, recusa no Oracle
+  if (paciente.idConviteAtivo) {
+    try {
+      await triagemService.recusarConvite(paciente.idConviteAtivo, input.motivo);
+    } catch (err) {
+      console.warn('[triagens] erro ao recusar convite no backend:', err);
+    }
+  }
 
   const novoRegistro: RespostaConvite = {
     dentistaId,
@@ -260,6 +439,7 @@ export async function recusarConvite(input: {
           ...p,
           statusVinculacao: 'aguardando',
           dentistaConvidadoId: undefined,
+          idConviteAtivo: undefined,
           historicoConvites: [...(p.historicoConvites ?? []), novoRegistro],
         }
       : p,
