@@ -311,7 +311,7 @@ export default function CadastrarVoluntario() {
                 </Campo>
 
                 <Campo label="CPF">
-                  <input
+                  <input {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })}
                     type="text"
                     value={cpf}
                     onChange={e => setCpf(formatCPF(e.target.value))}

@@ -236,6 +236,37 @@ export function listarProximosPorDentista(dentistaId: string, limite = 10): Aten
     .slice(0, limite);
 }
 
+/**
+ * Conta pacientes únicos em tratamento e na fila de espera, usado no KPI
+ * "Pacientes em tratamento" da Visão Geral.
+ *
+ * - emTratamento:    paciente tem ao menos 1 atendimento 'confirmado' ou 'em-andamento'
+ * - naFilaDeEspera:  paciente tem só atendimento 'aguardando' (não está em tratamento ativo)
+ */
+export function contarPacientesEmTratamento(): {
+  emTratamento: number;
+  naFilaDeEspera: number;
+} {
+  const emTratamentoSet = new Set<string>();
+  const filaSet         = new Set<string>();
+
+  atendimentos.forEach((a) => {
+    if (a.status === 'confirmado' || a.status === 'em-andamento') {
+      emTratamentoSet.add(a.paciente.id);
+    } else if (a.status === 'aguardando') {
+      filaSet.add(a.paciente.id);
+    }
+  });
+
+  // Quem já está em tratamento ativo não conta como "fila de espera"
+  emTratamentoSet.forEach((id) => filaSet.delete(id));
+
+  return {
+    emTratamento:   emTratamentoSet.size,
+    naFilaDeEspera: filaSet.size,
+  };
+}
+
 // ─── Criar atendimento a partir de uma triagem aceita ────────────
 // Diferente de criarAtendimento(): aceita dados completos do paciente/dentista
 // (não busca em PACIENTES_LISTA/DENTISTAS_LISTA), porque o paciente vem da fila

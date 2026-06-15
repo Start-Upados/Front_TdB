@@ -75,7 +75,9 @@ export function obterMutirao(id: string): Mutirao | undefined {
 }
 
 export function diasAte(dataAlvo: string): number {
-  const hoje = new Date(dataDeHoje() + 'T12:00:00');
+  // Usa a data REAL do navegador (não a DATA_REFERENCIA mock de atendimentos.ts)
+  const hojeStr = new Date().toISOString().slice(0, 10);
+  const hoje = new Date(hojeStr + 'T12:00:00');
   const alvo = new Date(dataAlvo + 'T12:00:00');
   return Math.round((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 }

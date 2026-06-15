@@ -326,6 +326,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
   const [telefone, setTelefone] = useState('')
+  
 
   const { register, trigger, formState: { errors }, getValues } = useForm<FormJovem>()
 
@@ -467,8 +468,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
                   <option value="Outro">Outro</option>
                 </select>
               </Campo>
-              <Campo label="RG ou CPF" error={errors.rgCpf?.message}>
-                <input {...register('rgCpf', { required: 'Campo obrigatório' })} placeholder="12345678900" className={inputCls} />
+              <Campo label="CPF" error={errors.rgCpf?.message}>
+                <input {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })} placeholder="000.000.000-00" className={inputCls} />
               </Campo>
             </>
           )}
@@ -500,7 +501,18 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
                 <input type="email" {...register('email', { required: 'Campo obrigatório', pattern: { value: /^\S+@\S+$/i, message: 'Email inválido' } })} placeholder="seu@email.com" className={inputCls} />
               </Campo>
               <Campo label="CEP" error={errors.cep?.message}>
-                <input {...register('cep', { required: 'Campo obrigatório' })} placeholder="12345678" className={inputCls} />
+                <input 
+                {...register('cep', {
+                      required: 'Obrigatório',
+                      pattern: {
+                        value: /^\d{5}-\d{3}$/,
+                        message: 'Formato inválido. Ex.: 12345-000',
+                      },
+                    })}
+                    placeholder="Digite seu CEP"
+                    maxLength={9}
+                    className={inputCls}
+                />
               </Campo>
             </>
           )}
@@ -708,14 +720,22 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
                   <input type="tel" value={telefone} onChange={e => setTelefone(formatTelefone(e.target.value))} placeholder="(11) 99999-9999" maxLength={15} className={inputCls} />
                 </Campo>
               </div>
-              <Campo label="RG ou CPF" error={errors.rgCpf?.message}>
-                <input {...register('rgCpf', { required: 'Campo obrigatório' })} placeholder="12345678900" className={inputCls} />
+              <Campo label="CPF" error={errors.rgCpf?.message}>
+                <input {...register('rgCpf', { required: 'Campo obrigatório', pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'Formato inválido. Ex.: 000.000.000-00' } })} placeholder="000.000.000-00" className={inputCls} />
               </Campo>
               <Campo label="Email" error={errors.email?.message}>
                 <input type="email" {...register('email', { required: 'Campo obrigatório', pattern: { value: /^\S+@\S+$/i, message: 'Email inválido' } })} placeholder="seu@email.com" className={inputCls} />
               </Campo>
               <Campo label="CEP" error={errors.cep?.message}>
-                <input {...register('cep', { required: 'Campo obrigatório' })} placeholder="12345678" className={inputCls} />
+                <input {...register('cep', { required: 'Campo obrigatório', pattern: {
+                        value: /^\d{5}-\d{3}$/,
+                        message: 'Formato inválido. Ex.: 12345-000',
+                      },
+                      })} 
+                      placeholder="12345-000"
+                      maxLength={9}
+                      className={inputCls}
+                    />
               </Campo>
             </>
           )}
