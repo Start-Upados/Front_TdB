@@ -17,9 +17,9 @@ import {
   listarDentistasFiltro, listarPacientes, listarDentistasCadastrados,
   marcarConfirmado, iniciarAtendimento, finalizarAtendimento,
   reagendarAtendimento, criarAtendimento,
+  carregarAtendimentosReais,
   type FiltrosAtendimentos, type NovoAtendimentoInput, type ReagendarInput,
 } from '../services/atendimentos';
-
 import type { Atendimento, StatusAtendimento, ProgramaAtendimento } from '../data/atendimentos';
 import { ESPECIALIDADES_DISPONIVEIS, PROGRAMAS_FILTRO, REGIOES } from '../data/atendimentos';
 
@@ -134,6 +134,13 @@ export default function AtendimentosPage() {
   function refresh() {
     setVersao((v) => v + 1);
   }
+
+  // Carrega atendimentos do backend no mount + sincroniza estado local
+  useEffect(() => {
+    carregarAtendimentosReais()
+      .then(() => refresh())
+      .catch(() => { /* silencioso — fallback pro localStorage */ });
+  }, []);
 
   function abrirAcao(a: Atendimento) {
     setAtendimentoAlvo(a);

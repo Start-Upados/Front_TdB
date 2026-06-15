@@ -105,11 +105,23 @@ export interface ConviteBody {
 
 // ─── ATENDIMENTO (Atendimento.java) — gerado ao aceitar convite ──
 export interface AtendimentoBody {
-  idAtendimento?:  number
-  idConvite?:      number
-  dataAtendimento: string   // 'YYYY-MM-DD'
-  horario:         string   // 'HH:MM'
-  observacoes?:    string
+  idAtendimento?:      number
+  protocolo?:          string
+  pacienteNome?:       string
+  pacienteRgCpf?:      string
+  dentistaRgCpf?:      string
+  dentistaNome?:       string
+  programa?:           string
+  especialidade?:      string
+  dataAtendimento?:    string   // formato definido pelo backend (YYYY-MM-DD HH:MM)
+  duracaoMin?:         number
+  status?:             string   // 'confirmado' | 'em-andamento' | 'concluido' | 'cancelado'
+  sessaoNumero?:       number
+  sessaoTotal?:        number
+  observacoes?:        string
+  ultimoProcedimento?: string
+  criadoEm?:           string
+  ultimaAtualizacao?:  string
 }
 
 // ─── MENSAGEM (Mensagem.java) ─────────────────
@@ -296,6 +308,34 @@ export const triagemService = {
       motivoRecusado,
       detalhesRecusado,
     }),
+}
+
+// ─── ATENDIMENTO ──────────────────────────────
+export const atendimentoService = {
+  listar: () =>
+    request<AtendimentoBody[]>('/atendimento'),
+  buscar: (idAtendimento: number) =>
+    request<AtendimentoBody>(`/atendimento/${idAtendimento}`),
+  listarPorData: (data: string) =>
+    request<AtendimentoBody[]>(`/atendimento/data/${data}`),
+  listarPorDentista: (dentistaRgCpf: string) =>
+    request<AtendimentoBody[]>(`/atendimento/dentista/${dentistaRgCpf}`),
+  alterar: (idAtendimento: number, body: Partial<AtendimentoBody>) =>
+    request<unknown>(`/atendimento/${idAtendimento}`, 'PUT', body),
+  deletar: (idAtendimento: number) =>
+    request<unknown>(`/atendimento/${idAtendimento}`, 'DELETE'),
+
+  // ─── Transições de status ───────────────────
+  confirmar: (idAtendimento: number) =>
+    request<unknown>(`/atendimento/${idAtendimento}/confirmar`, 'PUT'),
+  iniciar: (idAtendimento: number) =>
+    request<unknown>(`/atendimento/${idAtendimento}/iniciar`, 'PUT'),
+  finalizar: (idAtendimento: number) =>
+    request<unknown>(`/atendimento/${idAtendimento}/finalizar`, 'PUT'),
+  cancelar: (idAtendimento: number) =>
+    request<unknown>(`/atendimento/${idAtendimento}/cancelar`, 'PUT'),
+  reagendar: (idAtendimento: number, body: Partial<AtendimentoBody>) =>
+    request<unknown>(`/atendimento/${idAtendimento}/reagendar`, 'PUT', body),
 }
  
 export const authService = {

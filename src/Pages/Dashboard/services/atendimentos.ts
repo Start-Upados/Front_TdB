@@ -8,8 +8,9 @@ import {
   type Atendimento,
   type ProgramaAtendimento,
   type PacienteAtendimento,
+  type StatusAtendimento,
 } from '../data/atendimentos';
-
+import { atendimentoService, type AtendimentoBody } from '../../../Services/api';
 /*
   HOJE: mock + estado mutável em memória.
   AMANHÃ: cada função vira fetch ao backend.
@@ -59,6 +60,93 @@ const contagens: Record<string, number>      = hidratarContagens()    ?? { ...CO
 
 function recalcularContagem(data: string) {
   contagens[data] = atendimentos.filter((a) => a.data === data).length;
+}
+
+// ─── Helpers de mapeamento Backend ↔ Frontend ────
+
+function gerarIniciaisDoNome(nome: string): string {
+  const partes = (nome || '').trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s));
+  if (partes.length === 0) return 'P';
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+/** Aceita 'YYYY-MM-DD HH:MM', 'YYYY-MM-DDTHH:MM:SS', ou só 'YYYY-MM-DD'. */
+function parseDataAtendimento(raw: string | undefined): { data: string; hora: string } {
+  if (!raw) return { data: DATA_REFERENCIA, hora: '00:00' };
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})[T\s]?(\d{2}:\d{2})?/);
+  if (m) return { data: m[1], hora: m[2] ?? '00:00' };
+  return { data: DATA_REFERENCIA, hora: '00:00' };
+}
+
+/** Backend usa 'concluido'/'cancelado'; frontend usa 'realizado'/'no-show'. */
+function statusBackendParaFront(s: string | undefined): StatusAtendimento {
+  switch (s) {
+    case 'confirmado':   return 'confirmado';
+    case 'em-andamento': return 'em-andamento';
+    case 'concluido':    return 'realizado';
+    case 'cancelado':    return 'no-show';
+    default:             return 'aguardando';
+  }
+}
+
+function mapearAtendimentoBackend(body: AtendimentoBody): Atendimento {
+  const { data, hora } = parseDataAtendimento(body.dataAtendimento);
+  return {
+    id: body.idAtendimento ? `b${body.idAtendimento}` : `a${Date.now()}`,
+    idAtendimento: body.idAtendimento,
+    data,
+    hora,
+    duracaoMinutos: body.duracaoMin ?? 30,
+    paciente: {
+      id: body.pacienteRgCpf ?? '',
+      nome: body.pacienteNome ?? 'Paciente',
+      idade: 0,                                       // backend não armazena
+      iniciais: gerarIniciaisDoNome(body.pacienteNome ?? ''),
+    },
+    dentista: {
+      id: body.dentistaRgCpf ?? '',
+      nome: body.dentistaNome ?? 'Dentista',
+    },
+    especialidade: body.especialidade ?? 'Clínico geral',
+    local: '',                                        // backend não armazena
+    programa: (body.programa as ProgramaAtendimento) ?? 'Dentista do Bem',
+    status: statusBackendParaFront(body.status),
+    observacoesPre: body.status !== 'concluido' ? body.observacoes : undefined,
+    observacoesPos: body.status === 'concluido' ? body.observacoes : undefined,
+  };
+}
+
+/**
+ * Puxa atendimentos do Oracle e MESCLA com o estado local.
+ * Dedup por idAtendimento; preserva mocks/locais (que não têm idAtendimento).
+ */
+export async function carregarAtendimentosReais(): Promise<{
+  count: number;
+  fonte: 'backend' | 'mock';
+}> {
+  try {
+    const lista = await atendimentoService.listar();
+    if (Array.isArray(lista) && lista.length > 0) {
+      const doBackend = lista.map(mapearAtendimentoBackend);
+      const idsBackend = new Set(
+        doBackend.map((a) => a.idAtendimento).filter((id): id is number => id !== undefined),
+      );
+      const apenasLocais = atendimentos.filter(
+        (a) => !a.idAtendimento || !idsBackend.has(a.idAtendimento),
+      );
+      atendimentos = [...doBackend, ...apenasLocais];
+      // Recalcula contagens das datas afetadas
+      const datasAfetadas = new Set(doBackend.map((a) => a.data));
+      datasAfetadas.forEach(recalcularContagem);
+      persistir();
+      return { count: atendimentos.length, fonte: 'backend' };
+    }
+    return { count: atendimentos.length, fonte: 'mock' };
+  } catch (err) {
+    console.warn('[atendimentos] backend indisponível, mantendo dados locais:', err);
+    return { count: atendimentos.length, fonte: 'mock' };
+  }
 }
 
 export interface ContagemDia {
@@ -119,7 +207,18 @@ export function listarDentistasCadastrados() {
 
 // ─── Transições de status ─────────────────────────
 
+// ─── Transições de status ─────────────────────────
+
 export async function marcarConfirmado(id: string): Promise<void> {
+  const atendimento = atendimentos.find((a) => a.id === id);
+  // Backend-first: se veio do Oracle, chama endpoint
+  if (atendimento?.idAtendimento) {
+    try {
+      await atendimentoService.confirmar(atendimento.idAtendimento);
+    } catch (err) {
+      console.warn('[atendimentos] erro ao confirmar no backend:', err);
+    }
+  }
   atendimentos = atendimentos.map((a) =>
     a.id === id ? { ...a, status: 'confirmado' as const } : a,
   );
@@ -127,6 +226,14 @@ export async function marcarConfirmado(id: string): Promise<void> {
 }
 
 export async function iniciarAtendimento(id: string): Promise<void> {
+  const atendimento = atendimentos.find((a) => a.id === id);
+  if (atendimento?.idAtendimento) {
+    try {
+      await atendimentoService.iniciar(atendimento.idAtendimento);
+    } catch (err) {
+      console.warn('[atendimentos] erro ao iniciar no backend:', err);
+    }
+  }
   atendimentos = atendimentos.map((a) =>
     a.id === id ? { ...a, status: 'em-andamento' as const } : a,
   );
@@ -137,6 +244,20 @@ export async function finalizarAtendimento(
   id: string,
   observacoesPos?: string,
 ): Promise<void> {
+  const atendimento = atendimentos.find((a) => a.id === id);
+  if (atendimento?.idAtendimento) {
+    try {
+      await atendimentoService.finalizar(atendimento.idAtendimento);
+      // Salva observações em chamada separada (endpoint /finalizar só muda status)
+      if (observacoesPos) {
+        await atendimentoService.alterar(atendimento.idAtendimento, {
+          observacoes: observacoesPos,
+        });
+      }
+    } catch (err) {
+      console.warn('[atendimentos] erro ao finalizar no backend:', err);
+    }
+  }
   atendimentos = atendimentos.map((a) =>
     a.id === id ? { ...a, status: 'realizado' as const, observacoesPos } : a,
   );
@@ -157,6 +278,19 @@ export interface ReagendarInput {
 export async function reagendarAtendimento(input: ReagendarInput): Promise<Atendimento> {
   const original = atendimentos.find((a) => a.id === input.idOriginal);
   if (!original) throw new Error('Atendimento não encontrado');
+
+  // Backend-first: se veio do Oracle, chama /reagendar
+  if (original.idAtendimento) {
+    try {
+      await atendimentoService.reagendar(original.idAtendimento, {
+        dataAtendimento: `${input.novaData} ${input.novaHora}`,
+        duracaoMin: input.duracaoMinutos ?? original.duracaoMinutos,
+        observacoes: input.observacoes,
+      });
+    } catch (err) {
+      console.warn('[atendimentos] erro ao reagendar no backend:', err);
+    }
+  }
 
   // Marca o original como reagendado e atualiza o motivo
   atendimentos = atendimentos.map((a) =>
@@ -234,6 +368,39 @@ export function listarProximosPorDentista(dentistaId: string, limite = 10): Aten
       return a.hora.localeCompare(b.hora);
     })
     .slice(0, limite);
+}
+
+/**
+ * Conta atendimentos do mês corrente (referência: DATA_REFERENCIA) + variação
+ * em relação ao mês anterior. Usado no KPI "Atendimentos no mês" da Visão Geral.
+ *
+ * O array `atendimentos` já é alimentado pelo backend via carregarAtendimentosReais()
+ * — quem chama esse contador vê os dados reais do Oracle + os mocks que ainda estão
+ * em memória.
+ */
+export function contarAtendimentosNoMes(): {
+  atual: number;
+  anterior: number;
+  variacaoPct: number;
+  nomeMesAnterior: string;
+} {
+  const refDate = new Date(DATA_REFERENCIA + 'T12:00:00');
+  const anoMesAtual = `${refDate.getFullYear()}-${String(refDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const refAnterior = new Date(refDate);
+  refAnterior.setMonth(refAnterior.getMonth() - 1);
+  const anoMesAnterior = `${refAnterior.getFullYear()}-${String(refAnterior.getMonth() + 1).padStart(2, '0')}`;
+
+  const atual = atendimentos.filter((a) => a.data.startsWith(anoMesAtual)).length;
+  const anterior = atendimentos.filter((a) => a.data.startsWith(anoMesAnterior)).length;
+
+  const variacaoPct = anterior === 0
+    ? (atual > 0 ? 100 : 0)
+    : Math.round(((atual - anterior) / anterior) * 100);
+
+  const nomeMesAnterior = refAnterior.toLocaleDateString('pt-BR', { month: 'long' });
+
+  return { atual, anterior, variacaoPct, nomeMesAnterior };
 }
 
 /**

@@ -4,7 +4,7 @@ import {
   type KpiData, type PontoMensal, type AlertaVisaoGeral, type DistribuicaoPrograma,
 } from '../data/visaoGeral';
 import { obterKpisFinanceiro } from './financeiro';
-import { contarPacientesEmTratamento } from './atendimentos';
+import { contarPacientesEmTratamento, contarAtendimentosNoMes } from './atendimentos';
 
 /* ════════════════════════════════════════════════════════════════════════
  *  VISÃO GERAL — Service de leitura dos cards do dashboard
@@ -69,8 +69,23 @@ export function obterKpis(): KpiData[] {
       : `${variacaoDoacoes > 0 ? '+' : '-'}${formatarBR(Math.abs(variacaoDoacoes))} vs ${nomeMesAnterior}`;
 
   return [
-    // 1. Atendimentos no mês — mock (futuro: GET /api/dashboard/atendimentos-count?mes=X)
-    KPIS_VISAO_GERAL_MOCK[0],
+    // [0] Atendimentos no mês — DINÂMICO via services/atendimentos
+    (() => {
+      const m = contarAtendimentosNoMes();
+      const subTexto =
+        m.anterior === 0
+          ? `Sem comparação vs ${m.nomeMesAnterior}`
+          : `${m.variacaoPct > 0 ? '+' : ''}${m.variacaoPct}% vs ${m.nomeMesAnterior}`;
+      return {
+        ...KPIS_VISAO_GERAL_MOCK[0],
+        value: String(m.atual),
+        sub: subTexto,
+        subTone:
+          m.variacaoPct > 0 ? ('success' as const) :
+          m.variacaoPct < 0 ? ('danger'  as const) :
+          undefined,
+      };
+    })(),
 
     // 2. Pacientes em tratamento — DINÂMICO via services/atendimentos
     {

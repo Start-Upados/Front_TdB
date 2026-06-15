@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,13 +19,11 @@ import {
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
-import {
-  obterKpis,
-  obterGraficoMensal,
-  listarAlertas,
-  obterDistribuicao,
-} from '../services/visaoGeral';
+import { obterKpis, obterGraficoMensal, listarAlertas, obterDistribuicao } from '../services/visaoGeral';
+import { carregarAtendimentosReais } from '../services/atendimentos';;
 import type { IconeAlerta } from '../data/visaoGeral';
+
+
 
 // Mapa chave -> componente de ícone (o data não guarda componentes React)
 const ICONES_ALERTA: Record<IconeAlerta, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
@@ -134,6 +133,12 @@ function AlertRow({
 }
 
 export default function VisaoGeralPage() {
+  // Garante que o array de atendimentos esteja sincronizado com o backend
+  // antes da KPI "Atendimentos no mês" ser lida
+  useEffect(() => {
+    carregarAtendimentosReais().catch(() => { /* silencioso */ });
+  }, []);
+  
   const kpis = obterKpis();
   const grafico = obterGraficoMensal();
   const alertas = listarAlertas();

@@ -28,6 +28,7 @@ export interface DentistaAtendimento {
 
 export interface Atendimento {
   id: string;
+  idAtendimento?: number;   // PK do backend Oracle (mocks não têm)
   data: string;        // YYYY-MM-DD
   hora: string;        // HH:MM
   duracaoMinutos: number;

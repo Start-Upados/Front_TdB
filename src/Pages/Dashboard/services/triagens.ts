@@ -364,11 +364,18 @@ export async function aceitarConvite(input: AceitarConviteInput): Promise<Atendi
   const dentistaEstado = dentistaTriagem?.estado ?? paciente.estado;
 
   // Backend-first: se tem idConviteAtivo, cria o atendimento no Oracle
+  // Backend-first: se tem idConviteAtivo, cria o atendimento no Oracle
   if (paciente.idConviteAtivo) {
     try {
       await triagemService.aceitarConvite(paciente.idConviteAtivo, {
-        dataAtendimento: input.dataAtendimento,
-        horario: input.horaAtendimento,
+        dataAtendimento: `${input.dataAtendimento} ${input.horaAtendimento}`,
+        duracaoMin: input.duracaoMinutos ?? 60,
+        pacienteNome: paciente.nome,
+        pacienteRgCpf: paciente.id,
+        dentistaRgCpf: dentistaId,
+        dentistaNome,
+        programa: paciente.programa,
+        especialidade: input.especialidade ?? paciente.especialidadeNecessaria,
         observacoes: input.observacoes,
       });
     } catch (err) {
