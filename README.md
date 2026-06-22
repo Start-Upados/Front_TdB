@@ -66,6 +66,62 @@ A plataforma **StartUpados()** foi desenvolvida para digitalizar e otimizar os p
 
 ---
 
+---
+
+## 📸 Screenshots
+
+<div align="center">
+
+### 🌐 Site Institucional
+Primeiro contato do visitante com a ONG, com design responsivo e acessibilidade via VLibras.
+
+![Home do site institucional](docs/screenshots/home2.png)
+
+### 📊 Dashboard Executivo
+Painel administrativo com KPIs dinâmicos calculados a partir dos dados reais do Oracle.
+
+![Dashboard executivo com KPIs](docs/screenshots/admindashboard.png)
+
+### 🌙 Dark Mode com Escopo
+Modo escuro aplicado condicionalmente apenas nas rotas do dashboard, preservando o site institucional em claro.
+
+![Dashboard em modo escuro](docs/screenshots/dashboarddark.png)
+
+### 📝 Solicitação de Atendimento
+Formulário multi-step com máscaras automáticas de CPF/CEP e validação de idade integrada.
+
+![Formulário de solicitação - Dentista do Bem](docs/screenshots/formjovem.png)
+
+### 🗓 Gestão de Atendimentos
+Ciclo de vida completo dos atendimentos: confirmar, iniciar, finalizar, cancelar e reagendar.
+
+![Página de atendimentos](docs/screenshots/atendimentos.png)
+
+### 💰 Financeiro
+Indicadores de doações e parceiros com gráficos interativos via Recharts.
+
+![Dashboard financeiro](docs/screenshots/financeiro.png)
+
+### 🏥 Gerenciar Mutirões
+Cadastro e acompanhamento de mutirões de atendimento, com cálculo automático de dias restantes.
+
+![Gestão de mutirões](docs/screenshots/mutiroes.png)
+
+### 💬 Central de Mensagens
+Hub omnichannel de todas as solicitações em tempo real, com transições automáticas de status.
+
+![Central de Mensagens](docs/screenshots/centralcanais.png)
+
+</div>
+
+> 💡 _Mais screenshots do projeto disponíveis em [`docs/screenshots/`](docs/screenshots/)._
+
+---
+
+---
+
+
+
 ## 🏛 Arquitetura
 
 ```mermaid
