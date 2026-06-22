@@ -81,17 +81,17 @@ Primeiro contato do visitante com a ONG, com design responsivo e acessibilidade 
 ### 📊 Dashboard Executivo
 Painel administrativo com KPIs dinâmicos calculados a partir dos dados reais do Oracle.
 
-![Dashboard executivo com KPIs](docs/screenshots/admindashboard.png)
+![Dashboard executivo com KPIs](docs/screenshots/adminDashboard.png)
 
 ### 🌙 Dark Mode com Escopo
 Modo escuro aplicado condicionalmente apenas nas rotas do dashboard, preservando o site institucional em claro.
 
-![Dashboard em modo escuro](docs/screenshots/dashboarddark.png)
+![Dashboard em modo escuro](docs/screenshots/dashboardDark.png)
 
 ### 📝 Solicitação de Atendimento
 Formulário multi-step com máscaras automáticas de CPF/CEP e validação de idade integrada.
 
-![Formulário de solicitação - Dentista do Bem](docs/screenshots/formjovem.png)
+![Formulário de solicitação - Dentista do Bem](docs/screenshots/formJovem.png)
 
 ### 🗓 Gestão de Atendimentos
 Ciclo de vida completo dos atendimentos: confirmar, iniciar, finalizar, cancelar e reagendar.
@@ -111,7 +111,7 @@ Cadastro e acompanhamento de mutirões de atendimento, com cálculo automático 
 ### 💬 Central de Mensagens
 Hub omnichannel de todas as solicitações em tempo real, com transições automáticas de status.
 
-![Central de Mensagens](docs/screenshots/centralcanais.png)
+![Central de Mensagens](docs/screenshots/centralCanais.png)
 
 </div>
 
