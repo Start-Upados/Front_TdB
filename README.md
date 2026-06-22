@@ -18,6 +18,8 @@
 
 </div>
 
+🇺🇸 _[English version](README.en.md)_
+
 ---
 
 ## 📑 Sumário
