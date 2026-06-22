@@ -25,6 +25,7 @@
 ## 📑 Sumário
 
 - [Sobre o Projeto](#-sobre-o-projeto)
+- [📸 Screenshots](#-screenshots)
 - [Arquitetura](#-arquitetura)
 - [Stack Tecnológica](#-stack-tecnológica)
 - [Funcionalidades](#-funcionalidades)
