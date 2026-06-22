@@ -211,14 +211,14 @@ Painel administrativo com acesso protegido, organizado em módulos:
 - **Transições de status automáticas** com base no remetente da mensagem
 - Notas internas por solicitação
 
-### 📱 Integração WhatsApp _(em desenvolvimento)_
+### 📱 Integração WhatsApp
 Integração com a **WhatsApp Cloud API** orquestrada via **n8n**, seguindo arquitetura de _gateway_ stateless (o Quarkus controla a lógica, o n8n apenas entrega):
 
 | Fase | Escopo | Status |
 |---|---|---|
 | **Fase 1** | Recebimento de mensagens de pacientes (_inbound_) com deduplicação por WAMID | ✅ Funcional |
-| **Fase 2** | Lembretes de consulta via _templates_ aprovados pela Meta | 🔧 Em construção |
-| **Fase 3** | Confirmação de presença com botões interativos | 🔧 Em construção |
+| **Fase 2** | Lembretes de consulta via _templates_ aprovados pela Meta | ✅ Funcional |
+| **Fase 3** | Confirmação de presença com botões interativos | ✅ Funcional |
 | **Fase 4** | Disparo em massa / _broadcast_ | 📋 Planejado |
 
 > Convenção de payload de botões: `acao:tipo:id` (ex.: `confirmar:consulta:1023`), permitindo um roteador genérico de ações no backend.
@@ -231,7 +231,7 @@ Modelo de classificação que prioriza automaticamente as solicitações de aten
 
 ### Dataset
 
-- **Registros:** 2.638 (após remoção de 9 duplicatas)
+- **Registros:** 2.638
 - **Features:** `tipo_pedido`, `sexo`, `idade`, `tempo_espera`, `vulnerabilidade`, `tipo_violencia`, `elegivel`, `programa`, `dano_dentario`, `tipo_tratamento`
 
 | Prioridade | Quantidade | % |
