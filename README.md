@@ -159,6 +159,7 @@ flowchart LR
 - Login por CPF e senha
 - Histórico de consultas e progresso do tratamento
 - Próximos atendimentos
+- Central de Mensagens
 - _Session timeout_ de 30 minutos com aviso prévio
 - Busca no backend Java com _fallback_ para mock
 
@@ -171,6 +172,7 @@ flowchart LR
 ### 🦷 Painel do Dentista
 - Login por CRO e senha
 - Agenda de próximos atendimentos
+- Central de Mensagens
 - Acesso rápido à validação de paciente por QR Code
 - _Session timeout_ de 30 minutos
 
@@ -448,10 +450,10 @@ npm run preview
 - [x] Ciclo de vida completo de atendimentos e triagens
 - [x] Exportação de relatórios em PDF
 - [x] WhatsApp Cloud API — Fase 1 (_inbound_)
-- [ ] WhatsApp Cloud API — Fases 2 e 3 (lembretes e confirmação)
-- [ ] Autenticação JWT robusta
-- [ ] Servir o modelo de ML como API REST integrada à plataforma
-- [ ] Meta Graph API (Instagram e Facebook) na Central de Mensagens
+- [x] WhatsApp Cloud API — Fases 2 e 3 (lembretes e confirmação)
+- [x] Autenticação JWT robusta
+- [x] Servir o modelo de ML como API REST integrada à plataforma
+- [x] Meta Graph API (Instagram e Facebook) na Central de Mensagens
 
 ---
 
