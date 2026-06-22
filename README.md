@@ -255,35 +255,6 @@ RandomForestClassifier(
     random_state=42
 )
 ```
----
-Variáveis de Ambiente
-Crie um arquivo `.env` na raiz do projeto:
-```env
-VITE_GOOGLE_CLIENT_EMAIL=tdb-dashboard@startupados-tdb.iam.gserviceaccount.com
-VITE_GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-VITE_GOOGLE_SHEET_ID=
-VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/.../exec
-VITE_BACKEND_URL=https://backend-mjgv.onrender.com
-```
----
-Como Rodar Localmente
-```bash
-# 1. Clone o repositório
-git clone https://github.com/seu-usuario/startupados.git
-cd startupados
-
-# 2. Instale as dependências
-npm install
-
-# 3. Configure as variáveis de ambiente
-cp .env.example .env
-# Edite o .env com suas credenciais
-
-# 4. Rode o projeto
-npm run dev
-
-# 5. Acesse em http://localhost:5173
-```
 Build para produção
 ```bash
 npm run build
@@ -293,7 +264,7 @@ npm run preview
 Deploy
 Frontend: Vercel — deploy automático a cada push na branch `main`
 URL de produção: www.startupados.com.br
-Backend: Render.com — `https://backend-mjgv.onrender.com`
+Backend: Render.com
 > **Atenção:** O backend no Render.com hiberna após 15 minutos de inatividade. A primeira requisição pode demorar até 60 segundos para acordar o serviço. O frontend trata esse cenário com fallback automático para o Google Sheets.
 ---
 
