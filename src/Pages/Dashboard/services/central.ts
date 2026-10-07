@@ -2,7 +2,7 @@ import { solicitacaoService, type SolicitacaoBody } from '../../../Services/api'
 import { criarTriagem, type NovaTriagemInput } from './triagens';
 
 import {
-  SOLICITACOES_MOCK, KPIS_CENTRAL_MOCK,
+  KPIS_CENTRAL_MOCK,
   type Solicitacao, type KpiData, type Prioridade,
   type Mensagem, type MotivoFechamento, type Programa,
   type TriagemOral, type InfoRecusa,
@@ -29,7 +29,7 @@ function hidratar(): Solicitacao[] | null {
   }
 }
 
-let solicitacoes: Solicitacao[] = hidratar() ?? [...SOLICITACOES_MOCK];
+let solicitacoes: Solicitacao[] = hidratar() ?? [];
 
 // ─── Leitura ──────────────────────────────────────
 

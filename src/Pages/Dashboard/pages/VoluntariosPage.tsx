@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -18,6 +18,7 @@ import {
   listarPendentes,
   listarEspecialidades,
   obterDistribuicaoRegional,
+  carregarDentistasReais,
 } from '../services/voluntarios';
 import type { Regiao } from '../data/dentistas';
 
@@ -31,12 +32,16 @@ const REGIOES: Regiao[] = [
 
 export default function VoluntariosPage() {
   const navigate = useNavigate();
-
   const kpis = obterKpis();
   const dentistas = listarDentistas();
   const pendentes = listarPendentes();
   const especialidades = listarEspecialidades();
   const distribuicao = obterDistribuicaoRegional();
+
+  const [carregado, setCarregado] = useState(false);
+  useEffect(() => {
+  carregarDentistasReais().finally(() => setCarregado(true));
+  }, []);
 
   const [regiao, setRegiao] = useState<Regiao>('Sudeste');
 
@@ -69,7 +74,12 @@ export default function VoluntariosPage() {
     return true;
   });
 
+  if (!carregado) {
+  return <p className="py-10 text-center text-sm text-muted">Carregando dentistas...</p>;
+  }
+
   return (
+    
     <div className="flex w-full max-w-full flex-col gap-5">
 
       {/* KPI */}

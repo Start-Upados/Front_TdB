@@ -7,15 +7,109 @@ import {
   type RegistroSuspensao,
 } from '../data/dentistas';
 
-/* HOJE: mock + estado mutável em memória.
-   AMANHÃ: cada função vira fetch ao backend.
-   - aprovarDentista()    vira PATCH  /api/voluntarios/{id}/aprovar
-   - rejeitarDentista()   vira PATCH  /api/voluntarios/{id}/rejeitar
-   - suspenderDentista()  vira PATCH  /api/voluntarios/{id}/suspender
-   - reativarDentista()   vira PATCH  /api/voluntarios/{id}/reativar
-*/
+import { dentistaService, type DentistaBody } from '../../../Services/api';
 
 let dentistas: DentistaCompleto[] = [...DENTISTAS];
+let contatosBackend: Record<string, { whatsapp: string; email: string; telefone: string }> = {};
+
+// ─── Backend real ────────────────────────────────
+// Converte o DentistaBody (enxuto, do Oracle) no DentistaCompleto (rico) que a
+// tela usa. O backend não tem todos os campos — os que faltam recebem defaults
+// seguros até existirem no banco (Opção A).
+
+function iniciaisDe(nome: string): string {
+  const p = nome.trim().split(/\s+/).filter((x) => !['Dr.', 'Dra.'].includes(x));
+  if (p.length === 0) return 'XX';
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+  return (p[0][0] + p[p.length - 1][0]).toUpperCase();
+}
+
+function statusDe(s?: string): DentistaCompleto['status'] {
+  switch ((s ?? '').toLowerCase()) {
+    case 'ativa':
+    case 'ativo':     return 'Ativa';
+    case 'inativo':   return 'Inativo';
+    case 'suspensa':
+    case 'suspenso':  return 'Suspensa';
+    case 'rejeitado': return 'Rejeitado';
+    case 'pendente':
+    default:          return 'Pendente';
+  }
+}
+
+function regiaoDoCep(cep?: string): Regiao {
+  const d = (cep ?? '').replace(/\D/g, '');
+  if (d.length < 1) return 'Sudeste';           // sem CEP → default
+  switch (d[0]) {
+    case '0':                                    // 0xxxx = SP
+    case '1':                                    // 1xxxx = SP interior
+    case '2':                                    // 2xxxx = RJ, ES
+    case '3':                                    // 3xxxx = MG
+      return 'Sudeste';
+    case '4':                                    // 4xxxx = BA, SE
+    case '5':                                    // 5xxxx = PE, AL, PB, RN
+    case '6':                                    // 6xxxx = CE, PI, MA, (+ PA/AM/AC/AP/RR no 68-69)
+      // 66-68 pegam parte do Norte; tratamos o grosso como Nordeste,
+      // e o recorte Norte abaixo corrige os prefixos 68/69.
+      if (d.startsWith('68') || d.startsWith('69')) return 'Norte';
+      return 'Nordeste';
+    case '7':                                    // 7xxxx = DF, GO, TO, MT, MS, RO (Centro-Oeste + parte Norte)
+      if (d.startsWith('76')) return 'Norte';    // 76xxx = RO/parte de TO
+      return 'Centro-Oeste';
+    case '8':                                    // 8xxxx = PR, SC
+    case '9':                                    // 9xxxx = RS
+      return 'Sul';
+    default:
+      return 'Sudeste';
+  }
+}
+
+function mapearDentistaBackend(b: DentistaBody): DentistaCompleto {
+  contatosBackend[b.rgCpf] = {
+  whatsapp: (b.telefone ?? '').replace(/\D/g, ''),
+  email: b.email ?? '',
+  telefone: b.telefone ?? '',};
+  return {
+    id: b.rgCpf,
+    nome: b.nome,
+    iniciais: iniciaisDe(b.nome),
+    cro: b.cro ?? '',
+    especialidade: b.especializacao ?? 'Clínico geral',
+    tags: [],
+    cidade: '',                       // backend não fornece — derivar do CEP é trabalho futuro
+    estado: '',
+    regiao: regiaoDoCep(b.cep),                
+    status: statusDe(b.status),
+    vinculosTotal: 0,
+    vinculosAtivos: 0,
+    atendimentosNoAno: b.nAtendimentos ?? 0,
+    rating: b.avaliacao ?? 0,
+    ratingCount: 0,
+    taxaComparecimento: 0,
+    ultimaAtividadeDias: 0,
+    voluntariaDesde: '',
+    anosNaRede: 0,
+    programas: [],
+    pacientesAtivos: [],
+    disponibilidadeSemana: [],
+    ultimosAtendimentos: [],
+    horarioConfigurado: '',
+  };
+}
+
+export async function carregarDentistasReais(): Promise<{ count: number; fonte: 'backend' | 'mock' }> {
+  try {
+    const lista = await dentistaService.listar();
+    if (Array.isArray(lista) && lista.length > 0) {
+      dentistas = lista.map(mapearDentistaBackend);
+      return { count: dentistas.length, fonte: 'backend' };
+    }
+    return { count: dentistas.length, fonte: 'mock' };
+  } catch (err) {
+    console.warn('[voluntarios] backend indisponível, mantendo dados atuais:', err);
+    return { count: dentistas.length, fonte: 'mock' };
+  }
+}
 
 export interface ContatoDentista {
   whatsapp: string;
@@ -23,8 +117,9 @@ export interface ContatoDentista {
   telefone: string;
 }
 
-/** Gera contato mock determinístico baseado no nome + id. Em PROD, vem do banco. */
 export function contatoDoDentista(d: DentistaCompleto): ContatoDentista {
+  const real = contatosBackend[d.id];
+  if (real && real.whatsapp) return real;
   const slug = d.nome
     .toLowerCase()
     .replace(/^dra?\.?\s+/g, '')
@@ -46,12 +141,10 @@ function mesAtual(): string {
 }
 
 export function listarDentistas(): DentistaCompleto[] {
-  // PROD: GET /api/voluntarios
   return dentistas.filter((d) => d.status !== 'Rejeitado');
 }
 
 export function listarPendentes(): DentistaCompleto[] {
-  // PROD: GET /api/voluntarios?status=Pendente
   return dentistas.filter((d) => d.status === 'Pendente');
 }
 
