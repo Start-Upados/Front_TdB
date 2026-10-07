@@ -1,5 +1,4 @@
 import {
-  ATENDIMENTOS_MOCK,
   CONTAGENS_SEMANA_MOCK,
   DATA_REFERENCIA,
   PACIENTES_LISTA,
@@ -11,22 +10,18 @@ import {
   type StatusAtendimento,
 } from '../data/atendimentos';
 import { atendimentoService, type AtendimentoBody } from '../../../Services/api';
-/*
-  HOJE: mock + estado mutável em memória.
-  AMANHÃ: cada função vira fetch ao backend.
-  - listarPorData()           vira GET    /api/atendimentos?data=&filtros
-  - obterPorId()              vira GET    /api/atendimentos/{id}
-  - marcarConfirmado()        vira PATCH  /api/atendimentos/{id}/confirmar
-  - iniciarAtendimento()      vira PATCH  /api/atendimentos/{id}/iniciar
-  - finalizarAtendimento()    vira PATCH  /api/atendimentos/{id}/finalizar
-  - reagendarAtendimento()    vira POST   /api/atendimentos/{id}/reagendar
-  - criarAtendimento()        vira POST   /api/atendimentos
-  A página NÃO precisa ser refatorada quando isso acontecer.
-*/
+
 
 // ─── Persistência localStorage ────────────────────
 const LS_ATENDIMENTOS = 'tdb_atendimentos';
 const LS_CONTAGENS    = 'tdb_atendimentos_contagens';
+
+function hojeISO(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
 
 function persistir(): void {
   try {
@@ -55,7 +50,7 @@ function hidratarContagens(): Record<string, number> | null {
   }
 }
 
-let atendimentos: Atendimento[]              = hidratarAtendimentos() ?? [...ATENDIMENTOS_MOCK];
+let atendimentos: Atendimento[] = hidratarAtendimentos() ?? [];
 const contagens: Record<string, number>      = hidratarContagens()    ?? { ...CONTAGENS_SEMANA_MOCK };
 
 function recalcularContagem(data: string) {
@@ -128,14 +123,8 @@ export async function carregarAtendimentosReais(): Promise<{
   try {
     const lista = await atendimentoService.listar();
     if (Array.isArray(lista) && lista.length > 0) {
-      const doBackend = lista.map(mapearAtendimentoBackend);
-      const idsBackend = new Set(
-        doBackend.map((a) => a.idAtendimento).filter((id): id is number => id !== undefined),
-      );
-      const apenasLocais = atendimentos.filter(
-        (a) => !a.idAtendimento || !idsBackend.has(a.idAtendimento),
-      );
-      atendimentos = [...doBackend, ...apenasLocais];
+      const doBackend = lista.map(mapearAtendimentoBackend);      
+      atendimentos = doBackend;
       // Recalcula contagens das datas afetadas
       const datasAfetadas = new Set(doBackend.map((a) => a.data));
       datasAfetadas.forEach(recalcularContagem);
@@ -183,7 +172,7 @@ export function contarPorFaixa(dataInicial: string, dias: number): ContagemDia[]
 
 /** Data tida como "hoje" no contexto da aplicação. */
 export function dataDeHoje(): string {
-  return DATA_REFERENCIA;
+  return hojeISO();
 }
 
 export function obterPorId(id: string): Atendimento | undefined {
@@ -360,7 +349,7 @@ export async function criarAtendimento(input: NovoAtendimentoInput): Promise<Ate
 
 /** Lista próximos atendimentos de um dentista a partir de hoje (incluso). */
 export function listarProximosPorDentista(dentistaId: string, limite = 10): Atendimento[] {
-  const hoje = DATA_REFERENCIA;
+  const hoje = hojeISO();
   return atendimentos
     .filter((a) => a.dentista.id === dentistaId && a.data >= hoje)
     .sort((a, b) => {
@@ -384,7 +373,7 @@ export function contarAtendimentosNoMes(): {
   variacaoPct: number;
   nomeMesAnterior: string;
 } {
-  const refDate = new Date(DATA_REFERENCIA + 'T12:00:00');
+  const refDate = new Date(hojeISO() + 'T12:00:00');
   const anoMesAtual = `${refDate.getFullYear()}-${String(refDate.getMonth() + 1).padStart(2, '0')}`;
 
   const refAnterior = new Date(refDate);

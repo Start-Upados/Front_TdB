@@ -18,9 +18,10 @@ import {
   suspenderDentista,
   reativarDentista,
 } from '../services/voluntarios';
-import { listarProximosPorDentista } from '../services/atendimentos';
+import { listarProximosPorDentista, carregarAtendimentosReais } from '../services/atendimentos';
 import type { DentistaCompleto } from '../data/dentistas';
 import type { Atendimento } from '../data/atendimentos';
+
 
 type AcaoModal = 'contatar' | 'agenda' | 'suspender' | 'reativar' | 'aprovar' | 'rejeitar'
   | 'ver-paciente' | 'todos-pacientes' | 'configurar-disponibilidade' | null;
@@ -45,6 +46,11 @@ export default function DentistaPerfilPage() {
   const [acao, setAcao] = useState<AcaoModal>(null);
   const [processando, setProcessando] = useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] = useState<PacienteAtivo | null>(null);
+  const [atendCarregado, setAtendCarregado] = useState(false);
+  useEffect(() => {
+  carregarAtendimentosReais().finally(() => setAtendCarregado(true));
+  }, []);
+  void atendCarregado;
 
   const dentista = useMemo(
     () => (id ? obterDentista(id) : undefined),
