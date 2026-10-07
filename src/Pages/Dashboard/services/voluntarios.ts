@@ -1,6 +1,5 @@
 import {
   DENTISTAS,
-  DISTRIBUICAO_REGIONAL,
   type DentistaCompleto,
   type KpiData,
   type Regiao,
@@ -159,7 +158,18 @@ export function listarEspecialidades(): string[] {
 }
 
 export function obterDistribuicaoRegional(): Record<Regiao, { count: number; percent: number }> {
-  return DISTRIBUICAO_REGIONAL;
+  const regioes: Regiao[] = ['Sudeste', 'Sul', 'Nordeste', 'Centro-Oeste', 'Norte'];
+  // conta só dentistas ativos na rede (exclui pendentes/rejeitados)
+  const ativos = dentistas.filter((d) => d.status !== 'Pendente' && d.status !== 'Rejeitado');
+  const total = ativos.length;
+
+  const resultado = {} as Record<Regiao, { count: number; percent: number }>;
+  for (const r of regioes) {
+    const count = ativos.filter((d) => d.regiao === r).length;
+    const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+    resultado[r] = { count, percent };
+  }
+  return resultado;
 }
 
 export function obterDentista(id: string): DentistaCompleto | undefined {
@@ -167,12 +177,16 @@ export function obterDentista(id: string): DentistaCompleto | undefined {
 }
 
 export function obterKpis(): KpiData[] {
+  const ativos    = dentistas.filter((d) => d.status === 'Ativa');
+  const inativos  = dentistas.filter((d) => d.status === 'Inativo');
   const pendentes = listarPendentes();
+  const naRede    = dentistas.filter((d) => d.status !== 'Pendente' && d.status !== 'Rejeitado');
+
   return [
-    { label: 'Dentistas ativos',    value: '1.284',          sub: 'de 1.452 cadastrados' },
-    { label: 'Inativos +90 dias',   value: '23',             valueTone: 'warning', sub: 'Vale reengajar' },
+    { label: 'Dentistas ativos',    value: ativos.length,    sub: `de ${naRede.length} na rede` },
+    { label: 'Inativos',            value: inativos.length,  valueTone: 'warning', sub: 'Vale reengajar' },
     { label: 'Pendentes aprovação', value: pendentes.length, valueTone: 'danger',  sub: 'Aguardando ação', subTone: 'danger' },
-    { label: 'Novos este mês',      value: '18',             sub: '+5 vs setembro', subTone: 'success' },
+    { label: 'Total cadastrados',   value: dentistas.length, sub: 'Na plataforma' },
   ];
 }
 
