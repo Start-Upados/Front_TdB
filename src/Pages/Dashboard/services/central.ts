@@ -349,7 +349,8 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): Solicitacao {
     nome: body.nome,
     iniciais: gerarIniciais(body.nome),
     idade: calcularIdade(body.dataNasc),
-    cidade: undefined,                       // backend ainda não tem campo cidade
+    cidade: undefined,
+    telefone: body.telefone,                       // backend ainda não tem campo cidade
     canal: 'Site',                           // formulários públicos vêm do site
     tipo,
     programa,

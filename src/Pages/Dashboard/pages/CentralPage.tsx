@@ -66,6 +66,24 @@ function configMotivo(motivo: MotivoFechamento) {
   }
 }
 
+// Normaliza p/ E.164 (só dígitos, com 55) e monta o link do WhatsApp
+function linkWhatsApp(telefone?: string): string | null {
+  if (!telefone) return null;
+  let d = telefone.replace(/\D/g, '').replace(/^0+/, '');
+  if (!d) return null;
+  if (!d.startsWith('55')) d = '55' + d;
+  return `https://wa.me/${d}`;
+}
+
+function formatarTelefoneBR(telefone?: string): string {
+  if (!telefone) return '';
+  const d = telefone.replace(/\D/g, '');
+  if (d.length === 13) return `+${d.slice(0,2)} (${d.slice(2,4)}) ${d.slice(4,9)}-${d.slice(9)}`;
+  if (d.length === 12) return `+${d.slice(0,2)} (${d.slice(2,4)}) ${d.slice(4,8)}-${d.slice(8)}`;
+  if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  return telefone;
+}
+
 // ─────────────────────────────────────────────
 // FEATURE ROW
 // ─────────────────────────────────────────────
@@ -478,6 +496,23 @@ async function handleRecusar(info: InfoRecusa) {
                     </div>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted md:text-sm">{item.preview}</p>
 
+                    {/* ← NOVO: telefone + atalho WhatsApp */}
+                    {item.telefone && (
+                      linkWhatsApp(item.telefone) ? (
+                        <a
+                          href={linkWhatsApp(item.telefone)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+                        >
+                          {formatarTelefoneBR(item.telefone)}
+                        </a>
+                      ) : (
+                        <span className="mt-1 block text-xs text-subtle">{formatarTelefoneBR(item.telefone)}</span>
+                      )
+                    )}
+
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-subtle">
                       <span className="inline-flex items-center gap-1">
                         <ItemChannelIcon className="h-3.5 w-3.5" strokeWidth={2} />
@@ -642,6 +677,15 @@ function DetalheConversa({
             <p className="mt-1 text-xs leading-relaxed text-muted md:text-sm">
               {selected.tipo}{selected.idade && ` · ${selected.idade} anos`}{selected.cidade && ` · ${selected.cidade}`}
             </p>
+            {selected.telefone && linkWhatsApp(selected.telefone) && (
+              <a
+                href={linkWhatsApp(selected.telefone)!}
+                target="_blank" rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+              >
+                {formatarTelefoneBR(selected.telefone)}
+              </a>
+            )}
           </div>
           <div className="sm:text-right">
             <p className="text-xs text-subtle">{selected.data} atrás</p>

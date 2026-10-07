@@ -17,6 +17,7 @@ export interface BeneficiarioBody extends UsuarioBase {
   sexo:       string  // "masculino" | "feminino"
   dataNasc:   string  // "2000-12-20"
   numeroCasa: number
+  whatsappOptin: boolean
 }
  
 // ─── SOLICITAÇÃO (Solicitacao.java) ───────────

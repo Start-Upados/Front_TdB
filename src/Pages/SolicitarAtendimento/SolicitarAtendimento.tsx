@@ -340,6 +340,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [whatsappOptin, setWhatsappOptin] = useState(false)
   
 
   
@@ -404,7 +405,8 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
         cep:        data.cep,
         sexo:       'masculino',
         dataNasc:   data.dataNascimento,
-        numeroCasa: 0,                    // o form não coleta número da casa
+        numeroCasa: 0,
+        whatsappOptin: whatsappOptin,                   // o form não coleta número da casa
       })
     } catch (err) {
       console.warn('Backend indisponivel ao criar beneficiario (login):', err)
@@ -589,6 +591,19 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
                 </label>
               </div>
               {errors.aceitaTermos && <p className="text-[11px] text-red-600">{errors.aceitaTermos.message}</p>}
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="optinJ"
+                  checked={whatsappOptin}
+                  onChange={(e) => setWhatsappOptin(e.target.checked)}
+                  className="mt-1 cursor-pointer accent-[#E88407]"
+                />
+                <label htmlFor="optinJ" className="text-[12px] text-[#475569] cursor-pointer leading-relaxed">
+                  Autorizo receber lembretes das consultas por WhatsApp neste número.
+                </label>
+              </div>
             </>
           )}
         </div>
@@ -630,6 +645,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [whatsappOptin, setWhatsappOptin] = useState(false)
 
   // DEPOIS
   const { register, trigger, watch, setValue, formState: { errors }, getValues } = useForm<FormMulher>()
@@ -692,6 +708,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
       sexo:       'feminino',
       dataNasc:   data.dataNascimento,
       numeroCasa: 0,
+      whatsappOptin: whatsappOptin,
     })
   } catch (err) {
     console.warn('Backend indisponivel ao criar beneficiario (login):', err)
@@ -872,6 +889,22 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
                 </label>
               </div>
               {errors.aceitaTermos && <p className="text-[11px] text-red-600">{errors.aceitaTermos.message}</p>}
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="optinM"
+                  checked={whatsappOptin}
+                  onChange={(e) => setWhatsappOptin(e.target.checked)}
+                  className="mt-1 cursor-pointer accent-[#CED600]"
+                />
+                <label htmlFor="optinM" className="text-[12px] text-[#475569] cursor-pointer leading-relaxed">
+                  Autorizo receber lembretes das consultas por WhatsApp neste número.
+                  <span className="block mt-1 text-[#3F6212]">
+                    Use um número pessoal e seguro, ao qual só você tenha acesso.
+                  </span>
+                </label>
+              </div>
             </>
           )}
         </div>

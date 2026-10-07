@@ -86,6 +86,7 @@ export interface Solicitacao {
   iniciais: string;
   idade?: number;
   cidade?: string;
+  telefone?: string;
   canal: Canal;
   tipo: string;
   programa?: Programa;                                    // ← NOVO: direciona o fluxo de aprovação
