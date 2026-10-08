@@ -314,7 +314,7 @@ export default function VoluntariosPage() {
                           className="h-3.5 w-3.5"
                           strokeWidth={2}
                         />
-                        {d.rating.toFixed(1)}
+                        {d.ratingCount > 0 ? d.rating.toFixed(1) : '—'}
                       </span>
 
                       <span className={`inline-flex items-center gap-1 ${

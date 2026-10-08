@@ -18,7 +18,7 @@ import {
   suspenderDentista,
   reativarDentista,
 } from '../services/voluntarios';
-import { listarProximosPorDentista, carregarAtendimentosReais } from '../services/atendimentos';
+import { listarProximosPorDentista, carregarAtendimentosReais, contarAtendimentosDentistaNoAno } from '../services/atendimentos';
 import type { DentistaCompleto } from '../data/dentistas';
 import type { Atendimento } from '../data/atendimentos';
 
@@ -56,6 +56,8 @@ export default function DentistaPerfilPage() {
     () => (id ? obterDentista(id) : undefined),
     [id, versao],
   );
+
+  const atendimentosAno = dentista ? contarAtendimentosDentistaNoAno(dentista.id) : 0;
 
   function refresh() {
     setVersao((v) => v + 1);
@@ -255,10 +257,10 @@ export default function DentistaPerfilPage() {
       {/* KPIs */}
       {!isPendente && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Vínculos ativos"       value={dentista.vinculosAtivos}      sub={`de ${dentista.vinculosTotal} no total`} />
-          <KpiCard label="Atendimentos em 2025"  value={dentista.atendimentosNoAno}   sub="+14 vs 2024" subTone="success" />
-          <KpiCard label="Rating médio"          value={dentista.rating.toFixed(1)}   sub={`${dentista.ratingCount} avaliações`} />
-          <KpiCard label="Comparecimento"        value={`${dentista.taxaComparecimento}%`} sub="acima da média" subTone="success" />
+          <KpiCard label="Vínculos ativos"      value={dentista.vinculosAtivos}    sub={`de ${dentista.vinculosTotal} no total`} />
+          <KpiCard label={`Atendimentos em ${new Date().getFullYear()}`} value={atendimentosAno} />
+          <KpiCard label="Rating médio" value={dentista.ratingCount > 0 ? dentista.rating.toFixed(1) : '—'} sub={dentista.ratingCount > 0 ? 'avaliação do voluntário' : 'sem avaliações'} />
+          <KpiCard label="Comparecimento"       value={dentista.taxaComparecimento > 0 ? `${dentista.taxaComparecimento}%` : '—'} />
         </div>
       )}
 
@@ -627,7 +629,7 @@ function VerAgendaModal({
             onClick={onNavegar}
             className="px-4 py-2.5 text-sm rounded-xl bg-ink text-surface hover:opacity-90 inline-flex items-center justify-center gap-2"
           >
-            Ver agenda completa
+            Ver agenda geral de Atendimentos
             <ArrowRight className="w-4 h-4" strokeWidth={2} />
           </button>
         </>

@@ -5,6 +5,7 @@ import {
 } from '../data/visaoGeral';
 import { obterKpisFinanceiro } from './financeiro';
 import { contarPacientesEmTratamento, contarAtendimentosNoMes } from './atendimentos';
+import { listarDentistas } from './voluntarios';
 
 /* ════════════════════════════════════════════════════════════════════════
  *  VISÃO GERAL — Service de leitura dos cards do dashboard
@@ -95,7 +96,16 @@ export function obterKpis(): KpiData[] {
     },
 
     // 3. Dentistas ativos — mock (futuro: GET /dentista/count?status=Ativa)
-    KPIS_VISAO_GERAL_MOCK[2],
+    (() => {
+      const ativos = listarDentistas().filter((d) => d.status === 'Ativa').length;
+      const total = listarDentistas().length;
+      return {
+        label: 'Dentistas ativos',
+        value: String(ativos),
+        sub: `de ${total} cadastrados`,
+      };
+      })
+    (),
 
     // 4. Doações no mês — DINÂMICO via services/financeiro
     {

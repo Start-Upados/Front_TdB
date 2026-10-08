@@ -359,6 +359,13 @@ export function listarProximosPorDentista(dentistaId: string, limite = 10): Aten
     .slice(0, limite);
 }
 
+export function contarAtendimentosDentistaNoAno(dentistaId: string): number {
+  const ano = new Date().getFullYear();
+  return atendimentos.filter(
+    (a) => a.dentista.id === dentistaId && a.data.startsWith(String(ano)),
+  ).length;
+}
+
 /**
  * Conta atendimentos do mês corrente (referência: DATA_REFERENCIA) + variação
  * em relação ao mês anterior. Usado no KPI "Atendimentos no mês" da Visão Geral.

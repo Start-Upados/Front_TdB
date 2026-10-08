@@ -22,6 +22,7 @@ import { KpiCard } from '../components/KpiCard';
 import { obterKpis, obterGraficoMensal, listarAlertas, obterDistribuicao } from '../services/visaoGeral';
 import { carregarAtendimentosReais } from '../services/atendimentos';;
 import type { IconeAlerta } from '../data/visaoGeral';
+import { carregarDentistasReais } from '../services/voluntarios'
 
 
 
@@ -136,7 +137,8 @@ export default function VisaoGeralPage() {
   // Garante que o array de atendimentos esteja sincronizado com o backend
   // antes da KPI "Atendimentos no mês" ser lida
   useEffect(() => {
-    carregarAtendimentosReais().catch(() => { /* silencioso */ });
+  carregarAtendimentosReais().catch(() => {});
+  carregarDentistasReais().catch(() => {});
   }, []);
   
   const kpis = obterKpis();
