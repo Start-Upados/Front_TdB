@@ -1,5 +1,4 @@
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom'
-
 import Home from './Pages/Home/Home'
 import SobreNos from './Pages/SobreNos/SobreNos'
 import NossosServicos from './Pages/NossosServicos/NossosServicos'
@@ -29,6 +28,8 @@ import MutiroesPage from './Pages/Dashboard/pages/MutiroesPage'
 import FinanceiroPage from './Pages/Dashboard/pages/FinanceiroPage'
 import RelatoriosPage from './Pages/Dashboard/pages/RelatoriosPage'
 import ConfiguracoesPage from './Pages/Dashboard/pages/ConfiguracoesPage'
+import PrivacidadeStartUpados from './Pages/PrivacidadeStartUpados/PrivacidadeStartUpados'
+import PrivacidadeTurmaDoBem from './Pages/PrivacidadeTdB/PrivacidadeTurmaDoBem'
 
 const App = () => {
   return (
@@ -41,6 +42,8 @@ const App = () => {
           <Route path="/Integrantes" element={<Integrantes />} />
           <Route path="/FAQ" element={<FAQ />} />
           <Route path="/FaleConosco" element={<FaleConosco />} />
+          <Route path="/privacidade" element={<PrivacidadeStartUpados />} />
+          <Route path="/turma-do-bem/privacidade" element={<PrivacidadeTurmaDoBem />} />
         </Route>
 
         <Route path="/login" element={<Login />} />

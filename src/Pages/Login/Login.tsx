@@ -135,6 +135,15 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
             <Link to="/" className="text-[#E88407] font-extrabold hover:underline">
               StartUpados
             </Link>
+            <p className="mt-2 text-xs text-slate-500">
+              <Link to="/turma-do-bem/privacidade" className="hover:text-orange-600 hover:underline">
+                Política de Privacidade
+              </Link>
+              <span className="mx-2" aria-hidden="true">·</span>
+              <Link to="/turma-do-bem/privacidade#exclusao-de-dados" className="hover:text-orange-600 hover:underline">
+                Exclusão de dados
+              </Link>
+            </p>
           </p>
         </div>
       </div>
