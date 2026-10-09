@@ -13,10 +13,10 @@ import { Link, useLocation } from 'react-router-dom';
 
 const EMPRESA = {
   nome: 'StartUpados',
-  razaoSocial: '[PREENCHER: razão social ou nome do responsável]',
-  documento: '[PREENCHER: CNPJ, se houver]',
+  razaoSocial: '',
+  documento: '',
   cidade: 'São Paulo/SP',
-  email: '[PREENCHER: e-mail de contato, ex.: contato@startupados.com.br]',
+  email: 'contato@startupados.com.br]',
   site: 'www.startupados.com.br',
   ultimaAtualizacao: '9 de outubro de 2026',
 };

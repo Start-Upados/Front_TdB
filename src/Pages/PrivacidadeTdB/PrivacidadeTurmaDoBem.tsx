@@ -15,11 +15,11 @@ import { Link, useLocation } from 'react-router-dom';
 
 const ORG = {
   nome: 'Turma do Bem',
-  razaoSocial: '[PREENCHER: razão social da ONG]',
-  cnpj: '[PREENCHER: CNPJ]',
-  endereco: '[PREENCHER: endereço da sede]',
-  emailPrivacidade: '[PREENCHER: e-mail para privacidade, ex.: privacidade@...]',
-  encarregado: '[PREENCHER: nome do Encarregado de Dados (DPO)]',
+  razaoSocial: '',
+  cnpj: '',
+  endereco: '',
+  emailPrivacidade: '',
+  encarregado: '',
   instagram: '@startupados_tdb',
   site: 'www.startupados.com.br',
   ultimaAtualizacao: '9 de outubro de 2026',
