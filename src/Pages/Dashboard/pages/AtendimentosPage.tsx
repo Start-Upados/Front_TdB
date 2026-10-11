@@ -22,6 +22,7 @@ import {
 } from '../services/atendimentos';
 import type { Atendimento, StatusAtendimento, ProgramaAtendimento } from '../data/atendimentos';
 import { ESPECIALIDADES_DISPONIVEIS, PROGRAMAS_FILTRO, REGIOES } from '../data/atendimentos';
+import { obterKpisAtendimentos } from '../services/atendimentos.ts';
 
 // ─── HELPERS ─────────────────────────────────────
 
@@ -111,6 +112,8 @@ export default function AtendimentosPage() {
   const [acaoAtiva, setAcaoAtiva] = useState<AcaoModal>(null);
   const [processando, setProcessando] = useState(false);
   const [versao, setVersao] = useState(0); // força re-fetch após mutações
+
+  const kpis = obterKpisAtendimentos();
 
   const semana = useMemo(() => {
     const inicio = new Date(hoje + 'T12:00:00');
@@ -244,10 +247,14 @@ export default function AtendimentosPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Atendimentos hoje" value="5" sub="3 confirmados" />
-        <KpiCard label="Taxa de comparecimento" value="87%" sub="+4pp vs mês" subTone="success" />
-        <KpiCard label="Próximos 7 dias" value="42" sub="agendados" />
-        <KpiCard label="No-shows no mês" value="11" valueTone="warning" sub="1,3% dos agendamentos" />
+        <KpiCard label="Atendimentos hoje"      value={String(kpis.hoje)}
+                sub={kpis.hoje > 0 ? `${kpis.confirmadosHoje} confirmados` : 'sem agendamentos'} />
+        <KpiCard label="Taxa de comparecimento" value={kpis.taxaComparec > 0 ? `${kpis.taxaComparec}%` : '—'}
+                sub={kpis.taxaComparec > 0 ? 'realizados vs no-show' : 'sem histórico'} />
+        <KpiCard label="Próximos 7 dias"        value={String(kpis.proximos7)}
+                sub="agendados" />
+        <KpiCard label="No-shows no mês"        value={String(kpis.noShowsMes)}
+                sub={Number(kpis.pctNoShow) > 0 ? `${kpis.pctNoShow}% do total` : 'nenhum'} />
       </div>
 
       {/* CALENDÁRIO SEMANAL */}

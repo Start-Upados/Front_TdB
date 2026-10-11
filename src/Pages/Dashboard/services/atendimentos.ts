@@ -1,5 +1,4 @@
 import {
-  CONTAGENS_SEMANA_MOCK,
   DATA_REFERENCIA,
   PACIENTES_LISTA,
   DENTISTAS_LISTA,
@@ -51,7 +50,7 @@ function hidratarContagens(): Record<string, number> | null {
 }
 
 let atendimentos: Atendimento[] = hidratarAtendimentos() ?? [];
-const contagens: Record<string, number>      = hidratarContagens()    ?? { ...CONTAGENS_SEMANA_MOCK };
+const contagens: Record<string, number> = hidratarContagens() ?? {};
 
 function recalcularContagem(data: string) {
   contagens[data] = atendimentos.filter((a) => a.data === data).length;
@@ -430,10 +429,30 @@ export function contarPacientesEmTratamento(): {
   };
 }
 
-// ─── Criar atendimento a partir de uma triagem aceita ────────────
-// Diferente de criarAtendimento(): aceita dados completos do paciente/dentista
-// (não busca em PACIENTES_LISTA/DENTISTAS_LISTA), porque o paciente vem da fila
-// de Triagens e tem ID dinâmico (ex: 't1733...').
+export function obterKpisAtendimentos() {
+  const hoje = hojeISO();
+  const d = new Date();
+  const mesAtual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+  const deHoje = atendimentos.filter((a) => a.data === hoje);
+  const confirmadosHoje = deHoje.filter(
+    (a) => a.status === 'confirmado' || a.status === 'realizado',
+  ).length;
+
+  const fim = new Date(d);
+  fim.setDate(fim.getDate() + 6);
+  const fimISO = `${fim.getFullYear()}-${String(fim.getMonth() + 1).padStart(2, '0')}-${String(fim.getDate()).padStart(2, '0')}`;
+  const proximos7 = atendimentos.filter((a) => a.data >= hoje && a.data <= fimISO).length;
+
+  const doMes = atendimentos.filter((a) => a.data.startsWith(mesAtual));
+  const realizadosMes = doMes.filter((a) => a.status === 'realizado').length;
+  const noShowsMes = doMes.filter((a) => a.status === 'no-show').length;
+  const baseComparec = realizadosMes + noShowsMes;
+  const taxaComparec = baseComparec > 0 ? Math.round((realizadosMes / baseComparec) * 100) : 0;
+  const pctNoShow = doMes.length > 0 ? ((noShowsMes / doMes.length) * 100).toFixed(1) : '0';
+
+  return { hoje: deHoje.length, confirmadosHoje, proximos7, taxaComparec, noShowsMes, pctNoShow };
+}
 
 export interface NovoAtendimentoDeTriagemInput {
   pacienteId: string;

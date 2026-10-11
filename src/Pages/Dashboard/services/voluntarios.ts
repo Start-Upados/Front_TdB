@@ -177,16 +177,22 @@ export function obterDentista(id: string): DentistaCompleto | undefined {
 }
 
 export function obterKpis(): KpiData[] {
-  const ativos    = dentistas.filter((d) => d.status === 'Ativa');
-  const inativos  = dentistas.filter((d) => d.status === 'Inativo');
+  const todos     = listarDentistas();      // exclui rejeitados
   const pendentes = listarPendentes();
-  const naRede    = dentistas.filter((d) => d.status !== 'Pendente' && d.status !== 'Rejeitado');
+  const ativos    = todos.filter((d) => d.status === 'Ativa').length;
+  const inativos  = todos.filter((d) => d.status === 'Inativo').length;
+
+  // "Novos este mês" só fica real quando o backend mandar voluntariaDesde (hoje vem vazio).
+  const d = new Date();
+  const mesAtual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const temDataCadastro = todos.some((x) => !!x.voluntariaDesde);
+  const novosMes = todos.filter((x) => (x.voluntariaDesde ?? '').startsWith(mesAtual)).length;
 
   return [
-    { label: 'Dentistas ativos',    value: ativos.length,    sub: `de ${naRede.length} na rede` },
-    { label: 'Inativos',            value: inativos.length,  valueTone: 'warning', sub: 'Vale reengajar' },
-    { label: 'Pendentes aprovação', value: pendentes.length, valueTone: 'danger',  sub: 'Aguardando ação', subTone: 'danger' },
-    { label: 'Total cadastrados',   value: dentistas.length, sub: 'Na plataforma' },
+    { label: 'Dentistas ativos',    value: String(ativos),           sub: `de ${todos.length} cadastrados` },
+    { label: 'Inativos',            value: String(inativos),         valueTone: inativos > 0 ? 'warning' : 'default', sub: inativos > 0 ? 'status inativo' : 'nenhum' },
+    { label: 'Pendentes aprovação', value: String(pendentes.length), valueTone: 'danger', sub: 'Aguardando ação', subTone: 'danger' },
+    { label: 'Novos este mês',      value: temDataCadastro ? String(novosMes) : '—', sub: temDataCadastro ? 'novos cadastros' : 'sem data no backend' },
   ];
 }
 
