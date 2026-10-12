@@ -1,5 +1,4 @@
 import {
-  MUTIROES_MOCK,
   ESPECIALIDADES_MUTIRAO,
   type Mutirao,
   type StatusMutirao,
@@ -36,7 +35,7 @@ function hidratar(): Mutirao[] | null {
   }
 }
 
-let mutiroes: Mutirao[] = hidratar() ?? [...MUTIROES_MOCK];
+let mutiroes: Mutirao[] = hidratar() ?? [];
 
 // ──────────────────────────────────────────────
 // HELPERS
@@ -118,6 +117,27 @@ export function listarTodos(): Mutirao[] {
   return mutiroes;
 }
 
+export function obterKpisMutiroes(): {
+  atendimentosMes: number;
+  atendimentosAno: number;
+  realizadosAno: number;
+} {
+  const d = new Date();
+  const mesAtual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const anoAtual = String(d.getFullYear());
+
+  const realizados = mutiroes.filter((m) => m.status === 'realizado');
+
+  const atendimentosMes = realizados
+    .filter((m) => m.data.startsWith(mesAtual))
+    .reduce((sum, m) => sum + (m.atendimentosRealizados ?? 0), 0);
+
+  const doAno = realizados.filter((m) => m.data.startsWith(anoAtual));
+  const atendimentosAno = doAno.reduce((sum, m) => sum + (m.atendimentosRealizados ?? 0), 0);
+
+  return { atendimentosMes, atendimentosAno, realizadosAno: doAno.length };
+}
+
 /**
  * Puxa mutirões do Oracle e MESCLA com o estado local (mocks + cadastros offline).
  * Dedup por NOME (backend usa nome como PK; frontend pode ter gerado um id local
@@ -131,9 +151,37 @@ export async function carregarMutiroesReais(): Promise<{
     const lista = await campanhaService.listar();
     if (Array.isArray(lista) && lista.length > 0) {
       const doBackend = lista.map(mapearCampanhaBackend);
-      const nomesBackend = new Set(doBackend.map((m) => (m.nome ?? '').toLowerCase()));
-      const apenasLocais = mutiroes.filter((m) => !nomesBackend.has((m.nome ?? '').toLowerCase()));
-      mutiroes = [...doBackend, ...apenasLocais];
+
+      // O backend (CampanhaBody) não guarda data, horário, programa, tipo,
+      // especialidades, público nem CEP. Esses campos vêm do cadastro local
+      // (dado real do formulário) — preservamos por nome.
+      const nomesBackend  = new Set(doBackend.map((m) => (m.nome ?? '').toLowerCase().trim()));
+      const locaisPorNome = new Map(mutiroes.map((m) => [(m.nome ?? '').toLowerCase().trim(), m]));
+
+      // 1) Backend como fonte de verdade, enriquecido com os campos que ele não guarda
+      const enriquecidos = doBackend.map((bm) => {
+        const local = locaisPorNome.get((bm.nome ?? '').toLowerCase().trim());
+        if (!local) return bm;
+        return {
+          ...bm,
+          data:           local.data || bm.data,
+          horaInicio:     local.horaInicio ?? bm.horaInicio,
+          horaFim:        local.horaFim ?? bm.horaFim,
+          horario:        local.horario ?? bm.horario,
+          programa:       local.programa ?? bm.programa,
+          tipo:           local.tipo ?? bm.tipo,
+          especialidades: (local.especialidades?.length ? local.especialidades : bm.especialidades),
+          publicoAlvo:    local.publicoAlvo ?? bm.publicoAlvo,
+          cep:            local.cep ?? bm.cep,
+          endereco:       local.endereco ?? bm.endereco,
+          status:         local.status ?? bm.status,
+        };
+      });
+
+      // 2) Mantém cadastros locais que ainda não chegaram no backend (ex.: POST falhou)
+      const apenasLocais = mutiroes.filter((m) => !nomesBackend.has((m.nome ?? '').toLowerCase().trim()));
+
+      mutiroes = [...enriquecidos, ...apenasLocais];
       persistir();
       return { count: mutiroes.length, fonte: 'backend' };
     }

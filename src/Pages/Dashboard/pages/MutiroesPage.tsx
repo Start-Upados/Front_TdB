@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
+import { obterKpisMutiroes } from '../services/mutiroes';
 import { Avatar } from '../components/Avatar';
 import { Modal } from '../components/Modal';
 
@@ -80,6 +81,7 @@ export default function MutiroesPage() {
 
   const proximos = useMemo(() => listarProximos(), [versao]);
   const recentes = useMemo(() => listarRecentes(3), [versao]);
+  const kpisM = useMemo(() => obterKpisMutiroes(), [versao]);
 
   const proximo = proximos[0];
   const diasAteProximo = proximo ? diasAte(proximo.data) : null;
@@ -105,8 +107,11 @@ export default function MutiroesPage() {
           value={proximo ? `${diaSemanaCompleto(proximo.data).slice(0,3)} ${diaMes(proximo.data)}/${proximo.data.slice(5,7)}` : '—'}
           sub={proximo && diasAteProximo !== null ? `em ${diasAteProximo} dias · ${proximo.cidade}-${proximo.estado}` : 'sem agendamentos'}
         />
-        <KpiCard label="Atendimentos no mês" value="89"    sub="via mutirões" subTone="success" />
-        <KpiCard label="Total no ano"        value="1.247" sub="23 mutirões realizados" />
+        <KpiCard label="Atendimentos no mês" value={kpisM.atendimentosMes}
+          sub="via mutirões" subTone={kpisM.atendimentosMes > 0 ? 'success' : undefined} />
+        <KpiCard label="Total no ano"        value={kpisM.atendimentosAno}
+          sub={`${kpisM.realizadosAno} ${kpisM.realizadosAno === 1 ? 'mutirão realizado' : 'mutirões realizados'}`} 
+        />
       </div>
 
       {/* PRÓXIMOS */}

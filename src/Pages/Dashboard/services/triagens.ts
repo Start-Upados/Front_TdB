@@ -2,13 +2,13 @@ import { criarAtendimentoDeTriagem } from './atendimentos';
 import type { Atendimento } from '../data/atendimentos';
 import {
   triagemService,
+  dentistaService,
   type TriagemBody,
+  type DentistaBody,
 } from '../../../Services/api';
 
 import {
   KPIS_TRIAGENS_MOCK,
-  PACIENTES_FILA_MOCK,
-  DENTISTAS_MOCK,
   type KpiData,
   type Paciente,
   type Dentista,
@@ -17,7 +17,7 @@ import {
   type RespostaConvite,
 } from '../data/triagens';
 
-import { calcularMatch, type MatchResult } from '../Utils/Geo';
+import type { MatchResult } from '../Utils/Geo';
 
 // ─── Helpers de mapeamento Backend ↔ Frontend ────
 function gerarIniciaisDoNome(nome: string): string {
@@ -67,6 +67,45 @@ function mapearTriagemBackend(t: TriagemBody): Paciente {
   };
 }
 
+  // O backend (DentistaBody) ainda não tem cidade/estado/slots. Esses campos ficam
+// "a confirmar" na UI até entrarem no banco (já listados no handoff do Matheus).
+let dentistasTriagem: Dentista[] = [];
+
+function mapearDentistaParaTriagem(b: DentistaBody): Dentista {
+  return {
+    id: b.rgCpf,
+    nome: b.nome,
+    iniciais: gerarIniciaisDoNome(b.nome),
+    especialidade: b.especializacao ?? 'Clínico geral',
+    cidade: '',                            // backend ainda não fornece
+    estado: '',
+    coords: { lat: -23.55, lng: -46.64 },  // neutro — Opção A não usa distância
+    vinculos: b.nAtendimentos ?? 0,        // proxy real (nº de atendimentos); troque por 0 se preferir
+    rating: b.avaliacao ?? 0,
+    slotsDisponiveis: -1,                  // -1 = sem dado de agenda (UI mostra "a confirmar")
+  };
+}
+
+export async function carregarDentistasTriagemReais(): Promise<{ count: number; fonte: 'backend' | 'vazio' }> {
+  try {
+    const lista = await dentistaService.listar();
+    if (Array.isArray(lista) && lista.length > 0) {
+      dentistasTriagem = lista
+        .filter((d) => {
+          const s = (d.status ?? '').toLowerCase();
+          return s !== 'rejeitado' && s !== 'inativo' && s !== 'inativa' && s !== 'suspensa' && s !== 'suspenso';
+        })
+        .map(mapearDentistaParaTriagem);
+      return { count: dentistasTriagem.length, fonte: 'backend' };
+    }
+    dentistasTriagem = [];
+    return { count: 0, fonte: 'vazio' };
+  } catch (err) {
+    console.warn('[triagens] backend de dentistas indisponível:', err);
+    return { count: dentistasTriagem.length, fonte: 'vazio' };
+  }
+}
+
 /* HOJE: mock + matching local (haversine) com estado mutável em memória.
    AMANHÃ: cada função vira fetch ao backend.
    - obterKpis()         vira GET    /api/triagens/kpis
@@ -103,7 +142,7 @@ function hidratar(): Paciente[] | null {
 }
 
 // Estado mutável em memória — simula o estado do backend.
-let pacientes: Paciente[] = hidratar() ?? [...PACIENTES_FILA_MOCK];
+let pacientes: Paciente[] = hidratar() ?? [];
 
 // Coordenadas aproximadas das capitais por UF — usadas no matching de pacientes novos.
 const COORDS_POR_ESTADO: Record<string, { lat: number; lng: number }> = {
@@ -146,9 +185,8 @@ export function obterKpis(): KpiData[] {
     // [1] Tempo médio na fila — DINÂMICO
     { ...KPIS_TRIAGENS_MOCK[1], value: `${tempoMedio} dias` },
 
-    // [2] Vinculações esta semana — MOCK por enquanto
     //     (precisa de histórico de convites aceitos com timestamp no Oracle)
-    KPIS_TRIAGENS_MOCK[2],
+    { ...KPIS_TRIAGENS_MOCK[2], value: '—', sub: 'sem dados' },
 
     // [3] Fila +60 dias — DINÂMICO
     { ...KPIS_TRIAGENS_MOCK[3], value: String(fila60Dias) },
@@ -167,12 +205,11 @@ export async function carregarTriagensReais(): Promise<{
   fonte: 'backend' | 'mock';
 }> {
   try {
+    await carregarDentistasTriagemReais();
     const lista = await triagemService.listar();
     if (Array.isArray(lista) && lista.length > 0) {
       const doBackend = lista.map(mapearTriagemBackend);
-      const idsBackend = new Set(doBackend.map((p) => p.id));
-      const apenasLocais = pacientes.filter((p) => !idsBackend.has(p.id));
-      pacientes = [...doBackend, ...apenasLocais];
+      pacientes = doBackend;
       persistir();
       return { count: pacientes.length, fonte: 'backend' };
     }
@@ -190,27 +227,28 @@ export function listarFila(): Paciente[] {
 
 export function listarDentistas(): Dentista[] {
   // PROD: GET /api/dentistas
-  return DENTISTAS_MOCK;
+  return dentistasTriagem;
 }
 
 /** Retorna os N dentistas mais compatíveis com o paciente, ordenados por score. */
 export function sugerirDentistas(paciente: Paciente, limite = 3): SugestaoDentista[] {
-  // PROD: POST /api/triagens/{pacienteId}/matching { limite }
-  return DENTISTAS_MOCK
-    .map((d) => ({
-      dentista: d,
-      match: calcularMatch({
-        paciente: {
-          coords: paciente.coords,
-          especialidadeNecessaria: paciente.especialidadeNecessaria,
-        },
-        dentista: {
-          coords: d.coords,
-          especialidade: d.especialidade,
-          slotsDisponiveis: d.slotsDisponiveis,
-        },
-      }),
-    }))
+  // Opção A: sem coords/agenda reais, o score usa especialidade + rating.
+  //          distanciaKm = -1 sinaliza "sem localização" (a UI mostra "a confirmar").
+  return dentistasTriagem
+    .map((d) => {
+      let especialidadeScore: number;
+      if (d.especialidade === paciente.especialidadeNecessaria) especialidadeScore = 1;
+      else if (d.especialidade === 'Clínico geral') especialidadeScore = 0.85;
+      else especialidadeScore = 0.5;
+
+      const ratingScore = (d.rating ?? 0) / 5;              // 0..1
+      const score = 0.7 * especialidadeScore + 0.3 * ratingScore;
+
+      return {
+        dentista: d,
+        match: { score, scorePercent: Math.round(score * 100), distanciaKm: -1 },
+      };
+    })
     .sort((a, b) => b.match.score - a.match.score)
     .slice(0, limite);
 }
@@ -219,7 +257,7 @@ export function sugerirDentistas(paciente: Paciente, limite = 3): SugestaoDentis
 export async function convidarDentista(pacienteId: string, dentistaId: string): Promise<void> {
   const paciente = pacientes.find((p) => p.id === pacienteId);
   if (!paciente) throw new Error('Paciente não encontrado');
-  const dentista = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
+  const dentista = dentistasTriagem.find((d) => d.id === dentistaId);
 
   // Backend-first: se a triagem existe no Oracle, registra o convite lá e captura o conviteId
   let idConviteAtivo: number | undefined;
@@ -358,7 +396,7 @@ export async function aceitarConvite(input: AceitarConviteInput): Promise<Atendi
   }
 
   const dentistaId = paciente.dentistaConvidadoId;
-  const dentistaTriagem = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
+  const dentistaTriagem = dentistasTriagem.find((d) => d.id === dentistaId);
   const dentistaNome = dentistaTriagem?.nome ?? 'Dentista';
   const dentistaCidade = dentistaTriagem?.cidade ?? paciente.cidade;
   const dentistaEstado = dentistaTriagem?.estado ?? paciente.estado;
@@ -420,7 +458,7 @@ export async function recusarConvite(input: {
   }
 
   const dentistaId = paciente.dentistaConvidadoId;
-  const dentistaTriagem = DENTISTAS_MOCK.find((d) => d.id === dentistaId);
+  const dentistaTriagem = dentistasTriagem.find((d) => d.id === dentistaId);
   const dentistaNome = dentistaTriagem?.nome ?? 'Dentista';
 
   // Backend-first: se tem idConviteAtivo, recusa no Oracle
@@ -472,7 +510,7 @@ export function listarConvitesParaDentista(dentistaId: string): Paciente[] {
 export function listarConvitesParaDentistaPorNome(nomeDentista: string): Paciente[] {
   const nomeNorm = nomeDentista.toLowerCase().replace(/^dra?\.?\s+/, '').trim();
   if (!nomeNorm) return [];
-  const dent = DENTISTAS_MOCK.find((d) => {
+  const dent = dentistasTriagem.find((d) => {
     const dNorm = d.nome.toLowerCase().replace(/^dra?\.?\s+/, '').trim();
     return dNorm.includes(nomeNorm) || nomeNorm.includes(dNorm);
   });

@@ -403,15 +403,17 @@ export default function TriagensPage() {
                     <p className="text-sm font-medium text-ink truncate">{dentista.nome}</p>
                     <span className="text-xs font-medium text-ink shrink-0">Match {match.scorePercent}%</span>
                   </div>
-                  <p className="text-2xs text-muted mt-0.5">{dentista.especialidade} · {dentista.vinculos} vínculos</p>
+                  <p className="text-2xs text-muted mt-0.5">{dentista.especialidade}{dentista.vinculos > 0 ? ` · ${dentista.vinculos} atendimentos` : ''}</p>
                   <div className="flex items-center gap-3 mt-1.5 text-2xs text-subtle flex-wrap">
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="w-3 h-3" strokeWidth={2} />
-                      {match.distanciaKm < 10 ? match.distanciaKm.toFixed(1) : Math.round(match.distanciaKm)} km
+                      {match.distanciaKm >= 0
+                        ? `${match.distanciaKm < 10 ? match.distanciaKm.toFixed(1) : Math.round(match.distanciaKm)} km`
+                        : 'local a confirmar'}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <CalendarDays className="w-3 h-3" strokeWidth={2} />
-                      {dentista.slotsDisponiveis} slots / 14d
+                      {dentista.slotsDisponiveis >= 0 ? `${dentista.slotsDisponiveis} slots / 14d` : 'agenda a confirmar'}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Star className="w-3 h-3" strokeWidth={2} />
@@ -507,12 +509,16 @@ export default function TriagensPage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted">Distância</span>
                 <span className="text-ink">
-                  {conviteAlvo.match.distanciaKm < 10 ? conviteAlvo.match.distanciaKm.toFixed(1) : Math.round(conviteAlvo.match.distanciaKm)} km
+                  {conviteAlvo.match.distanciaKm >= 0
+                    ? `${conviteAlvo.match.distanciaKm < 10 ? conviteAlvo.match.distanciaKm.toFixed(1) : Math.round(conviteAlvo.match.distanciaKm)} km`
+                    : 'a confirmar'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted">Slots disponíveis</span>
-                <span className="text-ink">{conviteAlvo.dentista.slotsDisponiveis} em 14 dias</span>
+                <span className="text-ink">
+                  {conviteAlvo.dentista.slotsDisponiveis >= 0 ? `${conviteAlvo.dentista.slotsDisponiveis} em 14 dias` : 'a confirmar'}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted">Necessidade</span>
