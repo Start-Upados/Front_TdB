@@ -13,10 +13,10 @@ import { Link, useLocation } from 'react-router-dom';
 
 const EMPRESA = {
   nome: 'StartUpados',
-  razaoSocial: '',
-  documento: '',
+  razaoSocial: 'FK COMERCIO VAREJISTA DE PECAS LTDA',
+  documento: 'CNPJ 46.963.995/0001-97',
   cidade: 'São Paulo/SP',
-  email: 'contato@startupados.com.br]',
+  email: 'sac@apexparts.com.br',
   site: 'www.startupados.com.br',
   ultimaAtualizacao: '9 de outubro de 2026',
 };

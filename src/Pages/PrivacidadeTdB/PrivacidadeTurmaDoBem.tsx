@@ -14,15 +14,15 @@ import { Link, useLocation } from 'react-router-dom';
  */
 
 const ORG = {
-  nome: 'Turma do Bem',
-  razaoSocial: '',
-  cnpj: '',
-  endereco: '',
-  emailPrivacidade: '',
-  encarregado: '',
+  nome: 'StartUpados',
+  razaoSocial: 'FK COMERCIO VAREJISTA DE PECAS LTDA',
+  cnpj: '46.963.995/0001-97',
+  endereco: 'AVENIDA VILA EMA 1006, SALA 121, VILA SANTA CLARA, SAO PAULO, Sao Paulo 03156-900',
+  emailPrivacidade: 'sac@apexmotoparts.com.br',
+  encarregado: 'Pedro Falchi',
   instagram: '@startupados_tdb',
   site: 'www.startupados.com.br',
-  ultimaAtualizacao: '9 de outubro de 2026',
+  ultimaAtualizacao: '12 de outubro de 2026',
 };
 
 const SECOES = [
