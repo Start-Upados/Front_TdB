@@ -196,9 +196,18 @@ export function obterKpis(): KpiData[] {
   ];
 }
 
+export function contarDentistasSemAtividade90(): number {
+  return dentistas.filter((d) => d.status === 'Ativa' && d.ultimaAtividadeDias > 90).length;
+}
+
 // ─── Transições de status ─────────────────────────
 
 export async function aprovarDentista(id: string): Promise<void> {
+  try {
+    await dentistaService.atualizar(id, { status: 'ativo' });
+  } catch (err) {
+    console.warn('[voluntarios] erro ao aprovar no backend:', err);
+  }
   dentistas = dentistas.map((d) =>
     d.id === id
       ? { ...d, status: 'Ativa' as const, voluntariaDesde: mesAtual(), anosNaRede: 0 }
@@ -207,7 +216,11 @@ export async function aprovarDentista(id: string): Promise<void> {
 }
 
 export async function rejeitarDentista(id: string, _motivo: string): Promise<void> {
-  // Mantém no banco como 'Rejeitado' (histórico). listarDentistas filtra.
+  try {
+    await dentistaService.atualizar(id, { status: 'rejeitado' });
+  } catch (err) {
+    console.warn('[voluntarios] erro ao rejeitar no backend:', err);
+  }
   dentistas = dentistas.map((d) =>
     d.id === id ? { ...d, status: 'Rejeitado' as const } : d,
   );
@@ -218,6 +231,11 @@ export async function suspenderDentista(
   motivo: string,
   observacao?: string,
 ): Promise<void> {
+  try {
+    await dentistaService.atualizar(id, { status: 'suspenso' });
+  } catch (err) {
+    console.warn('[voluntarios] erro ao suspender no backend:', err);
+  }
   const registro: RegistroSuspensao = {
     data: new Date().toISOString().slice(0, 10),
     motivo,
@@ -235,6 +253,11 @@ export async function suspenderDentista(
 }
 
 export async function reativarDentista(id: string): Promise<void> {
+  try {
+    await dentistaService.atualizar(id, { status: 'ativo' });
+  } catch (err) {
+    console.warn('[voluntarios] erro ao reativar no backend:', err);
+  }
   dentistas = dentistas.map((d) =>
     d.id === id ? { ...d, status: 'Ativa' as const } : d,
   );

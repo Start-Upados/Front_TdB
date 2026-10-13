@@ -365,6 +365,23 @@ export function contarAtendimentosDentistaNoAno(dentistaId: string): number {
   ).length;
 }
 
+export function contarAtendimentosPorMes(meses = 6): { ano: number; mes: number; total: number }[] {
+  const hoje = new Date();
+  const out: { ano: number; mes: number; total: number }[] = [];
+  for (let i = meses - 1; i >= 0; i--) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    out.push({ ano: d.getFullYear(), mes: d.getMonth() + 1, total: atendimentos.filter((a) => a.data.startsWith(ym)).length });
+  }
+  return out;
+}
+
+export function contarAtendimentosPorPrograma(): { programa: string; total: number }[] {
+  const map = new Map<string, number>();
+  atendimentos.forEach((a) => map.set(a.programa, (map.get(a.programa) ?? 0) + 1));
+  return Array.from(map.entries()).map(([programa, total]) => ({ programa, total }));
+}
+
 /**
  * Conta atendimentos do mês corrente (referência: DATA_REFERENCIA) + variação
  * em relação ao mês anterior. Usado no KPI "Atendimentos no mês" da Visão Geral.

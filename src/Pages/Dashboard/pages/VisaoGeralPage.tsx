@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -23,6 +23,9 @@ import { obterKpis, obterGraficoMensal, listarAlertas, obterDistribuicao } from 
 import { carregarAtendimentosReais } from '../services/atendimentos';;
 import type { IconeAlerta } from '../data/visaoGeral';
 import { carregarDentistasReais } from '../services/voluntarios'
+
+import { carregarSolicitacoesReais } from '../services/central';
+import { carregarTriagensReais } from '../services/triagens';
 
 
 
@@ -134,11 +137,15 @@ function AlertRow({
 }
 
 export default function VisaoGeralPage() {
-  // Garante que o array de atendimentos esteja sincronizado com o backend
-  // antes da KPI "Atendimentos no mês" ser lida
+  const [, setCarregado] = useState(0);
+
   useEffect(() => {
-  carregarAtendimentosReais().catch(() => {});
-  carregarDentistasReais().catch(() => {});
+    Promise.allSettled([
+      carregarAtendimentosReais(),
+      carregarDentistasReais(),
+      carregarSolicitacoesReais(),
+      carregarTriagensReais(),
+    ]).finally(() => setCarregado((v) => v + 1));
   }, []);
   
   const kpis = obterKpis();
@@ -157,7 +164,7 @@ export default function VisaoGeralPage() {
         </h1>
 
         <p className="text-sm md:text-xs text-muted">
-          Junho de 2026
+          Outubro de 2026
         </p>
       </div>
 
@@ -194,17 +201,21 @@ export default function VisaoGeralPage() {
         </div>
 
         <div className="divide-y divide-line">
-          {alertas.map((a) => (
-            <AlertRow
-              key={a.id}
-              icon={ICONES_ALERTA[a.icone]}
-              tone={a.tone}
-              title={a.titulo}
-              subtitle={a.subtitulo}
-              link={a.link}
-              linkLabel={a.linkLabel}
-            />
-          ))}
+          {alertas.length === 0 ? (
+            <p className="py-6 text-center text-sm text-subtle">Nada precisa de atenção agora. Tudo em dia. ✅</p>
+          ) : (
+            alertas.map((a) => (
+              <AlertRow
+                key={a.id}
+                icon={ICONES_ALERTA[a.icone]}
+                tone={a.tone}
+                title={a.titulo}
+                subtitle={a.subtitulo}
+                link={a.link}
+                linkLabel={a.linkLabel}
+              />
+            ))
+          )}
         </div>
       </div>
 

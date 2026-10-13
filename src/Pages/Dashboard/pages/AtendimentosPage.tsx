@@ -99,6 +99,7 @@ type AcaoModal = 'ver' | 'contatar' | 'acompanhar' | 'reagendar' | 'novo' | null
 export default function AtendimentosPage() {
   const hoje = dataDeHoje();
   const [dataSelecionada, setDataSelecionada] = useState(hoje);
+  const [ancora, setAncora] = useState(hoje);
 
   // Filtros
   const [searchParams] = useSearchParams();
@@ -117,9 +118,9 @@ export default function AtendimentosPage() {
 
   const semana = useMemo(() => {
     const inicio = new Date(hoje + 'T12:00:00');
-    inicio.setDate(inicio.getDate() - 4);
+    inicio.setDate(inicio.getDate() - 3);
     return contarPorFaixa(inicio.toISOString().slice(0, 10), 7);
-  }, [hoje, versao]);
+  }, [ancora, versao]);
 
   const filtros: FiltrosAtendimentos = {
     programa:   filtroPrograma,
@@ -240,6 +241,19 @@ export default function AtendimentosPage() {
     }
   }
 
+  function moverSemana(dias: number) {
+    const d = new Date(ancora + 'T12:00:00');
+    d.setDate(d.getDate() + dias);
+    const iso = d.toISOString().slice(0, 10);
+    setAncora(iso);
+    setDataSelecionada(iso);
+  }
+  function irParaData(iso: string) {
+    if (!iso) return;
+    setAncora(iso);
+    setDataSelecionada(iso);
+  }
+
   // ─── RENDER ────────────────────────────────
 
   return (
@@ -255,6 +269,28 @@ export default function AtendimentosPage() {
                 sub="agendados" />
         <KpiCard label="No-shows no mês"        value={String(kpis.noShowsMes)}
                 sub={Number(kpis.pctNoShow) > 0 ? `${kpis.pctNoShow}% do total` : 'nenhum'} />
+      </div>
+
+      {/* NAVEGAÇÃO DE DATAS */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={() => moverSemana(-7)}
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink hover:bg-surface-soft">
+          ‹ Semana anterior
+        </button>
+        <button onClick={() => { setAncora(hoje); setDataSelecionada(hoje); }}
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink hover:bg-surface-soft">
+          Hoje
+        </button>
+        <button onClick={() => moverSemana(7)}
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink hover:bg-surface-soft">
+          Próxima semana ›
+        </button>
+        <input
+          type="date"
+          value={dataSelecionada}
+          onChange={(e) => irParaData(e.target.value)}
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink"
+        />
       </div>
 
       {/* CALENDÁRIO SEMANAL */}

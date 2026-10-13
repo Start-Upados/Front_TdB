@@ -193,6 +193,10 @@ export function obterKpis(): KpiData[] {
   ];
 }
 
+export function contarFila60Dias(): number {
+  return pacientes.filter((p) => p.diasNaFila > 60).length;
+}
+
 /**
  * Puxa triagens do backend Java/Oracle e MESCLA com o estado local.
  *

@@ -92,6 +92,26 @@ export function obterKpis(): KpiData[] {
   ];
 }
 
+export function contarAltaSemResposta24h(): { total: number; whatsapp: number; site: number } {
+  const limite24h = Date.now() - 86_400_000;
+  const PENDENTES: Solicitacao['status'][] = [
+    'aberta', 'pendente-aprovacao', 'pendente-triagem', 'triagem-apta', 'triagem-nao-apta',
+  ];
+  const alta = solicitacoes.filter((s) => {
+    if (s.prioridade !== 'Alta') return false;
+    if (!PENDENTES.includes(s.status)) return false;
+    const ultima = s.mensagens[s.mensagens.length - 1];
+    const semRespostaAdmin = !ultima || ultima.autor !== 'admin';
+    const velha = new Date(s.ultimaAtualizacao).getTime() < limite24h;
+    return semRespostaAdmin && velha;
+  });
+  return {
+    total: alta.length,
+    whatsapp: alta.filter((s) => s.canal === 'WhatsApp').length,
+    site: alta.filter((s) => s.canal === 'Site').length,
+  };
+}
+
 export function obterSolicitacao(id: string): Solicitacao | undefined {
   return solicitacoes.find((s) => s.id === id);
 }
