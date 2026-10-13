@@ -76,7 +76,7 @@ export function obterKpis(): KpiData[] {
 
   return [
     {
-      label: 'Solicitações novas',
+      label: 'Solicitações novas hoje',
       value: String(novasHoje),
       sub: `${sinal}${delta} vs ontem`,
     },

@@ -28,6 +28,8 @@ import type { Canal, Prioridade, Solicitacao, MotivoFechamento,
 
 import { MOTIVOS_RECUSA_LABEL } from '../data/central';
 
+import CanaisPanel, { SeletorModoCentral, type ModoCentral } from '../components/CanaisPanel';
+
 
 // ─────────────────────────────────────────────
 // ICONS
@@ -113,6 +115,7 @@ export default function CentralPage() {
   const navigate = useNavigate();
   const [versao, setVersao] = useState(0);
   const [vista, setVista] = useState<Vista>('ativas');
+  const [modo, setModo] = useState<ModoCentral>('solicitacoes');
 
   const todas = useMemo(
     () => (vista === 'ativas' ? listarAtivas() : listarArquivo()),
@@ -380,8 +383,19 @@ async function handleRecusar(info: InfoRecusa) {
   }
 }
 
+if (modo === 'canais') {
   return (
     <div className="flex w-full max-w-full flex-col gap-5">
+      <SeletorModoCentral modo={modo} onChange={setModo} />
+      <CanaisPanel />
+    </div>
+  );
+}
+
+  return (
+    <div className="flex w-full max-w-full flex-col gap-5">
+
+      <SeletorModoCentral modo={modo} onChange={setModo} />
 
       {/* KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
