@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Smile, HeartHandshake, ArrowRight, ArrowLeft, Check, CheckCircle2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -335,7 +335,7 @@ function TelaSelecao({ onSelect }: { onSelect: (tipo: 'jovem' | 'mulher') => voi
 
 
 // === FORMULÁRIO JOVEM (Dentista do Bem) ===
-function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: string) => void }) {
+function FormularioJovem({ onSucesso, refToken }: { onSucesso: (prot: string, senha: string) => void; refToken?: string }) {
   const [step,     setStep]     = useState(1)
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
@@ -344,7 +344,9 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
   
 
   
-  const { register, trigger, setValue, formState: { errors }, getValues } = useForm<FormJovem>()
+    const { register, trigger, setValue, formState: { errors }, getValues } = useForm<FormJovem>({
+    defaultValues: { comoSoube: refToken ? 'Instagram' : '' },
+  })
 
   const TOTAL_STEPS = 3
   const stepLabels  = ['Adolescente', 'Responsável', 'Atendimento']
@@ -390,6 +392,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
         responsavel: data.nomeResponsavel,
         comoSoube:   data.comoSoube,
         parentesco:  data.parentesco,
+        ...(refToken ? { ref: refToken } : {}),
       })
     } catch (err) {
       console.warn('Backend indisponivel, salvando no Sheets:', err)
@@ -406,8 +409,9 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
         sexo:       'masculino',
         dataNasc:   data.dataNascimento,
         numeroCasa: 0,
-        whatsappOptin: whatsappOptin,                   // o form não coleta número da casa
+        whatsappOptin: whatsappOptin,
       })
+      
     } catch (err) {
       console.warn('Backend indisponivel ao criar beneficiario (login):', err)
     }
@@ -640,7 +644,7 @@ function FormularioJovem({ onSucesso }: { onSucesso: (prot: string, senha: strin
 
 
 // === FORMULÁRIO MULHER (Apolônias do Bem) ===
-function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: string) => void }) {
+function FormularioMulher({ onSucesso, refToken }: { onSucesso: (prot: string, senha: string) => void; refToken?: string }) {
   const [step,     setStep]     = useState(1)
   const [enviando, setEnviando] = useState(false)
   const [whatsapp, setWhatsapp] = useState('')
@@ -648,8 +652,9 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
   const [whatsappOptin, setWhatsappOptin] = useState(false)
 
   // DEPOIS
-  const { register, trigger, watch, setValue, formState: { errors }, getValues } = useForm<FormMulher>()
-
+    const { register, trigger, watch, setValue, formState: { errors }, getValues } = useForm<FormMulher>({
+    defaultValues: { comoSoube: refToken ? 'Instagram' : '' },
+  })
   const TOTAL_STEPS = 2
   const stepLabels  = ['Dados pessoais', 'Atendimento']
 
@@ -692,6 +697,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
     responsavel: data.nome,
     comoSoube:   data.comoSoube,
     parentesco:  'Nao se aplica',
+    ...(refToken ? { ref: refToken } : {}),
   })
 } catch (err) {
   console.warn('Backend indisponivel, salvando no Sheets:', err)
@@ -788,7 +794,7 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
                   required: 'Campo obrigatório',
                   validate: v => {
                     const idade = calcularIdade(v)
-                    if (idade < 15 || idade > 100) return 'A idade deve estar entre 18 e 100 anos'
+                    if (idade < 18 || idade > 100) return 'A idade deve estar entre 18 e 100 anos'
                     return true
                   },
                  })} className={inputCls}
@@ -942,7 +948,13 @@ function FormularioMulher({ onSucesso }: { onSucesso: (prot: string, senha: stri
 
 // === SOLICITAR ATENDIMENTO (PRINCIPAL) ===
 export default function SolicitarAtendimento() {
-  const [tipo,      setTipo]      = useState<TipoAtendimento>('selecao')
+  // Link vindo do robô do Instagram: ?programa=dentista|apolonias&ref=<token>
+  const [searchParams, setSearchParams] = useSearchParams()
+  const programaUrl = searchParams.get('programa')
+  const [refToken, setRefToken] = useState(searchParams.get('ref') ?? '')
+  const [tipo,      setTipo]      = useState<TipoAtendimento>(
+    programaUrl === 'dentista' ? 'jovem' : programaUrl === 'apolonias' ? 'mulher' : 'selecao',
+  )
   const [enviado,   setEnviado]   = useState(false)
   const [protocolo, setProtocolo] = useState('')
   const [tipoFinal, setTipoFinal] = useState<'jovem' | 'mulher'>('jovem')
@@ -962,7 +974,12 @@ export default function SolicitarAtendimento() {
           senha={senha}
           protocolo={protocolo}
           tipo={tipoFinal}
-          onVoltar={() => { setEnviado(false); setTipo('selecao') }}
+          onVoltar={() => {
+            setEnviado(false)
+            setTipo('selecao')
+            setRefToken('')          // nova solicitação não fica ligada à conversa anterior
+            setSearchParams({})
+          }}
         />
       </div>
     )
@@ -971,8 +988,8 @@ export default function SolicitarAtendimento() {
   return (
     <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center p-4">
       {tipo === 'selecao' && <TelaSelecao onSelect={setTipo} />}
-      {tipo === 'jovem'   && <FormularioJovem  onSucesso={(prot, senha) => handleSucesso(prot, 'jovem', senha)} />}
-      {tipo === 'mulher'  && <FormularioMulher onSucesso={(prot, senha) => handleSucesso(prot, 'mulher', senha)} />}
+            {tipo === 'jovem'   && <FormularioJovem  refToken={refToken || undefined} onSucesso={(prot, senha) => handleSucesso(prot, 'jovem', senha)} />}
+      {tipo === 'mulher'  && <FormularioMulher refToken={refToken || undefined} onSucesso={(prot, senha) => handleSucesso(prot, 'mulher', senha)} />}
     </div>
   )
 }

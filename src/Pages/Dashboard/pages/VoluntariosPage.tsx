@@ -7,6 +7,8 @@ import {
   Star,
   Clock,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
@@ -30,6 +32,8 @@ const REGIOES: Regiao[] = [
   'Norte',
 ];
 
+const VOLUNTARIOS_POR_PAGINA = 5;
+
 export default function VoluntariosPage() {
   const navigate = useNavigate();
   const kpis = obterKpis();
@@ -50,6 +54,11 @@ export default function VoluntariosPage() {
   const [filtroEspecialidade, setFiltEsp] = useState('Todas');
 
   const [filtroStatus, setFiltStatus] = useState('Todos');
+
+  const [limite, setLimite] = useState(VOLUNTARIOS_POR_PAGINA);
+    useEffect(() => {
+    setLimite(VOLUNTARIOS_POR_PAGINA);
+  }, [search, filtroEspecialidade, filtroStatus, regiao]);
 
   const filtered = dentistas.filter((d) => {
     if (d.status === 'Pendente' || d.status === 'Rejeitado') return false;
@@ -90,7 +99,7 @@ export default function VoluntariosPage() {
       </div>
 
       {/* APROVAÇÕES */}
-      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
 
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-ink md:text-sm">
@@ -153,7 +162,7 @@ export default function VoluntariosPage() {
       </div>
 
       {/* REGIÕES */}
-      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
 
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-ink md:text-sm">
@@ -217,7 +226,7 @@ export default function VoluntariosPage() {
       </div>
 
       {/* DIRETÓRIO */}
-      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
 
         {/* TOP */}
         <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center">
@@ -237,7 +246,7 @@ export default function VoluntariosPage() {
               placeholder="Buscar dentista..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-line bg-surface shadow-cardpy-3 pl-10 pr-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              className="w-full rounded-xl border border-line bg-surface shadow-card py-3 pl-10 pr-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
           </div>
 
@@ -246,7 +255,7 @@ export default function VoluntariosPage() {
             <select
               value={filtroEspecialidade}
               onChange={(e) => setFiltEsp(e.target.value)}
-              className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
+              className="cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink"
             >
               <option value="Todas">
                 Todas especialidades
@@ -262,10 +271,10 @@ export default function VoluntariosPage() {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltStatus(e.target.value)}
-              className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
+              className="cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink"
             >
               <option value="Todos">Status</option>
-              <option value="Ativa">Ativa</option>
+              <option value="Ativa">Ativo</option>
               <option value="Suspensa">Suspensa</option>
               <option value="Inativo">Inativo</option>
             </select>
@@ -280,7 +289,7 @@ export default function VoluntariosPage() {
         ) : (
           <div className="divide-y divide-line">
 
-            {filtered.map((d) => (
+            {filtered.slice(0, limite).map((d) => (
               <div
                 key={d.id}
                 className="flex flex-col gap-4 py-4 first:pt-1 lg:flex-row lg:items-center"
@@ -358,14 +367,29 @@ export default function VoluntariosPage() {
         )}
 
         {/* FOOTER */}
-        <button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm text-ink transition-colors hover:bg-surface-soft">
-          Ver todos os {distribuicao[regiao].count} da região {regiao}
+        {(filtered.length > limite || limite > VOLUNTARIOS_POR_PAGINA) && (
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            {filtered.length > limite && (
+              <button
+                onClick={() => setLimite((l) => l + VOLUNTARIOS_POR_PAGINA)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm text-ink transition-colors hover:bg-surface-soft"
+              >
+                Ver mais opções
+                <ChevronDown className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
 
-          <ArrowRight
-            className="h-4 w-4"
-            strokeWidth={2}
-          />
-        </button>
+            {limite > VOLUNTARIOS_POR_PAGINA && (
+              <button
+                onClick={() => setLimite(VOLUNTARIOS_POR_PAGINA)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm text-ink transition-colors hover:bg-surface-soft"
+              >
+                Mostrar menos
+                <ChevronUp className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

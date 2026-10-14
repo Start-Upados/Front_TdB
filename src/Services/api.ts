@@ -31,6 +31,7 @@ export interface SolicitacaoBody extends UsuarioBase {
   responsavel: string
   comoSoube:   string
   parentesco:  string
+  ref?: string
 }
  
 // ─── DENTISTA (Dentista.java) ─────────────────

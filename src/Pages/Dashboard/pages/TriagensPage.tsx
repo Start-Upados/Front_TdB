@@ -221,7 +221,7 @@ export default function TriagensPage() {
             placeholder="Buscar paciente..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-3 py-3 text-sm rounded-xl border border-line bg-surface shadow-cardtext-ink placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            className="w-full pl-10 pr-3 py-3 text-sm rounded-xl border border-line bg-surface shadow-card text-ink placeholder:text-subtle focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
           />
         </div>
 
@@ -229,7 +229,7 @@ export default function TriagensPage() {
           <select
             value={filtroPrograma}
             onChange={(e) => setPrograma(e.target.value)}
-            className="text-sm py-3 px-3 rounded-xl border border-line bg-surface shadow-cardtext-ink cursor-pointer"
+            className="text-sm py-3 px-3 rounded-xl border border-line bg-surface shadow-card text-ink cursor-pointer"
           >
             <option value="Todos">Todos programas</option>
             <option value="Dentista do Bem">Dentista do Bem</option>
@@ -239,7 +239,7 @@ export default function TriagensPage() {
           <select
             value={filtroTempo}
             onChange={(e) => setFiltroTempo(e.target.value)}
-            className="text-sm py-3 px-3 rounded-xl border border-line bg-surface shadow-cardtext-ink cursor-pointer"
+            className="text-sm py-3 px-3 rounded-xl border border-line bg-surface shadow-card text-ink cursor-pointer"
           >
             <option value="Todos">Tempo na fila</option>
             <option value="ate7">Até 7 dias</option>
@@ -447,7 +447,7 @@ export default function TriagensPage() {
               onClick={() => setExpandido((e) => !e)}
               className="w-full inline-flex items-center justify-center gap-2 text-sm py-3 mt-3 rounded-xl border border-line text-ink hover:bg-surface-soft transition-colors"
             >
-              {expandido ? 'Ver menos' : `Ver mais opções (${totalDentistasDisponiveis - TOTAL_DENTISTAS_COMPACTO})`}
+              {expandido ? 'Ver menos' : `Ver mais opções `}
               {expandido ? <ChevronUp className="w-3.5 h-3.5" strokeWidth={2} /> : <ChevronDown className="w-3.5 h-3.5" strokeWidth={2} />}
             </button>
           )}

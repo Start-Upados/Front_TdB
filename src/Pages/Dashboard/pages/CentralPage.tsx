@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
-  Search, Plus, Sparkles, RefreshCw, Send, ArrowRight, Share2, Archive,
+  Search, Sparkles, RefreshCw, Send, ArrowRight, Share2, Archive,
   MessageSquare, Globe, Mail, MessageCircle, Phone, AlertCircle,
   Inbox, FileCheck, RotateCcw, CheckCircle2,
   ClipboardCheck, XCircle, Upload, Trash2, Camera,
@@ -404,7 +404,7 @@ if (modo === 'canais') {
 
       {/* TABS (Ativas / Arquivo) + FILTERS */}
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-        <div className="inline-flex rounded-xl border border-line bg-surface shadow-cardp-1">
+        <div className="inline-flex rounded-xl border border-line bg-surface shadow-card p-1">
           <button
             onClick={() => setVista('ativas')}
             className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors ${
@@ -436,22 +436,19 @@ if (modo === 'canais') {
           <input
             type="text" placeholder="Buscar solicitação..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-line bg-surface shadow-cardpy-3 pl-10 pr-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            className="w-full rounded-xl border border-line bg-surface shadow-card py-3 pl-10 pr-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex">
           <select value={filterCanal} onChange={(e) => setFilterCanal(e.target.value)}
-            className="min-w-[140px] cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink">
-            <option value="Todos">Todos canais</option>
+            className="min-w-[140px] cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink">
+            <option value="Site">Todos os Canais</option>
             <option value="Site">Site</option>
-            <option value="WhatsApp">WhatsApp</option>
             <option value="Email">Email</option>
-            <option value="Instagram">Instagram</option>
-            <option value="Telefone">Telefone</option>
           </select>
           <select value={filterPrioridade} onChange={(e) => setFilterPrior(e.target.value)}
-            className="min-w-[140px] cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink">
+            className="min-w-[140px] cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink">
             <option value="Todas">Todas prioridades</option>
             <option value="Alta">Alta</option>
             <option value="Media">Média</option>
@@ -462,22 +459,15 @@ if (modo === 'canais') {
         <button
           onClick={() => recarregarDoBackend(false)}
           disabled={carregandoBackend}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface shadow-cardpx-4 py-3 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50 disabled:cursor-not-allowed xl:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface shadow-card px-4 py-3 text-sm text-ink transition-colors hover:bg-surface-soft disabled:opacity-50 disabled:cursor-not-allowed xl:w-auto"
           >
           <RefreshCw className={`h-4 w-4 ${carregandoBackend ? 'animate-spin' : ''}`} strokeWidth={2} />
           {carregandoBackend ? 'Carregando...' : 'Recarregar'}
         </button>
-
-        {vista === 'ativas' && (
-          <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface shadow-cardpx-4 py-3 text-sm text-ink transition-colors hover:bg-surface-soft xl:w-auto">
-            <Plus className="h-4 w-4" strokeWidth={2} />
-            Manual
-          </button>
-        )}
       </div>
 
       {/* GRID */}
-      <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line bg-surface shadow-cardxl:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line bg-surface shadow-card xl:grid-cols-12 gap-6">
 
         {/* LIST */}
         <div className="max-h-[420px] overflow-y-auto border-b border-line xl:col-span-5 xl:max-h-[760px] xl:border-b-0 xl:border-r">

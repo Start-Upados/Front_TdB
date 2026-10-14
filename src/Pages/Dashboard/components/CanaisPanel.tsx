@@ -119,7 +119,7 @@ export function SeletorModoCentral({
         className={`${base} flex-1 justify-center sm:flex-none ${modo === 'canais' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
       >
         <MessageCircle className="h-3.5 w-3.5" strokeWidth={2} />
-        Instagram / WhatsApp
+        Instagram
       </button>
     </div>
   );

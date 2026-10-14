@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 //import { jsPDF } from 'jspdf';
 import {
-  Plus, Check, Clock, AlertTriangle, UserPlus, ArrowRight,
+  Plus, Check, Clock, AlertTriangle, UserPlus,
+  ChevronDown, ChevronUp,
   MapPin, Users, Calendar as CalIcon, FileText, Download,
   Trash2
 } from 'lucide-react';
@@ -32,6 +33,7 @@ import { ESPECIALIDADES_MUTIRAO } from '../data/mutiroes';
 
 const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const RECENTES_POR_PAGINA = 3;
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
 function diaSemanaUpper(iso: string) { return DIAS_SEMANA[new Date(iso + 'T12:00:00').getDay()]; }
@@ -44,6 +46,7 @@ function diaSemanaCompleto(iso: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 function formatarDataLonga(iso: string) {
+  if (!iso) return 'data a definir';
   const d = new Date(iso + 'T12:00:00');
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
@@ -80,11 +83,13 @@ export default function MutiroesPage() {
   const [processando, setProcessando] = useState(false);
 
   const proximos = useMemo(() => listarProximos(), [versao]);
-  const recentes = useMemo(() => listarRecentes(3), [versao]);
+  const recentes = useMemo(() => listarRecentes(), [versao]);
+  const [limiteRecentes, setLimiteRecentes] = useState(RECENTES_POR_PAGINA);
+
   const kpisM = useMemo(() => obterKpisMutiroes(), [versao]);
 
   const proximo = proximos[0];
-  const diasAteProximo = proximo ? diasAte(proximo.data) : null;
+  const diasAteProximo = proximo?.data ? diasAte(proximo.data) : null;
 
   function refresh() { setVersao((v) => v + 1); }
   function fechar()  { if (!processando) setAcao(null); }
@@ -104,8 +109,8 @@ export default function MutiroesPage() {
         <KpiCard label="Próximos mutirões" value={proximos.length} sub="nas próximas 3 semanas" />
         <KpiCard
           label="Próximo"
-          value={proximo ? `${diaSemanaCompleto(proximo.data).slice(0,3)} ${diaMes(proximo.data)}/${proximo.data.slice(5,7)}` : '—'}
-          sub={proximo && diasAteProximo !== null ? `em ${diasAteProximo} dias · ${proximo.cidade}-${proximo.estado}` : 'sem agendamentos'}
+          value={proximo?.data ? `${diaSemanaCompleto(proximo.data).slice(0,3)} ${diaMes(proximo.data)}/${proximo.data.slice(5,7)}` : '—'}
+          sub={proximo && diasAteProximo !== null ? `em ${diasAteProximo} dias · ${proximo.cidade}-${proximo.estado}` : proximo ? 'data a definir' : 'sem agendamentos'}
         />
         <KpiCard label="Atendimentos no mês" value={kpisM.atendimentosMes}
           sub="via mutirões" subTone={kpisM.atendimentosMes > 0 ? 'success' : undefined} />
@@ -128,7 +133,7 @@ export default function MutiroesPage() {
         </div>
 
         {proximos.length === 0 ? (
-          <p className="rounded-2xl border border-line bg-surface shadow-cardpy-10 text-center text-sm text-muted">
+          <p className="rounded-2xl border border-line bg-surface shadow-card py-10 text-center text-sm text-muted">
             Nenhum mutirão agendado.
           </p>
         ) : (
@@ -143,45 +148,74 @@ export default function MutiroesPage() {
         )}
       </div>
 
-      {/* RECENTES */}
-      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+            {/* RECENTES */}
+      <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <p className="text-base font-medium text-ink md:text-sm">Mutirões recentes</p>
-          <button className="inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-ink">
-            Ver histórico
-            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
-          </button>
+          <p className="text-base font-medium text-ink md:text-sm">Mutirões realizados</p>
+          <span className="text-xs text-subtle">
+            {recentes.length} {recentes.length === 1 ? 'mutirão' : 'mutirões'}
+          </span>
         </div>
 
-        <div className="divide-y divide-line">
-          {recentes.map((m) => (
-            <div key={m.id} className="flex flex-col gap-4 py-4 first:pt-1 lg:flex-row lg:items-center">
-              <div className="lg:min-w-[88px]">
-                <p className="text-sm font-medium text-ink">{dataDiaMes(m.data)}</p>
-                <p className="mt-1 text-xs text-subtle">{diaSemanaCompleto(m.data).toLowerCase()}</p>
-              </div>
+        {recentes.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted">
+            Nenhum mutirão realizado ainda. Eles aparecem aqui automaticamente depois da data do evento.
+          </p>
+        ) : (
+          <div className="divide-y divide-line">
+            {recentes.slice(0, limiteRecentes).map((m) => (
+              <div key={m.id} className="flex flex-col gap-4 py-4 first:pt-1 lg:flex-row lg:items-center">
+                <div className="lg:min-w-[88px]">
+                  <p className="text-sm font-medium text-ink">{dataDiaMes(m.data)}</p>
+                  <p className="mt-1 text-xs text-subtle">{diaSemanaCompleto(m.data).toLowerCase()}</p>
+                </div>
 
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink md:text-base">{m.local} · {m.cidade}-{m.estado}</p>
-                <p className="mt-1 text-xs text-subtle md:text-sm">{m.tipo} · {m.programa}</p>
-              </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-ink md:text-base">{m.local} · {m.cidade}-{m.estado}</p>
+                  <p className="mt-1 text-xs text-subtle md:text-sm">{m.tipo} · {m.programa}</p>
+                </div>
 
-              <div className="lg:text-right">
-                <p className="text-sm text-ink">
-                  <span className="font-semibold">{m.atendimentosRealizados}</span> atendimentos
-                </p>
-                <p className="mt-1 text-xs text-subtle">{m.encaminhamentos} encaminhados pra tratamento</p>
-              </div>
+                <div className="lg:text-right">
+                  <p className="text-sm text-ink">
+                    <span className="font-semibold">{m.atendimentosRealizados ?? 0}</span> atendimentos
+                  </p>
+                  <p className="mt-1 text-xs text-subtle">{m.encaminhamentos ?? 0} encaminhados pra tratamento</p>
+                </div>
 
+                <button
+                  onClick={() => setAcao({ tipo: 'relatorio', id: m.id })}
+                  className="w-full rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft lg:w-auto"
+                >
+                  Relatório
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* FOOTER */}
+        {(recentes.length > limiteRecentes || limiteRecentes > RECENTES_POR_PAGINA) && (
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            {recentes.length > limiteRecentes && (
               <button
-                onClick={() => setAcao({ tipo: 'relatorio', id: m.id })}
-                className="w-full rounded-xl border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft lg:w-auto"
+                onClick={() => setLimiteRecentes((l) => l + RECENTES_POR_PAGINA)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm text-ink transition-colors hover:bg-surface-soft"
               >
-                Relatório
+                Ver mais opções
+                <ChevronDown className="h-4 w-4" strokeWidth={2} />
               </button>
-            </div>
-          ))}
-        </div>
+            )}
+            {limiteRecentes > RECENTES_POR_PAGINA && (
+              <button
+                onClick={() => setLimiteRecentes(RECENTES_POR_PAGINA)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm text-ink transition-colors hover:bg-surface-soft"
+              >
+                Mostrar menos
+                <ChevronUp className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* MODAIS */}
@@ -238,10 +272,16 @@ function MutiraoCard({
     <div className={`mb-3 rounded-2xl bg-surface p-4 md:p-5 ${cfg.cardBorderClass}`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
 
-        <div className={`flex min-w-[88px] flex-row items-center justify-center gap-3 rounded-2xl px-4 py-3 lg:flex-col lg:gap-1 ${cfg.dateBg}`}>
-          <span className={`text-xs ${cfg.dateText === 'text-ink' ? 'text-muted' : cfg.dateText}`}>{diaSemanaUpper(m.data)}</span>
-          <span className={`text-3xl font-semibold leading-none ${cfg.dateText}`}>{diaMes(m.data)}</span>
-          <span className={`text-xs ${cfg.dateText === 'text-ink' ? 'text-muted' : cfg.dateText}`}>{mesAbrev(m.data)}</span>
+                <div className={`flex min-w-[88px] flex-row items-center justify-center gap-3 rounded-2xl px-4 py-3 lg:flex-col lg:gap-1 ${cfg.dateBg}`}>
+          {m.data ? (
+            <>
+              <span className={`text-xs ${cfg.dateText === 'text-ink' ? 'text-muted' : cfg.dateText}`}>{diaSemanaUpper(m.data)}</span>
+              <span className={`text-3xl font-semibold leading-none ${cfg.dateText}`}>{diaMes(m.data)}</span>
+              <span className={`text-xs ${cfg.dateText === 'text-ink' ? 'text-muted' : cfg.dateText}`}>{mesAbrev(m.data)}</span>
+            </>
+          ) : (
+            <span className="text-center text-xs leading-tight text-muted">Data<br />a definir</span>
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -624,7 +664,7 @@ function DetalhesMutiraoModal({
   const m = useMemo(() => (mutiraoId ? obterMutirao(mutiraoId) : undefined), [mutiraoId, versaoLocal, open]);
   if (!m) return null;
 
-  const dias = diasAte(m.data);
+  const dias = m.data ? diasAte(m.data) : null;
   const cfg = m.status !== 'realizado' ? STATUS_CONFIG[m.status] : null;
 
   async function cancelar(dentistaId: string) {
@@ -672,7 +712,7 @@ function DetalhesMutiraoModal({
             <div className="flex-1 min-w-0">
               <p className={`text-sm font-medium ${cfg.text}`}>{cfg.label}</p>
               <p className="text-xs text-muted mt-0.5">
-                {dias > 0 ? `Daqui a ${dias} ${dias === 1 ? 'dia' : 'dias'}` : dias === 0 ? 'Hoje' : 'Já passou'}
+                {dias === null ? 'Data a definir' : dias > 0 ? `Daqui a ${dias} ${dias === 1 ? 'dia' : 'dias'}` : dias === 0 ? 'Hoje' : 'Já passou'}
               </p>
             </div>
           </div>

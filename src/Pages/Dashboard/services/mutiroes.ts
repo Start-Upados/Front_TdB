@@ -4,7 +4,7 @@ import {
   type StatusMutirao,
   type VoluntarioConvocado,
 } from '../data/mutiroes';
-import { dataDeHoje } from './atendimentos';
+//import { dataDeHoje } from './atendimentos';
 import { listarDentistas } from './voluntarios';
 import type { DentistaCompleto } from '../data/dentistas';
 import type { /* ... existentes ..., */ PacienteConfirmado } from '../data/mutiroes';
@@ -41,6 +41,17 @@ let mutiroes: Mutirao[] = hidratar() ?? [];
 // HELPERS
 // ──────────────────────────────────────────────
 
+// Data local (YYYY-MM-DD) — toISOString() é UTC e vira o dia após 21h em SP
+function hojeLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Recalcula o status na leitura — mutirão cuja data passou vira 'realizado' sozinho
+function comStatusAtual(): Mutirao[] {
+  return mutiroes.map((m) => ({ ...m, status: calcularStatus(m) }));
+}
+
 function horaParaLabel(hhmm: string): string {
   const [h, m] = hhmm.split(':');
   return m === '00' ? `${h}h` : `${h}h${m}`;
@@ -52,9 +63,10 @@ export function formatarHorario(inicio: string, fim: string): string {
 
 function calcularStatus(m: Pick<Mutirao, 'data' | 'dentistasConfirmados' | 'dentistasNecessarios' | 'status'>): StatusMutirao {
   if (m.status === 'realizado') return 'realizado';
-  if (m.data < dataDeHoje()) return 'realizado';
+  if (m.data && m.data < hojeLocal()) return 'realizado';
 
   if (m.dentistasConfirmados >= m.dentistasNecessarios) return 'pronto';
+  if (!m.data) return 'em-preparacao';           // sem data definida
 
   const diasFalta = diasAte(m.data);
   if (diasFalta < 7) return 'atencao';
@@ -84,14 +96,13 @@ function gerarIdDeNome(nome: string): string {
  * atualiza só este mapper.
  */
 function mapearCampanhaBackend(c: CampanhaBody): Mutirao {
-  const hoje = new Date().toISOString().slice(0, 10);
   return {
     id: gerarIdDeNome(c.nome),
     nome: c.nome,
-    data: hoje,                                          // backend não tem data evento
-    horaInicio: '08:00',
-    horaFim: '17:00',
-    horario: '8h às 17h',
+    data: '',                                            // backend ainda não guarda data do evento
+    horaInicio: '',
+    horaFim: '',
+    horario: 'Horário a definir',
     local: c.logradouro || c.nome,
     endereco: c.logradouro,
     cidade: c.cidade,
@@ -126,7 +137,7 @@ export function obterKpisMutiroes(): {
   const mesAtual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   const anoAtual = String(d.getFullYear());
 
-  const realizados = mutiroes.filter((m) => m.status === 'realizado');
+  const realizados = comStatusAtual().filter((m) => m.status === 'realizado');
 
   const atendimentosMes = realizados
     .filter((m) => m.data.startsWith(mesAtual))
@@ -193,26 +204,30 @@ export async function carregarMutiroesReais(): Promise<{
 }
 
 export function listarProximos(): Mutirao[] {
-  const hoje = dataDeHoje();
-  return mutiroes
-    .filter((m) => m.status !== 'realizado' && m.data >= hoje)
-    .sort((a, b) => a.data.localeCompare(b.data));
+  const hoje = hojeLocal();
+  return comStatusAtual()
+    .filter((m) => m.status !== 'realizado' && (!m.data || m.data >= hoje))
+    .sort((a, b) => {
+      if (!a.data) return 1;                       // "a definir" vai pro fim
+      if (!b.data) return -1;
+      return a.data.localeCompare(b.data);
+    });
 }
 
-export function listarRecentes(limite = 5): Mutirao[] {
-  return mutiroes
+export function listarRecentes(limite?: number): Mutirao[] {
+  return comStatusAtual()
     .filter((m) => m.status === 'realizado')
     .sort((a, b) => b.data.localeCompare(a.data))
-    .slice(0, limite);
+    .slice(0, limite);                              // sem limite = todos
 }
 
 export function obterMutirao(id: string): Mutirao | undefined {
-  return mutiroes.find((m) => m.id === id);
+  return comStatusAtual().find((m) => m.id === id);
 }
 
 export function diasAte(dataAlvo: string): number {
   // Usa a data REAL do navegador (não a DATA_REFERENCIA mock de atendimentos.ts)
-  const hojeStr = new Date().toISOString().slice(0, 10);
+  const hojeStr = hojeLocal();
   const hoje = new Date(hojeStr + 'T12:00:00');
   const alvo = new Date(dataAlvo + 'T12:00:00');
   return Math.round((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
