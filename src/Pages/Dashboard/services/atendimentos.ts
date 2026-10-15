@@ -22,6 +22,8 @@ function hojeISO(): string {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+export const EVENTO_ATENDIMENTOS = 'tdb:atendimentos-atualizados';
+
 function persistir(): void {
   try {
     localStorage.setItem(LS_ATENDIMENTOS, JSON.stringify(atendimentos));
@@ -29,6 +31,7 @@ function persistir(): void {
   } catch (err) {
     console.warn('[atendimentos] erro ao persistir:', err);
   }
+  window.dispatchEvent(new Event(EVENTO_ATENDIMENTOS));
 }
 
 function hidratarAtendimentos(): Atendimento[] | null {
@@ -73,13 +76,17 @@ function parseDataAtendimento(raw: string | undefined): { data: string; hora: st
   return { data: DATA_REFERENCIA, hora: '00:00' };
 }
 
-/** Backend usa 'concluido'/'cancelado'; frontend usa 'realizado'/'no-show'. */
+/** Backend usa 'concluido'/'cancelado'/'agendado' (às vezes em maiúsculas); frontend usa 'realizado'/'no-show'/'aguardando'. */
 function statusBackendParaFront(s: string | undefined): StatusAtendimento {
-  switch (s) {
+  switch ((s ?? '').toLowerCase().trim()) {
     case 'confirmado':   return 'confirmado';
-    case 'em-andamento': return 'em-andamento';
-    case 'concluido':    return 'realizado';
-    case 'cancelado':    return 'no-show';
+    case 'em-andamento':
+    case 'em_andamento': return 'em-andamento';
+    case 'concluido':
+    case 'realizado':    return 'realizado';
+    case 'cancelado':
+    case 'no-show':      return 'no-show';
+    case 'agendado':
     default:             return 'aguardando';
   }
 }
@@ -164,7 +171,7 @@ export function contarPorFaixa(dataInicial: string, dias: number): ContagemDia[]
   return Array.from({ length: dias }, (_, i) => {
     const d = new Date(inicio);
     d.setDate(d.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return { data: iso, count: contagens[iso] ?? 0 };
   });
 }
@@ -362,6 +369,13 @@ export function contarAtendimentosDentistaNoAno(dentistaId: string): number {
   const ano = new Date().getFullYear();
   return atendimentos.filter(
     (a) => a.dentista.id === dentistaId && a.data.startsWith(String(ano)),
+  ).length;
+}
+
+/** Atendimentos com status 'realizado' no ano (padrão: ano atual). Usado na Meta TdB. */
+export function contarRealizadosNoAno(ano = new Date().getFullYear()): number {
+  return atendimentos.filter(
+    (a) => a.status === 'realizado' && a.data.startsWith(String(ano)),
   ).length;
 }
 

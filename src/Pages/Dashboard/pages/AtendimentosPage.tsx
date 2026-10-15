@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   Plus, Check, Clock, Play, X, ArrowRight, Square,
   Phone, Mail, MessageCircle, Calendar, MapPin, Stethoscope,
-  CheckCircle2, Copy,
+  CheckCircle2, Copy, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
@@ -44,6 +44,38 @@ function diaSemanaCurto(iso: string): string {
 
 function diaMes(iso: string): number {
   return parseInt(iso.slice(8, 10), 10);
+}
+
+/** YYYY-MM-DD no fuso local (toISOString é UTC). */
+function isoLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function somarDias(iso: string, dias: number): string {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + dias);
+  return isoLocal(d);
+}
+
+/** Segunda-feira da semana que contém a data (semana seg → dom). */
+function segundaDaSemana(iso: string): string {
+  const d = new Date(iso + 'T12:00:00');
+  const dow = d.getDay();                 // 0 = domingo
+  return somarDias(iso, dow === 0 ? -6 : 1 - dow);
+}
+
+function rotuloDaSemana(inicioIso: string, fimIso: string): string {
+  const ini = new Date(inicioIso + 'T12:00:00');
+  const fim = new Date(fimIso + 'T12:00:00');
+  const completo: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+  const fimTxt = fim.toLocaleDateString('pt-BR', completo);
+  if (ini.getFullYear() !== fim.getFullYear()) {
+    return `${ini.toLocaleDateString('pt-BR', completo)} – ${fimTxt}`;
+  }
+  if (ini.getMonth() !== fim.getMonth()) {
+    return `${ini.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })} – ${fimTxt}`;
+  }
+  return `${ini.getDate()} – ${fimTxt}`;
 }
 
 function horaAtual(): string {
@@ -116,11 +148,11 @@ export default function AtendimentosPage() {
 
   const kpis = obterKpisAtendimentos();
 
-  const semana = useMemo(() => {
-    const inicio = new Date(hoje + 'T12:00:00');
-    inicio.setDate(inicio.getDate() - 3);
-    return contarPorFaixa(inicio.toISOString().slice(0, 10), 7);
-  }, [ancora, versao]);
+  const semana = useMemo(
+  () => contarPorFaixa(segundaDaSemana(ancora), 7),
+  [ancora, versao],
+  );
+  const rotuloSemana = semana.length === 7 ? rotuloDaSemana(semana[0].data, semana[6].data) : '';
 
   const filtros: FiltrosAtendimentos = {
     programa:   filtroPrograma,
@@ -242,12 +274,11 @@ export default function AtendimentosPage() {
   }
 
   function moverSemana(dias: number) {
-    const d = new Date(ancora + 'T12:00:00');
-    d.setDate(d.getDate() + dias);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = somarDias(ancora, dias);
     setAncora(iso);
     setDataSelecionada(iso);
   }
+
   function irParaData(iso: string) {
     if (!iso) return;
     setAncora(iso);
@@ -293,31 +324,53 @@ export default function AtendimentosPage() {
         />
       </div>
 
-      {/* CALENDÁRIO SEMANAL */}
-      <div className="overflow-x-auto pb-1">
-        <div className="grid min-w-[720px] grid-cols-7 gap-3">
-          {semana.map(({ data, count }) => {
-            const isHoje = data === hoje;
-            const isPast = data < hoje;
-            const isSelected = data === dataSelecionada;
-            return (
-              <button
-                key={data}
-                onClick={() => setDataSelecionada(data)}
-                className={`rounded-2xl border px-2 py-4 text-center transition-all ${
-                  isSelected ? 'border-info bg-info-soft' : 'border-line bg-surface hover:bg-surface-soft'
-                } ${isPast && !isSelected ? 'opacity-60' : ''}`}
-              >
-                <p className={`text-xs ${isSelected ? 'text-info' : 'text-muted'}`}>
-                  {diaSemanaCurto(data)}{isHoje && ' · hoje'}
-                </p>
-                <p className="mt-1 text-2xl font-semibold leading-none text-ink">{diaMes(data)}</p>
-                <p className={`mt-2 text-xs ${isSelected ? 'text-info' : 'text-subtle'}`}>
-                  {count === 0 ? '—' : `${count} atend.`}
-                </p>
-              </button>
-            );
-          })}
+            {/* CALENDÁRIO SEMANAL */}
+      <div className="flex flex-col gap-2">
+        <p className="px-1 text-sm font-medium text-ink">{rotuloSemana}</p>
+
+        <div className="flex items-stretch gap-2">
+          <button
+            onClick={() => moverSemana(-7)}
+            aria-label="Semana anterior"
+            className="flex shrink-0 items-center rounded-2xl border border-line bg-surface px-2 text-ink transition-colors hover:bg-surface-soft"
+          >
+            <ChevronLeft className="h-5 w-5" strokeWidth={2} />
+          </button>
+
+          <div className="min-w-0 flex-1 overflow-x-auto pb-1">
+            <div className="grid min-w-[720px] grid-cols-7 gap-3">
+              {semana.map(({ data, count }) => {
+                const isHoje = data === hoje;
+                const isPast = data < hoje;
+                const isSelected = data === dataSelecionada;
+                return (
+                  <button
+                    key={data}
+                    onClick={() => setDataSelecionada(data)}
+                    className={`rounded-2xl border px-2 py-4 text-center transition-all ${
+                      isSelected ? 'border-info bg-info-soft' : 'border-line bg-surface hover:bg-surface-soft'
+                    } ${isPast && !isSelected ? 'opacity-60' : ''}`}
+                  >
+                    <p className={`text-xs ${isSelected ? 'text-info' : 'text-muted'}`}>
+                      {diaSemanaCurto(data)}{isHoje && ' · hoje'}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold leading-none text-ink">{diaMes(data)}</p>
+                    <p className={`mt-2 text-xs ${isSelected ? 'text-info' : 'text-subtle'}`}>
+                      {count === 0 ? '—' : `${count} atend.`}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            onClick={() => moverSemana(7)}
+            aria-label="Próxima semana"
+            className="flex shrink-0 items-center rounded-2xl border border-line bg-surface px-2 text-ink transition-colors hover:bg-surface-soft"
+          >
+            <ChevronRight className="h-5 w-5" strokeWidth={2} />
+          </button>
         </div>
       </div>
 
@@ -327,7 +380,7 @@ export default function AtendimentosPage() {
           <select
             value={filtroPrograma}
             onChange={(e) => setFiltroPrograma(e.target.value)}
-            className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
+            className="cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink"
           >
             {PROGRAMAS_FILTRO.map((p) => (
               <option key={p} value={p}>{p === 'Todos' ? 'Todos programas' : p}</option>
@@ -337,7 +390,7 @@ export default function AtendimentosPage() {
           <select
             value={filtroRegiao}
             onChange={(e) => setFiltroRegiao(e.target.value)}
-            className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
+            className="cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink"
           >
             {REGIOES.map((r) => (
               <option key={r} value={r}>{r === 'Todas' ? 'Todas regiões' : r}</option>
@@ -347,7 +400,7 @@ export default function AtendimentosPage() {
           <select
             value={filtroDentista}
             onChange={(e) => setFiltroDentista(e.target.value)}
-            className="cursor-pointer rounded-xl border border-line bg-surface shadow-cardpx-3 py-3 text-sm text-ink"
+            className="cursor-pointer rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink"
           >
             <option value="Todos">Todos dentistas</option>
             {dentistasFiltro.map((d) => (
@@ -366,7 +419,7 @@ export default function AtendimentosPage() {
       </div>
 
       {/* LISTA */}
-      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-base font-medium text-ink md:text-sm">
             {formatarDataLonga(dataSelecionada)} · {atendimentos.length} atendimento{atendimentos.length === 1 ? '' : 's'}
@@ -380,16 +433,20 @@ export default function AtendimentosPage() {
           <p className="py-10 text-center text-sm text-muted">Nenhum atendimento agendado para este dia.</p>
         ) : (
           <div className="divide-y divide-line">
-            {atendimentos.map((a) => (
+                        {atendimentos.map((a) => (
               <div key={a.id} className="flex flex-col gap-4 py-4 first:pt-1 lg:flex-row lg:items-center">
 
                 {/* HORA */}
                 <div className="lg:min-w-[72px]">
                   <p className={`text-xl font-semibold leading-none lg:text-base ${a.status === 'em-andamento' ? 'text-info' : 'text-ink'}`}>
-                    {a.hora}
+                    {a.hora === '00:00' ? '—' : a.hora}
                   </p>
                   <p className={`mt-1 text-xs ${a.status === 'em-andamento' ? 'text-info' : 'text-subtle'}`}>
-                    {a.status === 'em-andamento' ? 'em curso' : `${a.duracaoMinutos}min`}
+                    {a.status === 'em-andamento'
+                      ? 'em curso'
+                      : a.hora === '00:00'
+                        ? 'sem horário'
+                        : `${a.duracaoMinutos}min`}
                   </p>
                 </div>
 
@@ -402,10 +459,10 @@ export default function AtendimentosPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-relaxed text-ink md:text-base">
-                      {a.paciente.nome}, {a.paciente.idade} · {a.dentista.nome}
+                      {a.paciente.nome}{a.paciente.idade ? `, ${a.paciente.idade}` : ''} · {a.dentista.nome}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-muted md:text-sm">
-                      {a.especialidade} · {a.local} · {a.programa}
+                      {[a.especialidade, a.local, a.programa].filter(Boolean).join(' · ')}
                     </p>
                   </div>
                 </div>

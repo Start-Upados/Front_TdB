@@ -6,6 +6,7 @@ import {
   Users, Plug, Building2, SlidersHorizontal,
   Plus, Sun, Moon, X, Edit2, Trash2, Save, AlertCircle, Power, Link2,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 import { Avatar } from '../components/Avatar';
 import { Modal } from '../components/Modal';
@@ -18,6 +19,7 @@ import {
   carregarEquipeReal,
   type PreferenciasNotificacao,
 } from '../services/configuracoes';
+import { obterProgressoMeta, salvarMeta, EVENTO_ATENDIMENTOS } from '../services/meta';
 
 import type {
   PapelUsuario, StatusIntegracao,
@@ -56,14 +58,26 @@ const PAPEIS: PapelUsuario[] = ['Administrador', 'Coordenador', 'Visualizador'];
 // PAGE
 // ─────────────────────────────────────────────
 
+function abaValida(v: string | null): v is Aba {
+  return !!v && ABAS.some((a) => a.id === v);
+}
+
 export default function ConfiguracoesPage() {
-  const [aba, setAba] = useState<Aba>('equipe');
+  const [searchParams] = useSearchParams();
+  const abaUrl = searchParams.get('aba');
+
+  const [aba, setAba] = useState<Aba>(abaValida(abaUrl) ? abaUrl : 'equipe');
   const [versao, setVersao] = useState(0);
   const refresh = () => setVersao((v) => v + 1);
 
   const equipe = useMemo(() => listarEquipe(), [versao]);
   const integracoes = useMemo(() => listarIntegracoes(), [versao]);
   const org = useMemo(() => obterOrganizacao(), [versao]);
+
+  // Abre a aba vinda da URL (ex.: lápis da Meta → ?aba=preferencias)
+  useEffect(() => {
+    if (abaValida(abaUrl)) setAba(abaUrl);
+  }, [abaUrl]);
 
   // Puxa equipe do backend uma vez no mount + recarrega ao trocar pra aba Equipe
   useEffect(() => {
@@ -740,6 +754,7 @@ function AbaPreferencias() {
 
   return (
     <div className="flex max-w-[700px] flex-col gap-5">
+      <CardMeta />
       {/* APARÊNCIA */}
       <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
         <h2 className="mb-1 text-base font-semibold text-ink md:text-sm">Aparência</h2>
@@ -788,6 +803,89 @@ function AbaPreferencias() {
             label="Lembrete de renovação de parcerias"
             checked={prefs.lembreteRenovacao}
             onChange={(v) => alterarPref('lembreteRenovacao', v)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// CARD — META DE ATENDIMENTOS
+// ─────────────────────────────────────────────
+
+function CardMeta() {
+  const [progresso, setProgresso] = useState(obterProgressoMeta);
+  const [valor, setValor] = useState(() => String(obterProgressoMeta().meta));
+
+  useEffect(() => {
+    const atualizar = () => setProgresso(obterProgressoMeta());
+    window.addEventListener(EVENTO_ATENDIMENTOS, atualizar);
+    return () => window.removeEventListener(EVENTO_ATENDIMENTOS, atualizar);
+  }, []);
+
+  const numero = Number(valor);
+  const valido = Number.isInteger(numero) && numero >= 1;
+  const mudou = valido && numero !== progresso.meta;
+  const previa = valido
+    ? Math.min(100, Math.round((progresso.realizados / numero) * 100))
+    : progresso.pct;
+
+  function salvar() {
+    if (!mudou) return;
+    salvarMeta(numero);
+    setProgresso(obterProgressoMeta());
+    toast.success('Meta atualizada', {
+      description: `${numero.toLocaleString('pt-BR')} atendimentos em ${progresso.ano}.`,
+    });
+  }
+
+  return (
+    <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
+      <h2 className="mb-1 text-base font-semibold text-ink md:text-sm">Meta de atendimentos</h2>
+      <p className="mb-5 text-xs leading-relaxed text-muted md:text-sm">
+        Total de atendimentos realizados que a ONG quer atingir em {progresso.ano}. A barra do menu lateral usa este valor.
+      </p>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label className="mb-2 block text-xs text-muted">Meta anual</label>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            inputMode="numeric"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') salvar(); }}
+            className="w-full rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+          />
+        </div>
+        <button
+          onClick={salvar}
+          disabled={!mudou}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-3 text-sm text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" strokeWidth={2} />
+          Salvar meta
+        </button>
+      </div>
+      {!valido && (
+        <p className="mt-2 text-xs text-danger">Informe um número inteiro maior que zero.</p>
+      )}
+
+      {/* Prévia */}
+      <div className="mt-5 rounded-xl bg-surface-soft p-3">
+        <div className="mb-2 flex items-center justify-between text-xs">
+          <span className="text-muted">
+            {progresso.realizados.toLocaleString('pt-BR')} realizados em {progresso.ano}
+          </span>
+          <span className="font-semibold text-ink">{previa}%</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-surface">
+          <div
+            className="h-full rounded-full bg-blue-400 transition-all duration-500"
+            style={{ width: `${previa}%` }}
           />
         </div>
       </div>
