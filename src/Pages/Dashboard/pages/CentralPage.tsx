@@ -268,8 +268,10 @@ export default function CentralPage() {
       toast.success('Promovida para triagem', { description: 'Disponível na fila de triagens.' });
       refresh();
       navigate('/dashboard/triagens');
-    } catch {
-      toast.error('Não foi possível promover');
+    } catch (err) {
+      toast.error('Não foi possível promover', {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally {
       setPromovendo(false);
     }
@@ -358,11 +360,13 @@ async function handleAprovar(aprovadaPor: string) {
   setProcessandoAprovacao(true);
   try {
     await aprovarSolicitacao(selected.id, aprovadaPor);
-    toast.success('Solicitação aprovada', { description: 'Encaminhada para Triagens.' });
+    toast.success('Solicitação aprovada', { description: 'Triagem gravada no servidor.' });
     setAcaoAprovacao(null);
     refresh();
-  } catch {
-    toast.error('Não foi possível aprovar');
+  } catch (err) {
+    toast.error('Não foi possível aprovar', {
+      description: err instanceof Error ? err.message : undefined,
+    });
   } finally {
     setProcessandoAprovacao(false);
   }

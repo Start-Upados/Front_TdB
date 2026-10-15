@@ -1,4 +1,4 @@
-import { solicitacaoService, type SolicitacaoBody } from '../../../Services/api';
+import { solicitacaoService, triagemService, type SolicitacaoBody } from '../../../Services/api';
 import { criarTriagem, type NovaTriagemInput } from './triagens';
 
 import {
@@ -260,9 +260,9 @@ export async function encaminharSolicitacao(
   fechar(id, 'encaminhada', destinatario);
 }
 
-export async function promoverParaTriagem(id: string): Promise<void> {
-  await chamarBackendComProtocolo(id, solicitacaoService.promover, 'promover');
-  fechar(id, 'promovida');
+/** Promover = mandar para a fila de Triagens (cria a triagem no banco, igual à aprovação). */
+export async function promoverParaTriagem(id: string, promovidaPor = 'Admin TdB'): Promise<void> {
+  await enviarParaTriagem(id, promovidaPor, 'promovida');
 }
 
 export async function reabrirSolicitacao(id: string): Promise<void> {
@@ -307,13 +307,39 @@ export async function carregarSolicitacoesReais(): Promise<{
     if (Array.isArray(lista) && lista.length > 0) {
       const doBackend = lista.map(mapearSolicitacaoBackend);
 
-      // MERGE: pra cada solicitação que vem do backend:
-      //   - Se já existe localmente → mantém o LOCAL (com todas as mudanças)
-      //   - Se NÃO existe localmente → adiciona como nova
-      const idsLocais = new Set(solicitacoes.map((s) => s.id));
-      const novasDoBackend = doBackend.filter((s) => !idsLocais.has(s.id));
+      // MERGE: o STATUS vem do banco (aprovar/recusar/resolver/arquivar/reabrir já são gravados lá).
+      // Do local só fica o que o banco ainda não guarda: mensagens trocadas na tela,
+      // triagem oral, e "encaminhada"/"promovida" (sem coluna própria no backend).
+      const locaisPorId = new Map(solicitacoes.map((s) => [s.id, s]));
+      const idsBackend  = new Set(doBackend.map((s) => s.id));
 
-      solicitacoes = [...solicitacoes, ...novasDoBackend];
+      const mescladas = doBackend.map((b) => {
+        const local = locaisPorId.get(b.id);
+        if (!local) return b;
+
+        const estadoSoLocal =
+          local.status === 'triagem-apta' ||
+          local.status === 'triagem-nao-apta' ||
+          (local.status === 'fechada' &&
+            (local.motivoFechamento === 'encaminhada' || local.motivoFechamento === 'promovida'));
+        const bancoAindaPendente = ['pendente-aprovacao', 'pendente-triagem', 'aberta'].includes(b.status);
+        if (estadoSoLocal && bancoAindaPendente) return local;
+
+        return {
+          ...local,
+          protocolo:         b.protocolo,
+          status:            b.status,
+          motivoFechamento:  b.motivoFechamento,
+          infoRecusa:        local.infoRecusa ?? b.infoRecusa,
+          prioridade:        b.prioridadeDoBanco ? b.prioridade : local.prioridade,
+          score:             b.prioridadeDoBanco ? b.score : local.score,
+        };
+      });
+
+      // Mantém o que só existe localmente (sem par no banco)
+      const soLocais = solicitacoes.filter((s) => !idsBackend.has(s.id));
+
+      solicitacoes = [...mescladas, ...soLocais];
       persistir();
       return { count: solicitacoes.length, fonte: 'backend' };
     }
@@ -348,8 +374,36 @@ function calcularIdade(dataNasc: string): number | undefined {
   return idade >= 0 ? idade : undefined;
 }
 
-function mapearSolicitacaoBackend(body: SolicitacaoBody): Solicitacao {
-  const ts = new Date().toISOString();
+type SolicitacaoMapeada = Solicitacao & { prioridadeDoBanco?: boolean };
+
+/** Traduz o status gravado no Oracle para o status/motivo da Central. */
+function estadoDoBackend(
+  body: SolicitacaoBody,
+  padrao: Solicitacao['status'],
+): Pick<Solicitacao, 'status' | 'motivoFechamento'> {
+  const st = (body.status ?? '').toLowerCase().trim();
+  // aprovar() grava status 'pendente-triagem' + aprovado_por — o aprovado_por é o que diferencia
+  if (body.aprovadoPor) return { status: 'fechada', motivoFechamento: 'aprovada' };
+  if (st === 'recusado' || st === 'recusada') return { status: 'fechada', motivoFechamento: 'recusada' };
+  if (st === 'fechada') {
+    const m = (body.motivo ?? '').toLowerCase();
+    const motivo: MotivoFechamento =
+      m === 'arquivada' ? 'arquivada' :
+      m === 'encaminhada' ? 'encaminhada' :
+      m === 'promovida' ? 'promovida' : 'resolvida';
+    return { status: 'fechada', motivoFechamento: motivo };
+  }
+  if (st === 'aberta' || st === 'aguardando-paciente' || st === 'pendente-aprovacao' || st === 'pendente-triagem') {
+    return { status: st, motivoFechamento: undefined };
+  }
+  return { status: padrao, motivoFechamento: undefined };
+}
+
+function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
+  // Data real de criação (o backend guarda só o dia); sem ela, usa agora
+  const ts = body.criadaEm && /^\d{4}-\d{2}-\d{2}/.test(body.criadaEm)
+    ? new Date(body.criadaEm.slice(0, 10) + 'T12:00:00').toISOString()
+    : new Date().toISOString();
   const ehApolonia = body.protocolo?.startsWith('APO-') ?? false;
   const tipo = ehApolonia ? 'Apolônia do Bem' : 'Beneficiário';
   const programa: Programa = ehApolonia ? 'Apolônias do Bem' : 'Dentista do Bem';
@@ -358,6 +412,10 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): Solicitacao {
   const textoInicial = body.descricao && body.descricao.trim()
     ? `${body.necessidade}\n\n${body.descricao}`
     : body.necessidade;
+
+  const p = (body.prioridade ?? '').toLowerCase();
+  const prioridadeDoBanco: Prioridade | undefined =
+    p === 'alta' ? 'Alta' : p === 'baixa' ? 'Baixa' : p === 'media' || p === 'média' ? 'Media' : undefined;
 
   const preview = body.necessidade.length > 80
     ? body.necessidade.slice(0, 80) + '…'
@@ -383,11 +441,15 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): Solicitacao {
         timestamp: ts,
       },
     ],
-    data: 'agora',
+    data: atualizarTempoRelativo(ts),
     ultimaAtualizacao: ts,
-    prioridade: 'Media',                     // default até admin clicar "Reclassificar"
-    score: 0.5,
-    status: ehApolonia ? 'pendente-triagem' : 'pendente-aprovacao',
+    prioridade: prioridadeDoBanco ?? 'Media',   // default até admin clicar "Reclassificar"
+    score: prioridadeDoBanco && body.scoreMl ? body.scoreMl : 0.5,
+    prioridadeDoBanco: !!prioridadeDoBanco,
+    ...estadoDoBackend(body, ehApolonia ? 'pendente-triagem' : 'pendente-aprovacao'),
+    ...(body.recusadoEm || body.recusadoPor
+      ? { infoRecusa: { motivo: 'outro' as const, detalhe: body.detalhe, recusadaEm: (body.recusadoEm ?? '').slice(0, 10), recusadaPor: body.recusadoPor ?? 'Admin' } }
+      : {}),
   };
 }
 
@@ -409,17 +471,35 @@ export async function aprovarSolicitacao(
   id: string,
   aprovadaPor: string,
 ): Promise<void> {
+  await enviarParaTriagem(id, aprovadaPor, 'aprovada');
+}
+
+/**
+ * Fluxo único de "Aprovar" e "Promover": grava a triagem no banco (sem duplicar)
+ * e só depois marca a solicitação como aprovada no banco.
+ */
+async function enviarParaTriagem(
+  id: string,
+  aprovadaPor: string,
+  motivo: 'aprovada' | 'promovida',
+): Promise<void> {
   const sol = solicitacoes.find((s) => s.id === id);
   if (!sol) throw new Error('Solicitação não encontrada');
 
-  // Backend first: se tem protocolo (veio do Oracle), persiste a aprovação
+  // Dados completos no Oracle (CPF, nascimento, CEP) — o cache local da Central não guarda.
+  let detalhe: SolicitacaoBody | undefined;
+  let triagemJaExiste = false;
   if (sol.protocolo) {
     try {
-      await solicitacaoService.aprovar(sol.protocolo, aprovadaPor);
+      detalhe = await solicitacaoService.buscarPorProtocolo(sol.protocolo);
     } catch (err) {
-      console.error('[central] erro ao aprovar no backend:', err);
-      throw new Error('Não foi possível aprovar no servidor. Tente novamente.');
+      console.warn('[central] não consegui ler a solicitação completa no backend:', err);
     }
+    // Evita triagem duplicada se uma tentativa anterior já gravou e só a aprovação falhou
+    try {
+      const existente = await triagemService.buscarPorProtocolo(sol.protocolo);
+      triagemJaExiste = !!existente?.idTriagem;
+    } catch { /* sem triagem para este protocolo */ }
   }
 
   // Monta input pra criar entrada em Triagens
@@ -436,25 +516,37 @@ export async function aprovarSolicitacao(
 
   const necessidade = sol.triagemOral?.tratamentoSugerido || sol.preview;
 
-  try {
+  // 1) Triagem no banco. Se falhar, PARA aqui: nada é aprovado e o erro aparece na tela.
+  if (!triagemJaExiste) {
     await criarTriagem({
       nome: sol.nome,
       idade: sol.idade ?? 0,
       cidade: cidadeNome || 'São Paulo',
       estado: estadoSigla || 'SP',
-      cep: '',
+      cep: detalhe?.cep ?? '',
       programa,
       necessidade,
       especialidadeNecessaria: 'Clínico geral',
       severidade,
       origemTipo: 'central',
-      origemDetalhe: `Aprovada por ${aprovadaPor} via Central de Mensagens`,
+      origemDetalhe: `${motivo === 'aprovada' ? 'Aprovada' : 'Promovida'} por ${aprovadaPor} via Central de Mensagens`,
+      pacienteRgCpf: detalhe?.rgCpf || (sol.protocolo ? sol.id : undefined),
+      dataNasc: detalhe?.dataNasc,
+      protocolo: sol.protocolo,
     });
-  } catch (err) {
-    console.warn('[central] erro ao criar triagem:', err);
   }
 
-  fechar(id, 'aprovada');
+  // 2) Aprovação da solicitação no banco
+  if (sol.protocolo) {
+    try {
+      await solicitacaoService.aprovar(sol.protocolo, aprovadaPor);
+    } catch (err) {
+      console.error('[central] erro ao aprovar no backend:', err);
+      throw new Error('A triagem foi criada, mas a solicitação não foi marcada no servidor. Tente de novo (não duplica).');
+    }
+  }
+
+  fechar(id, motivo);
 }
 
 export async function recusarSolicitacao(

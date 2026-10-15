@@ -32,6 +32,17 @@ export interface SolicitacaoBody extends UsuarioBase {
   comoSoube:   string
   parentesco:  string
   ref?: string
+  // ─── preenchidos pelo backend (GET) ───
+  status?:      string   // pendente-aprovacao | pendente-triagem | aberta | aguardando-paciente | recusado | fechada
+  aprovadoPor?: string
+  aprovadoEm?:  string
+  recusadoPor?: string
+  recusadoEm?:  string
+  motivo?:      string   // motivo do fechamento: resolvida | arquivada
+  detalhe?:     string
+  prioridade?:  string
+  scoreMl?:     number
+  criadaEm?:    string
 }
  
 // ─── DENTISTA (Dentista.java) ─────────────────
@@ -91,6 +102,8 @@ export interface TriagemBody {
   cep?:                      string
   especialidadeNescessaria?: string   // sic — typo está no backend, manter
   observacaoAdmin?:          string
+  dataNasc?:                 string   // 'YYYY-MM-DD' — o backend grava em data_nasc
+  dataEntradaFila?:          string | number[]  // gerado pelo backend (LocalDate)
 }
 
 // ─── CONVITE (Convite.java) — para dentistas em triagens ──
@@ -282,7 +295,7 @@ export const campanhaService = {
 // ─── TRIAGEM ──────────────────────────────────
 export const triagemService = {
   cadastrar: (body: TriagemBody) =>
-    request<{ idTriagem: string; Status: string }>('/triagem', 'POST', body),
+    request<{ idTriagem?: string; 'idTriagem '?: string; Status?: string }>('/triagem', 'POST', body),
   listar: () =>
     request<TriagemBody[]>('/triagem'),
   buscar: (idTriagem: number) =>

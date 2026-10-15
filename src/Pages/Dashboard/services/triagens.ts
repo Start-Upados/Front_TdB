@@ -27,6 +27,36 @@ function gerarIniciaisDoNome(nome: string): string {
   return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
 }
 
+/** Aceita 'YYYY-MM-DD' (ou com hora) e o formato array do Jackson [ano, mes, dia]. */
+function paraIsoData(v: unknown): string | undefined {
+  if (Array.isArray(v) && v.length >= 3) {
+    const [a, m, d] = v as number[];
+    return `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  return undefined;
+}
+
+function idadeDe(iso?: string): number {
+  if (!iso) return 0;
+  const n = new Date(iso + 'T12:00:00');
+  const h = new Date();
+  let idade = h.getFullYear() - n.getFullYear();
+  const m = h.getMonth() - n.getMonth();
+  if (m < 0 || (m === 0 && h.getDate() < n.getDate())) idade--;
+  return idade >= 0 && idade < 130 ? idade : 0;
+}
+
+function diasDesde(iso?: string): number {
+  if (!iso) return 0;
+  const inicio = new Date(iso + 'T12:00:00').getTime();
+  const dias = Math.floor((Date.now() - inicio) / 86_400_000);
+  return dias > 0 ? dias : 0;
+}
+
+/** Triagens com esses status já saíram da fila (ex.: convite aceito vira atendimento). */
+const STATUS_FORA_DA_FILA = ['aceito', 'aceita', 'concluido', 'concluida', 'cancelado', 'cancelada', 'removido', 'removida'];
+
 function gerarRgCpfTemporario(): string {
   // Backend exige pacienteRgCpf como string; ainda não capturamos CPF real no form
   return `t${Date.now()}${Math.floor(Math.random() * 999)}`;
@@ -52,7 +82,7 @@ function mapearTriagemBackend(t: TriagemBody): Paciente {
     idTriagem: t.idTriagem,
     nome: t.pacienteNome,
     iniciais: gerarIniciaisDoNome(t.pacienteNome),
-    idade: 0,                                                    // backend não armazena ainda
+    idade: idadeDe(paraIsoData(t.dataNasc)),
     cidade,
     estado,
     cep: t.cep ?? '',
@@ -61,8 +91,8 @@ function mapearTriagemBackend(t: TriagemBody): Paciente {
     necessidade: t.observacaoAdmin ?? t.especialidadeNescessaria ?? 'A definir',
     especialidadeNecessaria: t.especialidadeNescessaria ?? 'Clínico geral',
     severidade,
-    diasNaFila: 0,
-    origem: { tipo: 'manual', detalhe: 'Importado do backend' },
+    diasNaFila: diasDesde(paraIsoData(t.dataEntradaFila)),
+    origem: { tipo: 'manual', detalhe: t.protocolo ? `Protocolo ${t.protocolo}` : 'Cadastrado no banco' },
     statusVinculacao: 'aguardando',
   };
 }
@@ -211,13 +241,44 @@ export async function carregarTriagensReais(): Promise<{
   try {
     await carregarDentistasTriagemReais();
     const lista = await triagemService.listar();
-    if (Array.isArray(lista) && lista.length > 0) {
-      const doBackend = lista.map(mapearTriagemBackend);
-      pacientes = doBackend;
-      persistir();
-      return { count: pacientes.length, fonte: 'backend' };
-    }
-    return { count: pacientes.length, fonte: 'mock' };
+    if (!Array.isArray(lista)) return { count: pacientes.length, fonte: 'mock' };
+
+    // O banco é a fonte da verdade da fila. Do estado local só aproveitamos o que o
+    // banco ainda não guarda (convite em andamento, histórico, origem detalhada).
+    const locaisPorIdTriagem = new Map(
+      pacientes.filter((p) => p.idTriagem).map((p) => [p.idTriagem as number, p]),
+    );
+
+    const doBackend = lista
+      .filter((t) => !STATUS_FORA_DA_FILA.includes((t.status ?? '').toLowerCase().trim()))
+      .map(mapearTriagemBackend)
+      .map((bp) => {
+        const local = bp.idTriagem ? locaisPorIdTriagem.get(bp.idTriagem) : undefined;
+        if (!local) return bp;
+        return {
+          ...bp,
+          statusVinculacao:    local.statusVinculacao,
+          dentistaConvidadoId: local.dentistaConvidadoId,
+          idConviteAtivo:      local.idConviteAtivo,
+          historicoConvites:   local.historicoConvites,
+          origem:              local.origem,
+          idade:               bp.idade || local.idade,
+        };
+      });
+
+    // Itens criados aqui que NÃO chegaram ao banco: continuam visíveis, marcados
+    // como pendentes (nunca somem em silêncio). Se o banco já tem o mesmo paciente,
+    // o local é descartado para não duplicar.
+    const idsBackend   = new Set(doBackend.map((p) => p.id));
+    const nomesBackend = new Set(doBackend.map((p) => p.nome.trim().toLowerCase()));
+    const pendentes = pacientes
+      .filter((p) => !p.idTriagem)
+      .filter((p) => !idsBackend.has(p.id) && !nomesBackend.has(p.nome.trim().toLowerCase()))
+      .map((p) => ({ ...p, pendenteSync: true }));
+
+    pacientes = [...pendentes, ...doBackend];
+    persistir();
+    return { count: pacientes.length, fonte: 'backend' };
   } catch (err) {
     console.warn('[triagens] backend indisponível, mantendo dados locais:', err);
     return { count: pacientes.length, fonte: 'mock' };
@@ -329,15 +390,19 @@ export interface NovaTriagemInput {
   severidade: Severidade;
   origemTipo: 'central' | 'escola' | 'manual';
   origemDetalhe: string;
+  pacienteRgCpf?: string;   // CPF real (solicitação do site); sem ele usa um id temporário
+  dataNasc?: string;        // YYYY-MM-DD
+  protocolo?: string;       // protocolo da solicitação de origem (TDB-/APO-)
 }
 
 /** Cria uma nova entrada de triagem na fila. Retorna o paciente criado. */
 export async function criarTriagem(data: NovaTriagemInput): Promise<Paciente> {
   const iniciais = gerarIniciaisDoNome(data.nome);
   const coords = COORDS_POR_ESTADO[data.estado.toUpperCase()] ?? { lat: -23.55, lng: -46.64 };
-  const pacienteRgCpf = gerarRgCpfTemporario();
+  const pacienteRgCpf = data.pacienteRgCpf || gerarRgCpfTemporario();
+  const dataNasc = paraIsoData(data.dataNasc);
 
-  // Backend-first: persiste no Oracle e captura o idTriagem
+  // Banco primeiro e OBRIGATÓRIO: se o Oracle recusar, nada é criado e o erro sobe pra tela.
   let idTriagem: number | undefined;
   try {
     const res = await triagemService.cadastrar({
@@ -345,14 +410,18 @@ export async function criarTriagem(data: NovaTriagemInput): Promise<Paciente> {
       pacienteRgCpf,
       programa: data.programa,
       prioridade: data.severidade,
-      cep: data.cep,
+      cep: (data.cep ?? '').replace(/\D/g, ''),
       especialidadeNescessaria: data.especialidadeNecessaria,  // sic typo backend
       observacaoAdmin: data.necessidade + (data.origemDetalhe ? ` · ${data.origemDetalhe}` : ''),
+      ...(dataNasc ? { dataNasc } : {}),
+      ...(data.protocolo ? { protocolo: data.protocolo } : {}),
     });
-    const parsed = parseInt(res.idTriagem, 10);
+    // "idTriagem " (com espaço) cobre a versão antiga do backend
+    const parsed = parseInt(String(res.idTriagem ?? res['idTriagem '] ?? ''), 10);
     if (!isNaN(parsed)) idTriagem = parsed;
   } catch (err) {
-    console.warn('[triagens] erro ao cadastrar no backend, salvando só local:', err);
+    console.error('[triagens] o banco recusou a triagem:', err);
+    throw new Error('O servidor não gravou a triagem. Nada foi salvo — tente novamente.');
   }
 
   const novo: Paciente = {
@@ -360,7 +429,7 @@ export async function criarTriagem(data: NovaTriagemInput): Promise<Paciente> {
     idTriagem,
     nome: data.nome,
     iniciais,
-    idade: data.idade,
+    idade: data.idade || idadeDe(dataNasc),
     cidade: data.cidade,
     estado: data.estado.toUpperCase(),
     cep: data.cep,

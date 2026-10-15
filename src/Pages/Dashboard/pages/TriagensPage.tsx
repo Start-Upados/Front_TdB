@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   Search, Plus, MessageSquare, School, Clock,
   MapPin, CalendarDays, Star, ChevronDown, ChevronUp,
-  ArrowRight, CheckCircle2, X,
+  ArrowRight, CheckCircle2, X, CloudOff,
 } from 'lucide-react';
 import { KpiCard } from '../components/KpiCard';
 import { Avatar } from '../components/Avatar';
@@ -25,7 +25,15 @@ import type { Paciente, StatusVinculacao, Programa, Severidade } from '../data/t
 const TOTAL_DENTISTAS_EXPANDIDO = 8;
 const TOTAL_DENTISTAS_COMPACTO  = 3;
 
-function OrigemBadge({ origem, statusVinculacao }: { origem: Paciente['origem']; statusVinculacao: StatusVinculacao }) {
+function OrigemBadge({ origem, statusVinculacao, pendenteSync }: { origem: Paciente['origem']; statusVinculacao: StatusVinculacao; pendenteSync?: boolean }) {
+  if (pendenteSync) {
+    return (
+      <div className="flex items-center gap-1.5 text-2xs text-danger">
+        <CloudOff className="w-3 h-3" strokeWidth={2} />
+        <span>Não salvo no servidor · só neste navegador</span>
+      </div>
+    );
+  }
   if (statusVinculacao === 'convite-enviado') {
     return (
       <div className="flex items-center gap-1.5 text-2xs text-warning">
@@ -166,13 +174,16 @@ export default function TriagensPage() {
         severidade: data.severidade,
         origemTipo: data.origemTipo,
         origemDetalhe: data.origemDetalhe || 'Cadastro manual',
+        dataNasc: data.dataNascimento,
       });
       toast.success(`${novo.nome} adicionado(a) à fila de triagens`);
       setMostrarNovaTriagem(false);
       refreshFila();
       setSelectedId(novo.id);
     } catch (err) {
-      toast.error('Não foi possível criar a triagem.');
+      toast.error('Não foi possível criar a triagem.', {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally {
       setProcessando(false);
     }
@@ -288,7 +299,7 @@ export default function TriagensPage() {
                     </div>
                     <p className="text-xs text-muted truncate mt-0.5">{p.programa} · {p.cidade}-{p.estado}</p>
                     <div className="mt-1.5 flex flex-col gap-1">
-                      <OrigemBadge origem={p.origem} statusVinculacao={p.statusVinculacao} />
+                      <OrigemBadge origem={p.origem} statusVinculacao={p.statusVinculacao} pendenteSync={p.pendenteSync} />
                       {p.historicoConvites && p.historicoConvites.length > 0 && (
                         <div className="flex items-center gap-1.5 text-2xs text-danger">
                           <X className="w-3 h-3" strokeWidth={2} />

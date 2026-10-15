@@ -33,6 +33,7 @@ export interface Paciente {
   statusVinculacao: StatusVinculacao;
   dentistaConvidadoId?: string;
   historicoConvites?: RespostaConvite[];
+  pendenteSync?: boolean;   // true = ainda não foi gravado no banco (só existe neste navegador)
 }
 
 export interface RespostaConvite {
@@ -45,7 +46,7 @@ export interface RespostaConvite {
   motivoRecusa?: string;       // apenas se recusado
 }
 
-export interface Dentista { 
+export interface Dentista {
   id: string;
   nome: string;
   iniciais: string;
