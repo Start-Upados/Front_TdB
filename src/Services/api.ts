@@ -251,6 +251,8 @@ export const dentistaService = {
     request<DentistaBody>(`/dentista/${rgCpf}`),
   atualizar: (rgCpf: string, body: Partial<DentistaBody>) =>
     request<unknown>(`/dentista/${rgCpf}`, 'PUT', body),
+  mudarStatus: (rgCpf: string, status: string) =>
+    request<unknown>(`/dentista/${encodeURIComponent(rgCpf)}/status`, 'PUT', undefined, { status }),
   deletar: (rgCpf: string) =>
     request<unknown>(`/dentista/${rgCpf}`, 'DELETE'),
   addAtendimento: (rgCpf: string, nAtendimento: number) =>

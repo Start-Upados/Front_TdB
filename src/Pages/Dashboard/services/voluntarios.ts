@@ -204,7 +204,7 @@ export function contarDentistasSemAtividade90(): number {
 
 export async function aprovarDentista(id: string): Promise<void> {
   try {
-    await dentistaService.atualizar(id, { status: 'ativo' });
+    await dentistaService.mudarStatus(id, 'ativo');
   } catch (err) {
     console.warn('[voluntarios] erro ao aprovar no backend:', err);
   }
@@ -217,7 +217,7 @@ export async function aprovarDentista(id: string): Promise<void> {
 
 export async function rejeitarDentista(id: string, _motivo: string): Promise<void> {
   try {
-    await dentistaService.atualizar(id, { status: 'rejeitado' });
+    await dentistaService.mudarStatus(id, 'rejeitado');
   } catch (err) {
     console.warn('[voluntarios] erro ao rejeitar no backend:', err);
   }
@@ -232,7 +232,7 @@ export async function suspenderDentista(
   observacao?: string,
 ): Promise<void> {
   try {
-    await dentistaService.atualizar(id, { status: 'suspenso' });
+    await dentistaService.mudarStatus(id, 'suspenso');
   } catch (err) {
     console.warn('[voluntarios] erro ao suspender no backend:', err);
   }
@@ -254,7 +254,7 @@ export async function suspenderDentista(
 
 export async function reativarDentista(id: string): Promise<void> {
   try {
-    await dentistaService.atualizar(id, { status: 'ativo' });
+    await dentistaService.mudarStatus(id, 'ativo');
   } catch (err) {
     console.warn('[voluntarios] erro ao reativar no backend:', err);
   }
