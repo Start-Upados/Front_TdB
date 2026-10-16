@@ -156,7 +156,7 @@ export default function DentistaPerfilPage() {
       </button>
 
       {/* Header card */}
-      <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+      <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
 
           <div className="flex min-w-0 flex-1 items-start gap-4">
@@ -266,7 +266,7 @@ export default function DentistaPerfilPage() {
 
       {/* Pacientes ativos */}
       {!isPendente && dentista.pacientesAtivos.length > 0 && (
-        <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+        <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-base md:text-sm font-semibold text-ink">
               Pacientes ativos · {dentista.vinculosAtivos} vínculos
@@ -326,7 +326,7 @@ export default function DentistaPerfilPage() {
       {/* Disponibilidade + últimos */}
       {!isPendente && dentista.disponibilidadeSemana.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+          <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-base md:text-sm font-semibold text-ink">Disponibilidade da semana</h2>
               <div className="flex items-center gap-3">
@@ -362,7 +362,7 @@ export default function DentistaPerfilPage() {
           </div>
 
           {dentista.ultimosAtendimentos.length > 0 && (
-            <div className="rounded-2xl border border-line bg-surface shadow-cardp-4 md:p-5">
+            <div className="rounded-2xl border border-line bg-surface shadow-card p-4 md:p-5">
               <h2 className="mb-4 text-base md:text-sm font-semibold text-ink">Últimos atendimentos</h2>
               <div className="divide-y divide-line">
                 {dentista.ultimosAtendimentos.map((a, i) => (

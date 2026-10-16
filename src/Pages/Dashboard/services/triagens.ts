@@ -174,6 +174,9 @@ function hidratar(): Paciente[] | null {
 // Estado mutável em memória — simula o estado do backend.
 let pacientes: Paciente[] = hidratar() ?? [];
 
+// Triagens que já viraram atendimento (status 'aceito' no banco) — KPI "Vinculações"
+let totalVinculadas: number | null = null;
+
 // Coordenadas aproximadas das capitais por UF — usadas no matching de pacientes novos.
 const COORDS_POR_ESTADO: Record<string, { lat: number; lng: number }> = {
   AC: { lat:  -9.97, lng: -67.81 }, AL: { lat:  -9.65, lng: -35.71 },
@@ -207,18 +210,33 @@ export function obterKpis(): KpiData[] {
     : 0;
 
   const fila60Dias = pacientes.filter((p) => p.diasNaFila > 60).length;
+  const novosNaSemana = pacientes.filter((p) => p.diasNaFila <= 6).length;
+  const maisAntigo = totalNaFila > 0 ? Math.max(...pacientes.map((p) => p.diasNaFila)) : 0;
 
   return [
-    // [0] Pacientes na fila — DINÂMICO
-    { ...KPIS_TRIAGENS_MOCK[0], value: String(totalNaFila) },
+    // [0] Pacientes na fila — total real + entradas dos últimos 7 dias
+    {
+      ...KPIS_TRIAGENS_MOCK[0],
+      value: String(totalNaFila),
+      sub: novosNaSemana > 0 ? `+${novosNaSemana} nos últimos 7 dias` : 'nenhuma entrada nos últimos 7 dias',
+    },
 
-    // [1] Tempo médio na fila — DINÂMICO
-    { ...KPIS_TRIAGENS_MOCK[1], value: `${tempoMedio} dias` },
+    // [1] Tempo médio na fila — real; o sub mostra quem espera há mais tempo
+    {
+      label: KPIS_TRIAGENS_MOCK[1].label,
+      value: `${tempoMedio} ${tempoMedio === 1 ? 'dia' : 'dias'}`,
+      sub: totalNaFila > 0 ? `mais antigo: ${maisAntigo} ${maisAntigo === 1 ? 'dia' : 'dias'}` : 'fila vazia',
+      subTone: maisAntigo > 60 ? 'danger' : maisAntigo > 30 ? 'warning' : undefined,
+    },
 
-    //     (precisa de histórico de convites aceitos com timestamp no Oracle)
-    { ...KPIS_TRIAGENS_MOCK[2], value: '—', sub: 'sem dados' },
+    // [2] Vinculações — triagens que já viraram atendimento (status 'aceito' no banco)
+    {
+      label: 'Vinculações realizadas',
+      value: totalVinculadas === null ? '—' : String(totalVinculadas),
+      sub: totalVinculadas === null ? 'carregando…' : 'pacientes já vinculados a um dentista',
+    },
 
-    // [3] Fila +60 dias — DINÂMICO
+    // [3] Fila +60 dias — real
     { ...KPIS_TRIAGENS_MOCK[3], value: String(fila60Dias) },
   ];
 }
@@ -242,6 +260,8 @@ export async function carregarTriagensReais(): Promise<{
     await carregarDentistasTriagemReais();
     const lista = await triagemService.listar();
     if (!Array.isArray(lista)) return { count: pacientes.length, fonte: 'mock' };
+
+    totalVinculadas = lista.filter((t) => ['aceito', 'aceita'].includes((t.status ?? '').toLowerCase().trim())).length;
 
     // O banco é a fonte da verdade da fila. Do estado local só aproveitamos o que o
     // banco ainda não guarda (convite em andamento, histórico, origem detalhada).

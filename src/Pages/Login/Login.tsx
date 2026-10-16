@@ -396,7 +396,7 @@ function TelaAdmin({ onVoltar }: { onVoltar: () => void }) {
       const logado = await authService.loginAdmin(email, senha);
 
       if (logado) {
-        localStorage.setItem('tdb_auth', 'true');
+        // a sessão (token ou modo legado) já foi gravada pelo authService
         navigate('/dashboard');
       }
     } catch (err) {

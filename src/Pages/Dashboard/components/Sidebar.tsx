@@ -16,6 +16,7 @@ import {
 
 import { carregarAtendimentosReais } from '../services/atendimentos';
 import { obterProgressoMeta, EVENTO_META, EVENTO_ATENDIMENTOS } from '../services/meta';
+import { encerrarSessao } from '../../../Services/sessao';
 
 const NAV_ITEMS = [
   { path: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard },
@@ -138,7 +139,7 @@ export function Sidebar() {
 
           <button
             onClick={() => {
-              localStorage.removeItem('tdb_auth');
+              encerrarSessao();
               navigate('/login');
             }}
             className="

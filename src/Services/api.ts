@@ -1,4 +1,16 @@
+import { tokenAtual, sessaoExpirada, salvarSessaoAdmin, salvarSessaoPortal } from './sessao'
+
 const API_URL = import.meta.env.VITE_BACKEND_URL ?? 'https://backend-mjgv.onrender.com'
+
+/** Erro HTTP com o status, para quem chama poder decidir o que fazer (ex.: 404 = backend antigo). */
+export class ErroHttp extends Error {
+  status: number
+  constructor(mensagem: string, status: number) {
+    super(mensagem)
+    this.name = 'ErroHttp'
+    this.status = status
+  }
+}
 //console.log('API_URL:', API_URL)
  
  
@@ -166,10 +178,11 @@ async function request<T>(
     url += `?${query}`
   }
  
-  const options: RequestInit = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  }
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const token = tokenAtual()
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const options: RequestInit = { method, headers }
  
   if (body) {
     options.body = JSON.stringify(body)
@@ -179,7 +192,9 @@ async function request<T>(
  
   if (!res.ok) {
     const err = await res.json().catch(() => ({ erro: 'Erro desconhecido' }))
-    throw new Error(err.erro ?? `Erro ${res.status}`)
+    const ehLogin = endpoint.startsWith('/auth/') || endpoint.endsWith('/login')
+    if (res.status === 401 && !ehLogin) sessaoExpirada()
+    throw new ErroHttp(err.erro ?? `Erro ${res.status}`, res.status)
   }
  
   const text = await res.text()
@@ -355,29 +370,49 @@ export const atendimentoService = {
     request<unknown>(`/atendimento/${idAtendimento}/reagendar`, 'PUT', body),
 }
  
+// ─── AUTENTICAÇÃO ─────────────────────────────
+type TipoLogin = 'admin' | 'dentista' | 'paciente'
+
+/**
+ * Backend novo: POST /auth/login (senha no corpo) devolve um token.
+ * Backend antigo (sem /auth/login → 404/405): cai no GET legado, que só devolve true/false.
+ * Retorna o token, ou null quando o login deu certo pelo caminho legado.
+ */
+async function entrar(
+  tipo: TipoLogin,
+  login: string,
+  senha: string,
+  legado: { endpoint: string; params: Record<string, string> },
+): Promise<string | null> {
+  try {
+    const r = await request<{ token?: string }>('/auth/login', 'POST', { tipo, login, senha })
+    if (r?.token) return r.token
+  } catch (err) {
+    const backendAntigo = err instanceof ErroHttp && (err.status === 404 || err.status === 405)
+    if (!backendAntigo) throw err
+  }
+  const ok = await request<boolean>(legado.endpoint, 'GET', undefined, legado.params)
+  if (!ok) throw new ErroHttp('Login ou senha incorretos', 401)
+  return null
+}
+
 export const authService = {
- 
-  loginPaciente: (rgCpf: string, senha: string) =>
-    request<boolean>(
-      '/beneficiario/login',
-      'GET',
-      undefined,
-      { rgCpf, senha }
-    ),
- 
-  loginDentista: (rgCpf: string, senha: string) =>
-    request<boolean>(
-      '/dentista/login',
-      'GET',
-      undefined,
-      { rgCpf, senha }
-    ),
- 
-  loginAdmin: (email: string, senha: string) =>
-    request<boolean>(
-      '/funcionario/login',
-      'GET',
-      undefined,
-      { email, senha }
-    ),
+
+  loginPaciente: async (rgCpf: string, senha: string): Promise<boolean> => {
+    const token = await entrar('paciente', rgCpf, senha, { endpoint: '/beneficiario/login', params: { rgCpf, senha } })
+    salvarSessaoPortal(token)
+    return true
+  },
+
+  loginDentista: async (rgCpf: string, senha: string): Promise<boolean> => {
+    const token = await entrar('dentista', rgCpf, senha, { endpoint: '/dentista/login', params: { rgCpf, senha } })
+    salvarSessaoPortal(token)
+    return true
+  },
+
+  loginAdmin: async (email: string, senha: string): Promise<boolean> => {
+    const token = await entrar('admin', email, senha, { endpoint: '/funcionario/login', params: { email, senha } })
+    salvarSessaoAdmin(token)
+    return true
+  },
 }

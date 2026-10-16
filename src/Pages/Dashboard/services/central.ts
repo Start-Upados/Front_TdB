@@ -2,7 +2,6 @@ import { solicitacaoService, triagemService, type SolicitacaoBody } from '../../
 import { criarTriagem, type NovaTriagemInput } from './triagens';
 
 import {
-  KPIS_CENTRAL_MOCK,
   type Solicitacao, type KpiData, type Prioridade,
   type Mensagem, type MotivoFechamento, type Programa,
   type TriagemOral, type InfoRecusa,
@@ -74,6 +73,31 @@ export function obterKpis(): KpiData[] {
     return semRespostaAdmin && velhaPra24h;
   }).length;
 
+  // 3. Tempo médio até a 1ª resposta do admin (mensagens registradas na Central)
+  const tempos: number[] = [];
+  for (const s of solicitacoes) {
+    const primeiraPaciente = s.mensagens.find((m) => m.autor !== 'admin');
+    if (!primeiraPaciente) continue;
+    const t0 = new Date(primeiraPaciente.timestamp).getTime();
+    const resposta = s.mensagens.find((m) => m.autor === 'admin' && new Date(m.timestamp).getTime() >= t0);
+    if (!resposta) continue;
+    tempos.push(new Date(resposta.timestamp).getTime() - t0);
+  }
+  const mediaMs = tempos.length > 0 ? tempos.reduce((a, b) => a + b, 0) / tempos.length : 0;
+  const formatarDuracao = (ms: number): string => {
+    const min = ms / 60_000;
+    if (min < 60) return `${Math.max(1, Math.round(min))}min`;
+    const h = min / 60;
+    if (h < 48) return `${h.toFixed(1).replace('.', ',')}h`;
+    return `${Math.round(h / 24)}d`;
+  };
+
+  // 4. Confiança média do ML nas solicitações já classificadas
+  const classificadas = solicitacoes.filter((s) => s.featuresUsadas || s.score !== 0.5);
+  const confiancaMedia = classificadas.length > 0
+    ? Math.round((classificadas.reduce((a, s) => a + s.score, 0) / classificadas.length) * 100)
+    : 0;
+
   return [
     {
       label: 'Solicitações novas hoje',
@@ -86,9 +110,21 @@ export function obterKpis(): KpiData[] {
       sub: altaSemResposta > 0 ? 'Atenção urgente' : 'Tudo em dia',
       tone: altaSemResposta > 0 ? 'danger' : 'success',
     },
-    // Os 2 abaixo ficam mock até backend emitir telemetria
-    KPIS_CENTRAL_MOCK[2],  // Tempo médio resposta
-    KPIS_CENTRAL_MOCK[3],  // Acurácia ML (30 dias)
+    {
+      label: 'Tempo médio de resposta',
+      value: tempos.length > 0 ? formatarDuracao(mediaMs) : '—',
+      sub: tempos.length > 0
+        ? `até a 1ª resposta · ${tempos.length} ${tempos.length === 1 ? 'conversa' : 'conversas'}`
+        : 'nenhuma resposta registrada',
+    },
+    {
+      label: 'Confiança média do ML',
+      value: classificadas.length > 0 ? `${confiancaMedia}%` : '—',
+      sub: classificadas.length > 0
+        ? `${classificadas.length} ${classificadas.length === 1 ? 'solicitação classificada' : 'solicitações classificadas'}`
+        : 'nenhuma classificada ainda',
+      tone: classificadas.length > 0 && confiancaMedia < 60 ? 'warning' : undefined,
+    },
   ];
 }
 

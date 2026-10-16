@@ -10,6 +10,8 @@
  * o Oracle é a fonte única da verdade.
  */
 
+import { tokenAtual, sessaoExpirada } from '../../../Services/sessao';
+
 // Mesma base do backend usada no resto do app. Se o projeto já exporta a URL
 // em Services/api.ts, troque esta constante pelo import de lá.
 const API_BASE: string =
@@ -49,12 +51,14 @@ export interface ResultadoResposta {
   entregue: boolean;
 }
 
-/** Cabeçalhos comuns. Quando o painel ganhar JWT, acrescentar o Authorization aqui. */
+/** Cabeçalhos comuns, com o token de login do painel. */
 function headers(extra?: Record<string, string>): HeadersInit {
-  return { Accept: 'application/json', ...extra };
+  const token = tokenAtual();
+  return { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra };
 }
 
 async function lerJson<T>(res: Response): Promise<T> {
+  if (res.status === 401) sessaoExpirada();
   if (!res.ok) {
     const corpo = await res.text().catch(() => '');
     throw new Error(`HTTP ${res.status}${corpo ? ` — ${corpo}` : ''}`);
