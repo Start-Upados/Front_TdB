@@ -91,6 +91,17 @@ function statusBackendParaFront(s: string | undefined): StatusAtendimento {
   }
 }
 
+/**
+ * O banco aceita texto livre em `programa` (ex.: "Saúde Bucal" nos registros antigos).
+ * Normaliza para os nomes oficiais; "Saúde Bucal" é o nome antigo do Apolônias do Bem.
+ */
+function normalizarPrograma(bruto?: string): ProgramaAtendimento {
+  const p = (bruto ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (p.includes('apolon') || p.includes('saude bucal')) return 'Apolônias do Bem';
+  if (p.includes('mutir')) return 'Mutirão';
+  return 'Dentista do Bem';
+}
+
 function mapearAtendimentoBackend(body: AtendimentoBody): Atendimento {
   const { data, hora } = parseDataAtendimento(body.dataAtendimento);
   return {
@@ -111,7 +122,7 @@ function mapearAtendimentoBackend(body: AtendimentoBody): Atendimento {
     },
     especialidade: body.especialidade ?? 'Clínico geral',
     local: '',                                        // backend não armazena
-    programa: (body.programa as ProgramaAtendimento) ?? 'Dentista do Bem',
+    programa: normalizarPrograma(body.programa),
     status: statusBackendParaFront(body.status),
     observacoesPre: body.status !== 'concluido' ? body.observacoes : undefined,
     observacoesPos: body.status === 'concluido' ? body.observacoes : undefined,
