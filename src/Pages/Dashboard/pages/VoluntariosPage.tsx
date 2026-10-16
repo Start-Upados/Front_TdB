@@ -43,9 +43,13 @@ export default function VoluntariosPage() {
   const distribuicao = obterDistribuicaoRegional();
 
   const [carregado, setCarregado] = useState(false);
+  const [erroCarga, setErroCarga] = useState<string | null>(null);
+  const [tentativa, setTentativa] = useState(0);
   useEffect(() => {
-  carregarDentistasReais().finally(() => setCarregado(true));
-  }, []);
+    carregarDentistasReais()
+      .then((r) => setErroCarga(r.fonte === 'erro' ? (r.erro ?? 'Erro desconhecido') : null))
+      .finally(() => setCarregado(true));
+  }, [tentativa]);
 
   const [regiao, setRegiao] = useState<Regiao>('Sudeste');
 
@@ -90,6 +94,21 @@ export default function VoluntariosPage() {
   return (
     
     <div className="flex w-full max-w-full flex-col gap-5">
+
+      {erroCarga && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-danger/30 bg-danger-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-danger">Não foi possível carregar os voluntários do servidor.</p>
+            <p className="mt-1 text-xs text-muted">{erroCarga}</p>
+          </div>
+          <button
+            onClick={() => { setCarregado(false); setTentativa((t) => t + 1); }}
+            className="rounded-xl border border-line bg-surface px-4 py-2 text-sm text-ink transition-colors hover:bg-surface-soft"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      )}
 
       {/* KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

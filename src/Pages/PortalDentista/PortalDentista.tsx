@@ -9,12 +9,14 @@ import {
 } from 'lucide-react'
 
 import { dentistaService, type DentistaBody } from '../../Services/api'
+import { salvarSessaoPortal } from '../../Services/sessao'
 // NOVO ↓ — ajusta o caminho se a pasta do Dashboard for diferente
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
 
 import {
   listarProximosPorCidade,
+  carregarMutiroesReais,
   dentistaEstaConfirmado,
   autoInscreverDentista,
   cancelarPresencaDentista,
@@ -22,11 +24,12 @@ import {
 import type { Mutirao } from '../Dashboard/data/mutiroes'
 
 import {
-  listarConvitesParaDentistaPorNome,
-  aceitarConvite,
-  recusarConvite,
-} from '../Dashboard/services/triagens'
-import type { Paciente } from '../Dashboard/data/triagens'
+  carregarConvitesPendentes,
+  aceitarConvitePortal,
+  recusarConvitePortal,
+  type ConvitePortal,
+  type DadosAceite,
+} from './convitesPortal'
 
 
 interface Dentista {
@@ -235,6 +238,13 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
   const [versao, setVersao] = useState(0)
   const [processando, setProcessando] = useState<string | null>(null)
 
+  // Mutirões e presenças vêm do banco (antes só do cache deste navegador)
+  useEffect(() => {
+    let ativo = true
+    carregarMutiroesReais().then(() => { if (ativo) setVersao((v) => v + 1) })
+    return () => { ativo = false }
+  }, [])
+
   // Filtro de especialidade: só mutirões que precisam da especialidade dele
   // (se o dentista é "Ortodontia" e o mutirão precisa de "Clínico geral, Periodontia", não mostra)
   const mutiroes = useMemo<Mutirao[]>(() => {
@@ -258,6 +268,9 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
         })
       }
       setVersao((v) => v + 1)
+    } catch (err) {
+      console.error('[portal] erro ao atualizar presença no mutirão:', err)
+      alert('Não foi possível salvar sua presença agora. Tente novamente.')
     } finally {
       setProcessando(null)
     }
@@ -368,72 +381,109 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
 // NOVO: SEÇÃO CONVITES PENDENTES + MODAIS
 // ═══════════════════════════════════════════════
 
-function SecaoConvitesPendentes({ dentistaNome }: { dentistaNome: string }) {
+function SecaoConvitesPendentes({ rgCpf }: { rgCpf: string }) {
+  const [convites, setConvites] = useState<ConvitePortal[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [versao, setVersao] = useState(0)
+  const [aviso, setAviso] = useState<string | null>(null)
   const [acaoModal, setAcaoModal] = useState<'aceitar' | 'recusar' | null>(null)
-  const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null)
+  const [conviteSelecionado, setConviteSelecionado] = useState<ConvitePortal | null>(null)
   const [processando, setProcessando] = useState(false)
 
-  const convites = useMemo<Paciente[]>(
-    () => listarConvitesParaDentistaPorNome(dentistaNome),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dentistaNome, versao],
-  )
+  // Fonte única: backend (GET /triagem/dentista/{cpf}/convites)
+  useEffect(() => {
+    let ativo = true
+    carregarConvitesPendentes(rgCpf)
+      .then((lista) => { if (ativo) { setConvites(lista); setErro(null) } })
+      .catch((err) => {
+        console.error('[portal] erro ao carregar convites:', err)
+        if (ativo) setErro('Não foi possível carregar seus convites agora.')
+      })
+      .finally(() => { if (ativo) setCarregando(false) })
+    return () => { ativo = false }
+  }, [rgCpf, versao])
 
-  function abrirAceitar(p: Paciente) {
-    setPacienteSelecionado(p)
+  function abrirAceitar(c: ConvitePortal) {
+    setConviteSelecionado(c)
     setAcaoModal('aceitar')
   }
-  function abrirRecusar(p: Paciente) {
-    setPacienteSelecionado(p)
+  function abrirRecusar(c: ConvitePortal) {
+    setConviteSelecionado(c)
     setAcaoModal('recusar')
   }
   function fecharModal() {
     if (processando) return
     setAcaoModal(null)
-    setPacienteSelecionado(null)
+    setConviteSelecionado(null)
   }
 
-  async function handleAceitar(dados: { data: string; hora: string; duracao: number; observacoes: string }) {
-    if (!pacienteSelecionado) return
+  async function handleAceitar(dados: DadosAceite) {
+    if (!conviteSelecionado) return
     setProcessando(true)
     try {
-      await aceitarConvite({
-        pacienteId: pacienteSelecionado.id,
-        dataAtendimento: dados.data,
-        horaAtendimento: dados.hora,
-        duracaoMinutos: dados.duracao,
-        observacoes: dados.observacoes,
-      })
-      setVersao((v) => v + 1)
-      fecharModal()
+      await aceitarConvitePortal(conviteSelecionado, dados)
+      setAviso(`Atendimento de ${conviteSelecionado.pacienteNome} agendado.`)
+      setAcaoModal(null)
+      setConviteSelecionado(null)
     } catch (err) {
-      console.error('Erro ao aceitar:', err)
-      alert('Não foi possível aceitar o convite. Tente novamente.')
+      alert(err instanceof Error ? err.message : 'Não foi possível aceitar o convite.')
     } finally {
       setProcessando(false)
+      setVersao((v) => v + 1)   // recarrega do backend (sucesso ou convite que já não está aberto)
     }
   }
 
   async function handleRecusar(motivo: string) {
-    if (!pacienteSelecionado) return
+    if (!conviteSelecionado) return
     setProcessando(true)
     try {
-      await recusarConvite({ pacienteId: pacienteSelecionado.id, motivo })
-      setVersao((v) => v + 1)
-      fecharModal()
+      await recusarConvitePortal(conviteSelecionado, motivo)
+      setAviso('Convite recusado. Obrigado por avisar!')
+      setAcaoModal(null)
+      setConviteSelecionado(null)
     } catch (err) {
-      console.error('Erro ao recusar:', err)
-      alert('Não foi possível recusar o convite. Tente novamente.')
+      alert(err instanceof Error ? err.message : 'Não foi possível recusar o convite.')
     } finally {
       setProcessando(false)
+      setVersao((v) => v + 1)
     }
   }
 
-  if (convites.length === 0) return null   // não mostra a seção se não tem convite
+  if (carregando && convites.length === 0) return null
+
+  if (erro) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-5 mb-5 border border-red-200 flex items-start gap-3">
+        <AlertCircle size={18} className="text-red-600 shrink-0 mt-0.5" strokeWidth={2} />
+        <div className="flex-1">
+          <p className="text-[13px] text-[#0F172A] font-semibold">{erro}</p>
+          <button
+            onClick={() => setVersao((v) => v + 1)}
+            className="mt-2 text-[12px] font-semibold text-[#E88407] bg-transparent border-none cursor-pointer p-0 hover:underline"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (convites.length === 0) {
+    return aviso ? (
+      <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-5 text-[13px] text-green-800 font-medium">
+        {aviso}
+      </div>
+    ) : null   // não mostra a seção se não tem convite
+  }
 
   return (
     <>
+      {aviso && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-3 text-[13px] text-green-800 font-medium">
+          {aviso}
+        </div>
+      )}
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -450,47 +500,57 @@ function SecaoConvitesPendentes({ dentistaNome }: { dentistaNome: string }) {
         </p>
 
         <div className="space-y-3">
-          {convites.map((p) => {
+          {convites.map((c) => {
             const corSeveridade =
-              p.severidade === 'Alta'  ? 'bg-red-100 text-red-700'
-              : p.severidade === 'Media' ? 'bg-orange-100 text-orange-700'
+              c.prioridade === 'Alta'  ? 'bg-red-100 text-red-700'
+              : c.prioridade === 'Media' ? 'bg-orange-100 text-orange-700'
               :                            'bg-blue-100 text-blue-700'
+            const local = [c.cidade, c.uf].filter(Boolean).join('-')
+            const linha2 = [local, c.programa].filter(Boolean).join(' · ')
             return (
-              <div key={p.id} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+              <div key={c.idConvite} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[#0F172A] text-[14px]">{p.nome}, {p.idade} anos</p>
-                    <p className="text-[#475569] text-[12px] mt-0.5">
-                      {p.cidade}-{p.estado} · {p.programa}
+                    <p className="font-semibold text-[#0F172A] text-[14px]">
+                      {c.pacienteNome}{c.idade !== undefined ? `, ${c.idade} anos` : ''}
                     </p>
+                    {linha2 && <p className="text-[#475569] text-[12px] mt-0.5">{linha2}</p>}
                   </div>
-                  <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${corSeveridade}`}>
-                    {p.severidade === 'Media' ? 'Média' : p.severidade}
-                  </span>
+                  {c.prioridade && (
+                    <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${corSeveridade}`}>
+                      {c.prioridade === 'Media' ? 'Média' : c.prioridade}
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-[12px] text-[#475569] mb-3 space-y-1">
-                  <p>
-                    <span className="font-semibold">Necessidade:</span> {p.necessidade}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Especialidade:</span> {p.especialidadeNecessaria}
-                  </p>
-                  <p className="text-[11px] text-[#94A3B8]">
-                    Na fila há {p.diasNaFila} {p.diasNaFila === 1 ? 'dia' : 'dias'}
-                  </p>
+                  {c.especialidade && (
+                    <p>
+                      <span className="font-semibold">Especialidade:</span> {c.especialidade}
+                    </p>
+                  )}
+                  {c.protocolo && (
+                    <p>
+                      <span className="font-semibold">Protocolo:</span> {c.protocolo}
+                    </p>
+                  )}
+                  {c.diasNaFila !== undefined && (
+                    <p className="text-[11px] text-[#94A3B8]">
+                      Na fila há {c.diasNaFila} {c.diasNaFila === 1 ? 'dia' : 'dias'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => abrirAceitar(p)}
+                    onClick={() => abrirAceitar(c)}
                     className="flex-1 bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] inline-flex items-center justify-center gap-2 border-none cursor-pointer"
                   >
                     <CheckCircle2 size={14} strokeWidth={2.5} />
                     Aceitar
                   </button>
                   <button
-                    onClick={() => abrirRecusar(p)}
+                    onClick={() => abrirRecusar(c)}
                     className="flex-1 bg-white border border-red-300 text-red-600 font-semibold py-2.5 rounded-lg hover:bg-red-50 transition-colors text-[13px] inline-flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <XCircle size={14} strokeWidth={2} />
@@ -503,17 +563,17 @@ function SecaoConvitesPendentes({ dentistaNome }: { dentistaNome: string }) {
         </div>
       </div>
 
-      {acaoModal === 'aceitar' && pacienteSelecionado && (
+      {acaoModal === 'aceitar' && conviteSelecionado && (
         <AceitarConviteModal
-          paciente={pacienteSelecionado}
+          convite={conviteSelecionado}
           onClose={fecharModal}
           onConfirmar={handleAceitar}
           processando={processando}
         />
       )}
-      {acaoModal === 'recusar' && pacienteSelecionado && (
+      {acaoModal === 'recusar' && conviteSelecionado && (
         <RecusarConviteModal
-          paciente={pacienteSelecionado}
+          convite={conviteSelecionado}
           onClose={fecharModal}
           onConfirmar={handleRecusar}
           processando={processando}
@@ -526,11 +586,11 @@ function SecaoConvitesPendentes({ dentistaNome }: { dentistaNome: string }) {
 // ─── MODAL ACEITAR ───
 
 function AceitarConviteModal({
-  paciente, onClose, onConfirmar, processando,
+  convite, onClose, onConfirmar, processando,
 }: {
-  paciente: Paciente
+  convite: ConvitePortal
   onClose: () => void
-  onConfirmar: (dados: { data: string; hora: string; duracao: number; observacoes: string }) => Promise<void>
+  onConfirmar: (dados: DadosAceite) => Promise<void>
   processando: boolean
 }) {
   const [data, setData] = useState('')
@@ -564,15 +624,15 @@ function AceitarConviteModal({
         <div className="p-6 border-b border-[#E2E8F0]">
           <h3 className="font-bold text-[#0F172A] text-[18px]">Aceitar convite</h3>
           <p className="text-[#475569] text-[13px] mt-1">
-            Atendimento de <span className="font-semibold">{paciente.nome}</span>
+            Atendimento de <span className="font-semibold">{convite.pacienteNome}</span>
           </p>
         </div>
 
         <form onSubmit={submit} className="p-6 space-y-4">
           <div className="bg-[#F8FAFC] rounded-xl p-3 text-[12px] text-[#475569] border border-[#E2E8F0]">
-            <p className="font-semibold text-[#0F172A]">{paciente.necessidade}</p>
+            <p className="font-semibold text-[#0F172A]">{convite.programa || 'Atendimento'}</p>
             <p className="mt-1">
-              {paciente.especialidadeNecessaria} · {paciente.cidade}-{paciente.estado}
+              {[convite.especialidade, [convite.cidade, convite.uf].filter(Boolean).join('-')].filter(Boolean).join(' · ') || 'Detalhes com a equipe TdB'}
             </p>
           </div>
 
@@ -660,9 +720,9 @@ function AceitarConviteModal({
 // ─── MODAL RECUSAR ───
 
 function RecusarConviteModal({
-  paciente, onClose, onConfirmar, processando,
+  convite, onClose, onConfirmar, processando,
 }: {
-  paciente: Paciente
+  convite: ConvitePortal
   onClose: () => void
   onConfirmar: (motivo: string) => Promise<void>
   processando: boolean
@@ -685,7 +745,7 @@ function RecusarConviteModal({
         <div className="p-6 border-b border-[#E2E8F0]">
           <h3 className="font-bold text-[#0F172A] text-[18px]">Recusar convite</h3>
           <p className="text-[#475569] text-[13px] mt-1">
-            Convite de <span className="font-semibold">{paciente.nome}</span>
+            Convite de <span className="font-semibold">{convite.pacienteNome}</span>
           </p>
         </div>
 
@@ -800,7 +860,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
           Validar paciente por QR Code
         </Link>
 
-        <SecaoConvitesPendentes dentistaNome={dentista.nome} />
+        <SecaoConvitesPendentes rgCpf={dentista.rgCpf} />
 
         {/* NOVO ↓ — Mensagens com a equipe TdB */}
         <SecaoMensagens dentistaNome={dentista.nome} />
@@ -924,6 +984,7 @@ const PainelDentistaPage = () => {
 
   function handleSair() {
     sessionStorage.removeItem('tdb_rgCpf')
+    salvarSessaoPortal(null)   // apaga o token do portal (o login do admin, se houver, continua)
     navigate('/login')
   }
 

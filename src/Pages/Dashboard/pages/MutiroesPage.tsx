@@ -22,6 +22,7 @@ import {
   type NovoMutiraoInput,
 } from '../services/mutiroes';
 import { campanhaService } from '../../../Services/api';
+import { carregarDentistasReais } from '../services/voluntarios';
 import { appendSheet } from '../../../Services/googleSheets';
 
 import type { Mutirao, StatusMutirao } from '../data/mutiroes';
@@ -96,9 +97,9 @@ export default function MutiroesPage() {
 
   // Carrega mutirões do backend no mount + sincroniza estado local
   useEffect(() => {
-    carregarMutiroesReais()
-      .then(() => refresh())
-      .catch(() => { /* silencioso — fallback pro localStorage */ });
+    // Dentistas reais (para convocar) + mutirões/participantes do banco
+    Promise.allSettled([carregarDentistasReais(), carregarMutiroesReais()])
+      .then(() => refresh());
   }, []);
 
   return (
@@ -432,6 +433,15 @@ function CadastrarMutiraoModal({
           cidade:           data.cidade,
           estado:           data.estado,
           numeroLogradouro,
+          // Campos do evento — antes ficavam só no navegador
+          dataEvento:       data.data,
+          horaInicio:       data.horaInicio,
+          horaFim:          data.horaFim,
+          programa:         data.programa,
+          tipo:             data.tipo,
+          especialidades:   especialidades.join(', '),
+          publicoAlvo:      data.publicoAlvo || undefined,
+          cep:              data.cep || undefined,
         });
         salvoNoOracle = true;
       } catch (err) {
@@ -668,18 +678,30 @@ function DetalhesMutiraoModal({
   const cfg = m.status !== 'realizado' ? STATUS_CONFIG[m.status] : null;
 
   async function cancelar(dentistaId: string) {
-    await cancelarConvocacao(m!.id, dentistaId);
-    toast.success('Convite cancelado');
-    setVersaoLocal((v) => v + 1);
-    onCancelarConvite();
+    try {
+      await cancelarConvocacao(m!.id, dentistaId);
+      toast.success('Convite cancelado');
+      setVersaoLocal((v) => v + 1);
+      onCancelarConvite();
+    } catch (err) {
+      toast.error('Não foi possível cancelar o convite', {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    }
   }
 
   async function cancelarPaciente(pacienteCpf: string) {
-  await cancelarPresencaPaciente(m!.id, pacienteCpf);
-  toast.success('Inscrição do paciente removida');
-  setVersaoLocal((v) => v + 1);
-  onCancelarConvite();
-}
+    try {
+      await cancelarPresencaPaciente(m!.id, pacienteCpf);
+      toast.success('Inscrição do paciente removida');
+      setVersaoLocal((v) => v + 1);
+      onCancelarConvite();
+    } catch (err) {
+      toast.error('Não foi possível remover a inscrição', {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    }
+  }
 
   return (
     <Modal
@@ -913,8 +935,11 @@ function ConvocarVoluntariosModal({
         description: 'Eles receberão notificação e poderão confirmar presença.',
       });
       onConvocado();
-    } catch {
-      toast.error('Não foi possível enviar convites');
+    } catch (err) {
+      toast.error('Não foi possível enviar todos os convites', {
+        description: err instanceof Error ? err.message : undefined,
+      });
+      onConvocado();   // atualiza a lista com quem foi salvo
     } finally {
       setProcessando(false);
     }

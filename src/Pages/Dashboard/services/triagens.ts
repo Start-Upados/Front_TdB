@@ -5,6 +5,7 @@ import {
   dentistaService,
   type TriagemBody,
   type DentistaBody,
+  type ConviteBody,
 } from '../../../Services/api';
 
 import {
@@ -252,6 +253,56 @@ export function contarFila60Dias(): number {
  * e adiciona/atualiza com os que vieram do Oracle. A UI deve chamar isso no mount
  * da TriagensPage pra garantir consistência entre navegadores (você ↔ Matheus).
  */
+/**
+ * Status do convite de cada triagem vem de GET /triagem/convite/{idTriagem}.
+ * Assim o que o dentista aceita/recusa no portal aparece aqui, em qualquer computador.
+ * Se a consulta de uma triagem falhar, mantém o que já estava (não apaga nada em silêncio).
+ */
+async function sincronizarConvites(lista: Paciente[]): Promise<Paciente[]> {
+  const st = (c: ConviteBody) => (c.status ?? '').toLowerCase().trim();
+  return Promise.all(
+    lista.map(async (p) => {
+      if (!p.idTriagem) return p;
+      let convites: ConviteBody[];
+      try {
+        convites = await triagemService.listarConvitesDaTriagem(p.idTriagem);
+      } catch (err) {
+        console.warn(`[triagens] convites da triagem ${p.idTriagem} indisponíveis:`, err);
+        return p;
+      }
+      if (!Array.isArray(convites)) return p;
+
+      const aberto = convites
+        .filter((c) => st(c) === 'pendente')
+        .sort((a, b) => (b.idConvite ?? 0) - (a.idConvite ?? 0))[0];
+
+      const historicoLocal = p.historicoConvites ?? [];
+      const recusasBanco: RespostaConvite[] = convites
+        .filter((c) => st(c) === 'recusado')
+        .map((c) => {
+          const local = historicoLocal.find((h) => h.dentistaId === c.dentistaRgCpf && h.resposta === 'recusado');
+          return {
+            dentistaId:   c.dentistaRgCpf,
+            dentistaNome: c.dentistaNome ?? local?.dentistaNome ?? 'Dentista',
+            resposta:     'recusado',
+            dataResposta: local?.dataResposta ?? '',          // o banco não guarda a data da recusa
+            motivoRecusa: c.motivoRecusado ?? local?.motivoRecusa,
+          };
+        });
+      const idsNoBanco = new Set(convites.map((c) => c.dentistaRgCpf));
+      const soLocais = historicoLocal.filter((h) => !idsNoBanco.has(h.dentistaId));
+
+      return {
+        ...p,
+        statusVinculacao:    aberto ? 'convite-enviado' : 'aguardando',
+        dentistaConvidadoId: aberto?.dentistaRgCpf,
+        idConviteAtivo:      aberto?.idConvite,
+        historicoConvites:   [...soLocais, ...recusasBanco],
+      };
+    }),
+  );
+}
+
 export async function carregarTriagensReais(): Promise<{
   count: number;
   fonte: 'backend' | 'mock';
@@ -286,6 +337,9 @@ export async function carregarTriagensReais(): Promise<{
         };
       });
 
+    // Convites: o banco é a fonte (o dentista responde pelo portal, em outro computador)
+    const doBackendComConvites = await sincronizarConvites(doBackend);
+
     // Itens criados aqui que NÃO chegaram ao banco: continuam visíveis, marcados
     // como pendentes (nunca somem em silêncio). Se o banco já tem o mesmo paciente,
     // o local é descartado para não duplicar.
@@ -296,7 +350,7 @@ export async function carregarTriagensReais(): Promise<{
       .filter((p) => !idsBackend.has(p.id) && !nomesBackend.has(p.nome.trim().toLowerCase()))
       .map((p) => ({ ...p, pendenteSync: true }));
 
-    pacientes = [...pendentes, ...doBackend];
+    pacientes = [...pendentes, ...doBackendComConvites];
     persistir();
     return { count: pacientes.length, fonte: 'backend' };
   } catch (err) {
@@ -344,20 +398,15 @@ export async function convidarDentista(pacienteId: string, dentistaId: string): 
   if (!paciente) throw new Error('Paciente não encontrado');
   const dentista = dentistasTriagem.find((d) => d.id === dentistaId);
 
-  // Backend-first: se a triagem existe no Oracle, registra o convite lá e captura o conviteId
-  let idConviteAtivo: number | undefined;
-  if (paciente.idTriagem && dentista) {
-    try {
-      const res = await triagemService.convidar(paciente.idTriagem, {
-        dentistaRgCpf: dentistaId,                // o id local serve como rgCpf
-        dentistaNome: dentista.nome,
-        mensagem: 'Convite gerado via Central de Triagens',
-      });
-      idConviteAtivo = res.conviteId;
-    } catch (err) {
-      console.warn('[triagens] erro ao convidar no backend:', err);
-    }
-  }
+  // O convite precisa estar no banco: é de lá que o dentista o lê no portal.
+  if (!paciente.idTriagem) throw new Error('Essa triagem ainda não foi salva no banco');
+  if (!dentista) throw new Error('Dentista não encontrado');
+  const res = await triagemService.convidar(paciente.idTriagem, {
+    dentistaRgCpf: dentistaId,                // id do dentista = rgCpf do banco
+    dentistaNome: dentista.nome,
+    mensagem: 'Convite gerado via Central de Triagens',
+  });
+  const idConviteAtivo: number | undefined = res?.conviteId;
 
   pacientes = pacientes.map((p) =>
     p.id === pacienteId
@@ -376,13 +425,9 @@ export async function convidarDentista(pacienteId: string, dentistaId: string): 
 export async function cancelarConvite(pacienteId: string): Promise<void> {
   const paciente = pacientes.find((p) => p.id === pacienteId);
 
-  // Backend-first: se tem idConviteAtivo, exclui o convite no Oracle
+  // Exclui no banco; se falhar, o erro sobe (senão o dentista continuaria vendo o convite)
   if (paciente?.idConviteAtivo) {
-    try {
-      await triagemService.excluirConvite(paciente.idConviteAtivo);
-    } catch (err) {
-      console.warn('[triagens] erro ao excluir convite no backend:', err);
-    }
+    await triagemService.excluirConvite(paciente.idConviteAtivo);
   }
 
   pacientes = pacientes.map((p) =>

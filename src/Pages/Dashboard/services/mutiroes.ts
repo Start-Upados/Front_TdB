@@ -3,12 +3,14 @@ import {
   type Mutirao,
   type StatusMutirao,
   type VoluntarioConvocado,
+  type TipoMutirao,
+  type ProgramaMutirao,
 } from '../data/mutiroes';
 //import { dataDeHoje } from './atendimentos';
 import { listarDentistas } from './voluntarios';
 import type { DentistaCompleto } from '../data/dentistas';
 import type { /* ... existentes ..., */ PacienteConfirmado } from '../data/mutiroes';
-import { campanhaService, type CampanhaBody } from '../../../Services/api';
+import { campanhaService, type CampanhaBody, type ParticipanteCampanhaBody } from '../../../Services/api';
 
 /*
   HOJE: estado mutável em memória + cache em localStorage (tdb_mutiroes).
@@ -89,32 +91,115 @@ function gerarIdDeNome(nome: string): string {
     .slice(0, 50);
 }
 
+function pad2(n: unknown): string {
+  return String(n).padStart(2, '0');
+}
+
+/** dataEvento chega como "YYYY-MM-DD" (ou [ano, mês, dia] dependendo do Jackson). */
+function dataDoBackend(v: unknown): string {
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  if (Array.isArray(v) && v.length >= 3) return `${v[0]}-${pad2(v[1])}-${pad2(v[2])}`;
+  return '';
+}
+
+function horaDoBackend(v?: string): string {
+  const m = (v ?? '').match(/^(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, '0')}:${m[2]}` : '';
+}
+
+function semAcento(v?: string): string {
+  return (v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function programaDoBackend(v?: string): ProgramaMutirao | undefined {
+  const p = semAcento(v);
+  if (!p) return undefined;
+  return p.includes('apolon') || p.includes('saude bucal') ? 'Apolônias do Bem' : 'Dentista do Bem';
+}
+
+function tipoDoBackend(v?: string): TipoMutirao | undefined {
+  const t = semAcento(v);
+  if (!t) return undefined;
+  return t.includes('escola') ? 'Triagem em escola' : 'Atendimento em comunidade';
+}
+
+function iniciaisDe(nome: string, padrao: string): string {
+  return nome
+    .trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s))
+    .map((s) => s[0]).slice(0, 2).join('').toUpperCase() || padrao;
+}
+
+/** CPF pode vir "000.000.000-11" ou "00000000011": compara só os dígitos. */
+function mesmoCpf(a?: string, b?: string): boolean {
+  const da = (a ?? '').replace(/\D/g, '');
+  return da.length > 0 ? da === (b ?? '').replace(/\D/g, '') : (a ?? '') === (b ?? '');
+}
+
+function chaveNome(nome?: string): string {
+  return (nome ?? '').toLowerCase().trim();
+}
+
+function voluntarioDoBackend(p: ParticipanteCampanhaBody): VoluntarioConvocado {
+  const st = semAcento(p.status);
+  return {
+    dentistaId: p.rgCpf,
+    nome: p.nome,
+    iniciais: iniciaisDe(p.nome ?? '', 'D'),
+    especialidade: p.especialidade ?? '',
+    cidade: p.cidade ?? '',
+    estado: p.estado ?? '',
+    convocadoEm: p.criadoEm ?? '',
+    status: st === 'pendente' ? 'pendente' : st === 'recusado' ? 'recusado' : 'confirmado',
+  };
+}
+
+function pacienteDoBackend(p: ParticipanteCampanhaBody): PacienteConfirmado {
+  return {
+    pacienteCpf: p.rgCpf,
+    nome: p.nome,
+    iniciais: iniciaisDe(p.nome ?? '', 'P'),
+    cidade: p.cidade ?? '',
+    confirmadoEm: p.criadoEm ?? '',
+  };
+}
+
 /**
- * Backend CampanhaBody é minimalista (só tem nome/endereço/meta/contagens).
- * Esse mapper aplica defaults pros campos que o backend ainda não armazena
- * (data, horários, especialidades, programa, tipo). Quando o backend expandir,
- * atualiza só este mapper.
+ * Campanha do banco → Mutirao da tela. Data, horário, programa, tipo, especialidades,
+ * público e CEP já vêm do banco. `participantes` = linhas de campanha_participante
+ * (null = backend ainda sem esse endpoint → listas ficam vazias aqui e o merge usa o cache).
  */
-function mapearCampanhaBackend(c: CampanhaBody): Mutirao {
+function mapearCampanhaBackend(c: CampanhaBody, participantes: ParticipanteCampanhaBody[] | null): Mutirao {
+  const data = dataDoBackend(c.dataEvento);
+  const horaInicio = horaDoBackend(c.horaInicio);
+  const horaFim = horaDoBackend(c.horaFim);
+  const especialidades = (c.especialidades ?? '').split(',').map((e) => e.trim()).filter(Boolean);
+  const daCampanha = (participantes ?? []).filter((p) => chaveNome(p.campanhaNome) === chaveNome(c.nome));
+  const voluntarios = daCampanha.filter((p) => p.tipo === 'dentista').map(voluntarioDoBackend);
+  const pacientes = daCampanha.filter((p) => p.tipo === 'paciente').map(pacienteDoBackend);
+
   return {
     id: gerarIdDeNome(c.nome),
     nome: c.nome,
-    data: '',                                            // backend ainda não guarda data do evento
-    horaInicio: '',
-    horaFim: '',
-    horario: 'Horário a definir',
+    data,
+    horaInicio,
+    horaFim,
+    horario: horaInicio && horaFim ? formatarHorario(horaInicio, horaFim) : 'Horário a definir',
     local: c.logradouro || c.nome,
     endereco: c.logradouro,
     cidade: c.cidade,
     estado: c.estado,
-    tipo: 'Atendimento em comunidade',                   // default
-    programa: 'Dentista do Bem',                         // default
-    especialidades: ['Clínico geral'],                   // default
+    cep: c.cep || undefined,
+    tipo: tipoDoBackend(c.tipo) ?? 'Atendimento em comunidade',
+    programa: programaDoBackend(c.programa) ?? 'Dentista do Bem',
+    publicoAlvo: c.publicoAlvo || undefined,
+    especialidades: especialidades.length ? especialidades : ['Clínico geral'],
     observacoes: c.descricao,
     dentistasNecessarios: c.nDentistas,
-    dentistasConfirmados: 0,
+    // Admin recebe todos os participantes; dentista/paciente só a si mesmo → o total vem do banco
+    dentistasConfirmados: c.nDentistasConfirmados ?? voluntarios.filter((v) => v.status === 'confirmado').length,
     pacientesEsperados: c.metaAtendidos,
-    voluntariosConvocados: [],
+    voluntariosConvocados: voluntarios,
+    pacientesConfirmados: pacientes,
     status: 'em-preparacao',
     atendimentosRealizados: c.nAtendidos,
   } as Mutirao;
@@ -160,39 +245,54 @@ export async function carregarMutiroesReais(): Promise<{
 }> {
   try {
     const lista = await campanhaService.listar();
+
+    // Participantes (convocados / presenças). Backend antigo responde outra coisa → null = usa o cache.
+    let participantes: ParticipanteCampanhaBody[] | null = null;
+    try {
+      const resp = await campanhaService.listarParticipantes();
+      participantes = Array.isArray(resp) ? resp : null;
+    } catch (err) {
+      console.warn('[mutiroes] participantes indisponíveis no backend, usando cache:', err);
+    }
+
     if (Array.isArray(lista) && lista.length > 0) {
-      const doBackend = lista.map(mapearCampanhaBackend);
+      const locaisPorNome = new Map(mutiroes.map((m) => [chaveNome(m.nome), m]));
+      const nomesBackend = new Set(lista.map((c) => chaveNome(c.nome)));
 
-      // O backend (CampanhaBody) não guarda data, horário, programa, tipo,
-      // especialidades, público nem CEP. Esses campos vêm do cadastro local
-      // (dado real do formulário) — preservamos por nome.
-      const nomesBackend  = new Set(doBackend.map((m) => (m.nome ?? '').toLowerCase().trim()));
-      const locaisPorNome = new Map(mutiroes.map((m) => [(m.nome ?? '').toLowerCase().trim(), m]));
-
-      // 1) Backend como fonte de verdade, enriquecido com os campos que ele não guarda
-      const enriquecidos = doBackend.map((bm) => {
-        const local = locaisPorNome.get((bm.nome ?? '').toLowerCase().trim());
+      // 1) Banco é a fonte. O cache só completa campos que mutirões ANTIGOS não têm no banco.
+      const doBanco = lista.map((c) => {
+        const bm = mapearCampanhaBackend(c, participantes);
+        const local = locaisPorNome.get(chaveNome(c.nome));
         if (!local) return bm;
+        const temHorario = !!(bm.horaInicio && bm.horaFim);
         return {
           ...bm,
-          data:           local.data || bm.data,
-          horaInicio:     local.horaInicio ?? bm.horaInicio,
-          horaFim:        local.horaFim ?? bm.horaFim,
-          horario:        local.horario ?? bm.horario,
-          programa:       local.programa ?? bm.programa,
-          tipo:           local.tipo ?? bm.tipo,
-          especialidades: (local.especialidades?.length ? local.especialidades : bm.especialidades),
-          publicoAlvo:    local.publicoAlvo ?? bm.publicoAlvo,
-          cep:            local.cep ?? bm.cep,
-          endereco:       local.endereco ?? bm.endereco,
-          status:         local.status ?? bm.status,
+          data:           bm.data || local.data,
+          horaInicio:     temHorario ? bm.horaInicio : local.horaInicio ?? bm.horaInicio,
+          horaFim:        temHorario ? bm.horaFim : local.horaFim ?? bm.horaFim,
+          horario:        temHorario ? bm.horario : local.horario ?? bm.horario,
+          programa:       c.programa ? bm.programa : local.programa ?? bm.programa,
+          tipo:           c.tipo ? bm.tipo : local.tipo ?? bm.tipo,
+          especialidades: c.especialidades ? bm.especialidades
+                          : (local.especialidades?.length ? local.especialidades : bm.especialidades),
+          publicoAlvo:    bm.publicoAlvo ?? local.publicoAlvo,
+          cep:            bm.cep ?? local.cep,
+          local:          local.local || bm.local,
+          status:         local.status === 'realizado' ? local.status : bm.status,
+          ...(participantes === null
+            ? {
+                voluntariosConvocados: local.voluntariosConvocados ?? [],
+                pacientesConfirmados:  local.pacientesConfirmados ?? [],
+                dentistasConfirmados:  local.dentistasConfirmados ?? 0,
+              }
+            : {}),
         };
       });
 
-      // 2) Mantém cadastros locais que ainda não chegaram no backend (ex.: POST falhou)
-      const apenasLocais = mutiroes.filter((m) => !nomesBackend.has((m.nome ?? '').toLowerCase().trim()));
+      // 2) Cadastros que ainda não chegaram no banco (POST falhou) continuam visíveis
+      const apenasLocais = mutiroes.filter((m) => !nomesBackend.has(chaveNome(m.nome)));
 
-      mutiroes = [...enriquecidos, ...apenasLocais];
+      mutiroes = [...doBanco, ...apenasLocais];
       persistir();
       return { count: mutiroes.length, fonte: 'backend' };
     }
@@ -286,55 +386,84 @@ export async function criarMutirao(input: NovoMutiraoInput): Promise<Mutirao> {
   return novo;
 }
 
-export async function convocarVoluntarios(
-  mutiraoId: string,
-  dentistaIds: string[],
-): Promise<void> {
-  const dentistas = listarDentistas();
+/** Nome da campanha no banco (chave usada nos endpoints de participantes). */
+function nomeNoBanco(m: Mutirao): string {
+  return m.nome || m.local;
+}
+
+function aplicar(mutiraoId: string, f: (m: Mutirao) => Mutirao): void {
   mutiroes = mutiroes.map((m) => {
     if (m.id !== mutiraoId) return m;
-
-    const novos: VoluntarioConvocado[] = [];
-    for (const id of dentistaIds) {
-      if (m.voluntariosConvocados.some((v) => v.dentistaId === id)) continue;
-      const d = dentistas.find((x) => x.id === id);
-      if (!d) continue;
-      novos.push({
-        dentistaId: d.id,
-        nome: d.nome,
-        iniciais: d.iniciais,
-        especialidade: d.especialidade,
-        cidade: d.cidade,
-        estado: d.estado,
-        convocadoEm: new Date().toISOString().slice(0, 10),
-        status: 'confirmado',
-      });
-    }
-
-    const atualizado = {
-      ...m,
-      voluntariosConvocados: [...m.voluntariosConvocados, ...novos],
-      dentistasConfirmados: m.voluntariosConvocados.length + novos.length,
-    };
+    const atualizado = f(m);
     atualizado.status = calcularStatus(atualizado);
     return atualizado;
   });
   persistir();
 }
 
-export async function cancelarConvocacao(mutiraoId: string, dentistaId: string): Promise<void> {
-  mutiroes = mutiroes.map((m) => {
-    if (m.id !== mutiraoId) return m;
-    const filtrados = m.voluntariosConvocados.filter((v) => v.dentistaId !== dentistaId);
-    const atualizado = {
-      ...m,
-      voluntariosConvocados: filtrados,
-      dentistasConfirmados: filtrados.length,
-    };
-    atualizado.status = calcularStatus(atualizado);
-    return atualizado;
+export async function convocarVoluntarios(
+  mutiraoId: string,
+  dentistaIds: string[],
+): Promise<void> {
+  const m = mutiroes.find((x) => x.id === mutiraoId);
+  if (!m) throw new Error('Mutirão não encontrado');
+  const dentistas = listarDentistas();
+  const alvos = dentistaIds
+    .filter((id) => !m.voluntariosConvocados.some((v) => v.dentistaId === id))
+    .map((id) => dentistas.find((x) => x.id === id))
+    .filter((d): d is DentistaCompleto => !!d);
+
+  // Grava no banco primeiro; só entra na tela quem foi salvo
+  const resultados = await Promise.allSettled(
+    alvos.map((d) =>
+      campanhaService.adicionarParticipante(nomeNoBanco(m), {
+        tipo: 'dentista',
+        rgCpf: d.id,                   // id do dentista = rgCpf do banco
+        nome: d.nome,
+        especialidade: d.especialidade,
+        cidade: d.cidade,
+        estado: d.estado,
+        status: 'confirmado',
+      }),
+    ),
+  );
+  const salvos = alvos.filter((_, i) => resultados[i].status === 'fulfilled');
+  const hoje = hojeLocal();
+
+  aplicar(mutiraoId, (atual) => {
+    const novos: VoluntarioConvocado[] = salvos.map((d) => ({
+      dentistaId: d.id,
+      nome: d.nome,
+      iniciais: d.iniciais,
+      especialidade: d.especialidade,
+      cidade: d.cidade,
+      estado: d.estado,
+      convocadoEm: hoje,
+      status: 'confirmado',
+    }));
+    const lista = [...atual.voluntariosConvocados, ...novos];
+    return { ...atual, voluntariosConvocados: lista, dentistasConfirmados: atual.dentistasConfirmados + novos.length };
   });
-  persistir();
+
+  const falhas = alvos.length - salvos.length;
+  if (falhas > 0) {
+    throw new Error(`${falhas} ${falhas === 1 ? 'convocação não foi salva' : 'convocações não foram salvas'} no banco`);
+  }
+}
+
+export async function cancelarConvocacao(mutiraoId: string, dentistaId: string): Promise<void> {
+  const m = mutiroes.find((x) => x.id === mutiraoId);
+  if (!m) throw new Error('Mutirão não encontrado');
+  await campanhaService.removerParticipante(nomeNoBanco(m), 'dentista', dentistaId);
+  aplicar(mutiraoId, (atual) => {
+    const filtrados = atual.voluntariosConvocados.filter((v) => !mesmoCpf(v.dentistaId, dentistaId));
+    const removidos = atual.voluntariosConvocados.length - filtrados.length;
+    return {
+      ...atual,
+      voluntariosConvocados: filtrados,
+      dentistasConfirmados: Math.max(0, atual.dentistasConfirmados - removidos),
+    };
+  });
 }
 
 // ──────────────────────────────────────────────
@@ -389,83 +518,90 @@ export function listarProximosPorCidade(cidade: string): Mutirao[] {
 // ─── Pacientes ───
 export function pacienteEstaConfirmado(mutiraoId: string, pacienteCpf: string): boolean {
   const m = obterMutirao(mutiraoId);
-  return !!m?.pacientesConfirmados?.some((p) => p.pacienteCpf === pacienteCpf);
+  return !!m?.pacientesConfirmados?.some((p) => mesmoCpf(p.pacienteCpf, pacienteCpf));
 }
 
 export async function confirmarPresencaPaciente(
   mutiraoId: string,
   paciente: { cpf: string; nome: string; cidade: string },
 ): Promise<void> {
-  await new Promise((r) => setTimeout(r, 200));
-  mutiroes = mutiroes.map((m) => {
-    if (m.id !== mutiraoId) return m;
-    const atuais = m.pacientesConfirmados ?? [];
-    if (atuais.some((p) => p.pacienteCpf === paciente.cpf)) return m;
-    const iniciais = paciente.nome
-      .trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s))
-      .map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'P';
-    const novo: PacienteConfirmado = {
-      pacienteCpf: paciente.cpf,
-      nome: paciente.nome,
-      iniciais,
-      cidade: extrairCidade(paciente.cidade),
-      confirmadoEm: new Date().toISOString().slice(0, 10),
-    };
-    return { ...m, pacientesConfirmados: [...atuais, novo] };
+  const m = mutiroes.find((x) => x.id === mutiraoId);
+  if (!m) throw new Error('Mutirão não encontrado');
+  if ((m.pacientesConfirmados ?? []).some((p) => mesmoCpf(p.pacienteCpf, paciente.cpf))) return;
+  await campanhaService.adicionarParticipante(nomeNoBanco(m), {
+    tipo: 'paciente',
+    rgCpf: paciente.cpf,
+    nome: paciente.nome,
+    cidade: extrairCidade(paciente.cidade),
+    status: 'confirmado',
   });
-  persistir();
+  aplicar(mutiraoId, (atual) => ({
+    ...atual,
+    pacientesConfirmados: [
+      ...(atual.pacientesConfirmados ?? []),
+      {
+        pacienteCpf: paciente.cpf,
+        nome: paciente.nome,
+        iniciais: iniciaisDe(paciente.nome, 'P'),
+        cidade: extrairCidade(paciente.cidade),
+        confirmadoEm: hojeLocal(),
+      },
+    ],
+  }));
 }
 
 export async function cancelarPresencaPaciente(mutiraoId: string, pacienteCpf: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 200));
-  mutiroes = mutiroes.map((m) => {
-    if (m.id !== mutiraoId) return m;
-    return {
-      ...m,
-      pacientesConfirmados: (m.pacientesConfirmados ?? []).filter((p) => p.pacienteCpf !== pacienteCpf),
-    };
-  });
-  persistir();
+  const m = mutiroes.find((x) => x.id === mutiraoId);
+  if (!m) throw new Error('Mutirão não encontrado');
+  await campanhaService.removerParticipante(nomeNoBanco(m), 'paciente', pacienteCpf);
+  aplicar(mutiraoId, (atual) => ({
+    ...atual,
+    pacientesConfirmados: (atual.pacientesConfirmados ?? []).filter((p) => !mesmoCpf(p.pacienteCpf, pacienteCpf)),
+  }));
 }
 
 // ─── Dentistas ───
 export function dentistaEstaConfirmado(mutiraoId: string, dentistaId: string): boolean {
   const m = obterMutirao(mutiraoId);
-  return !!m?.voluntariosConvocados.some((v) => v.dentistaId === dentistaId);
+  return !!m?.voluntariosConvocados.some((v) => mesmoCpf(v.dentistaId, dentistaId));
 }
 
 export async function autoInscreverDentista(
   mutiraoId: string,
   dentista: { id: string; nome: string; especialidade: string; cidade: string; estado: string },
 ): Promise<void> {
-  await new Promise((r) => setTimeout(r, 200));
-  mutiroes = mutiroes.map((m) => {
-    if (m.id !== mutiraoId) return m;
-    if (m.voluntariosConvocados.some((v) => v.dentistaId === dentista.id)) return m;
-    const iniciais = dentista.nome
-      .trim().split(/\s+/).filter((s) => !['Dr.', 'Dra.'].includes(s))
-      .map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'D';
-    const novo: VoluntarioConvocado = {
-      dentistaId: dentista.id,
-      nome: dentista.nome,
-      iniciais,
-      especialidade: dentista.especialidade,
-      cidade: extrairCidade(dentista.cidade),
-      estado: dentista.estado,
-      convocadoEm: new Date().toISOString().slice(0, 10),
-      status: 'confirmado',
-    };
-    const atualizado = {
-      ...m,
-      voluntariosConvocados: [...m.voluntariosConvocados, novo],
-      dentistasConfirmados: m.voluntariosConvocados.length + 1,
-    };
-    return atualizado;
+  const m = mutiroes.find((x) => x.id === mutiraoId);
+  if (!m) throw new Error('Mutirão não encontrado');
+  if (m.voluntariosConvocados.some((v) => mesmoCpf(v.dentistaId, dentista.id))) return;
+  await campanhaService.adicionarParticipante(nomeNoBanco(m), {
+    tipo: 'dentista',
+    rgCpf: dentista.id,
+    nome: dentista.nome,
+    especialidade: dentista.especialidade,
+    cidade: extrairCidade(dentista.cidade),
+    estado: dentista.estado,
+    status: 'confirmado',
   });
-  persistir();
+  aplicar(mutiraoId, (atual) => ({
+    ...atual,
+    voluntariosConvocados: [
+      ...atual.voluntariosConvocados,
+      {
+        dentistaId: dentista.id,
+        nome: dentista.nome,
+        iniciais: iniciaisDe(dentista.nome, 'D'),
+        especialidade: dentista.especialidade,
+        cidade: extrairCidade(dentista.cidade),
+        estado: dentista.estado,
+        convocadoEm: hojeLocal(),
+        status: 'confirmado',
+      },
+    ],
+    dentistasConfirmados: atual.dentistasConfirmados + 1,
+  }));
 }
 
 export async function cancelarPresencaDentista(mutiraoId: string, dentistaId: string): Promise<void> {
-  // Reusa cancelarConvocacao já existente — mesma mecânica
+  // Mesma mecânica do cancelamento pelo admin
   return cancelarConvocacao(mutiraoId, dentistaId);
 }

@@ -17,6 +17,8 @@ import {
   rejeitarDentista,
   suspenderDentista,
   reativarDentista,
+  carregarDentistasReais,
+  dentistasCarregados,
 } from '../services/voluntarios';
 import { listarProximosPorDentista, carregarAtendimentosReais, contarAtendimentosDentistaNoAno } from '../services/atendimentos';
 import type { DentistaCompleto } from '../data/dentistas';
@@ -52,6 +54,16 @@ export default function DentistaPerfilPage() {
   }, []);
   void atendCarregado;
 
+  // Abrindo o perfil direto (link ou F5): busca os voluntários no banco antes de procurar o id
+  const [dentCarregados, setDentCarregados] = useState(dentistasCarregados());
+  useEffect(() => {
+    if (dentCarregados) return;
+    carregarDentistasReais().finally(() => {
+      setDentCarregados(true);
+      setVersao((v) => v + 1);
+    });
+  }, [dentCarregados]);
+
   const dentista = useMemo(
     () => (id ? obterDentista(id) : undefined),
     [id, versao],
@@ -66,6 +78,10 @@ export default function DentistaPerfilPage() {
   function fechar() {
     if (processando) return;
     setAcao(null);
+  }
+
+  if (!dentista && !dentCarregados) {
+    return <p className="py-10 text-center text-sm text-muted">Carregando dentista...</p>;
   }
 
   if (!dentista) {

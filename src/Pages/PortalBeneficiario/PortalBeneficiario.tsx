@@ -16,6 +16,7 @@ import type { Solicitacao } from '../Dashboard/data/central'
 import { CalendarHeart } from 'lucide-react';   // ← já tem MapPin, renomeia se conflitar
 import {
   listarProximosPorCidade,
+  carregarMutiroesReais,
   pacienteEstaConfirmado,
   confirmarPresencaPaciente,
   cancelarPresencaPaciente,
@@ -416,6 +417,13 @@ function SecaoMutiroes({ paciente }: { paciente: Paciente }) {
   const [versao, setVersao] = useState(0)
   const [processando, setProcessando] = useState<string | null>(null)
 
+  // Mutirões e presenças vêm do banco (antes só do cache deste navegador)
+  useEffect(() => {
+    let ativo = true
+    carregarMutiroesReais().then(() => { if (ativo) setVersao((v) => v + 1) })
+    return () => { ativo = false }
+  }, [])
+
   const mutiroes = useMemo<Mutirao[]>(() => {
     return listarProximosPorCidade(paciente.cidade)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -434,6 +442,9 @@ function SecaoMutiroes({ paciente }: { paciente: Paciente }) {
         })
       }
       setVersao((v) => v + 1)
+    } catch (err) {
+      console.error('[portal] erro ao atualizar presença no mutirão:', err)
+      alert('Não foi possível salvar sua presença agora. Tente novamente.')
     } finally {
       setProcessando(null)
     }

@@ -1,5 +1,4 @@
 import {
-  DENTISTAS,
   type DentistaCompleto,
   type KpiData,
   type Regiao,
@@ -8,7 +7,9 @@ import {
 
 import { dentistaService, type DentistaBody } from '../../../Services/api';
 
-let dentistas: DentistaCompleto[] = [...DENTISTAS];
+// Só voluntários cadastrados no banco — nada de dados de exemplo.
+let dentistas: DentistaCompleto[] = [];
+let jaCarregou = false;
 let contatosBackend: Record<string, { whatsapp: string; email: string; telefone: string }> = {};
 
 // ─── Backend real ────────────────────────────────
@@ -96,18 +97,31 @@ function mapearDentistaBackend(b: DentistaBody): DentistaCompleto {
   };
 }
 
-export async function carregarDentistasReais(): Promise<{ count: number; fonte: 'backend' | 'mock' }> {
+export async function carregarDentistasReais(): Promise<{
+  count: number;
+  fonte: 'backend' | 'erro';
+  erro?: string;
+}> {
   try {
     const lista = await dentistaService.listar();
-    if (Array.isArray(lista) && lista.length > 0) {
-      dentistas = lista.map(mapearDentistaBackend);
-      return { count: dentistas.length, fonte: 'backend' };
-    }
-    return { count: dentistas.length, fonte: 'mock' };
+    // O banco é a única fonte: lista vazia = nenhum voluntário cadastrado
+    dentistas = Array.isArray(lista) ? lista.map(mapearDentistaBackend) : [];
+    jaCarregou = true;
+    return { count: dentistas.length, fonte: 'backend' };
   } catch (err) {
-    console.warn('[voluntarios] backend indisponível, mantendo dados atuais:', err);
-    return { count: dentistas.length, fonte: 'mock' };
+    console.error('[voluntarios] não foi possível carregar os dentistas do backend:', err);
+    // Mantém o que já veio do banco nesta sessão (se veio); nunca cai em dados de exemplo
+    return {
+      count: dentistas.length,
+      fonte: 'erro',
+      erro: err instanceof Error ? err.message : 'Erro desconhecido',
+    };
   }
+}
+
+/** true depois que a lista veio do banco ao menos uma vez nesta sessão. */
+export function dentistasCarregados(): boolean {
+  return jaCarregou;
 }
 
 export interface ContatoDentista {

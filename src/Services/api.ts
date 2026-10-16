@@ -87,6 +87,32 @@ export interface CampanhaBody {
   estado:           string
   cidade:           string
   numeroLogradouro: number
+  // ─── campos do evento (já existem no backend) ───
+  dataEvento?:      string   // "YYYY-MM-DD"
+  horaInicio?:      string   // "HH:MM"
+  horaFim?:         string   // "HH:MM"
+  programa?:        string   // 'Dentista do Bem' | 'Apolônias do Bem'
+  tipo?:            string   // 'Triagem em escola' | 'Atendimento em comunidade'
+  especialidades?:  string   // separadas por vírgula
+  publicoAlvo?:     string
+  cep?:             string
+  // ─── calculados pelo backend (só leitura) ───
+  nDentistasConfirmados?: number
+  nPacientesConfirmados?: number
+}
+
+// ─── PARTICIPANTE DE MUTIRÃO (ParticipanteCampanha.java) ──
+export interface ParticipanteCampanhaBody {
+  idParticipante?: number
+  campanhaNome?:   string
+  tipo:            'dentista' | 'paciente'
+  rgCpf:           string
+  nome:            string
+  especialidade?:  string
+  cidade?:         string
+  estado?:         string
+  status?:         string   // 'confirmado' | 'pendente' | 'recusado'
+  criadoEm?:       string   // "YYYY-MM-DD"
 }
 
 // ─── MENSAGEM (Mensagem.java) ─────────────────
@@ -128,6 +154,16 @@ export interface ConviteBody {
   status?:           string   // 'pendente' | 'aceito' | 'recusado'
   detalhesRecusado?: string
   motivoRecusado?:   string
+  // ─── resumo da triagem (só em GET /triagem/dentista/{cpf}/convites) ───
+  protocolo?:        string
+  pacienteNome?:     string
+  programa?:         string
+  prioridade?:       string
+  especialidade?:    string
+  cidade?:           string
+  uf?:               string
+  dataNasc?:         string   // "YYYY-MM-DD"
+  dataEntradaFila?:  string   // "YYYY-MM-DD"
 }
 
 // ─── ATENDIMENTO (Atendimento.java) — gerado ao aceitar convite ──
@@ -194,7 +230,7 @@ async function request<T>(
     const err = await res.json().catch(() => ({ erro: 'Erro desconhecido' }))
     const ehLogin = endpoint.startsWith('/auth/') || endpoint.endsWith('/login')
     if (res.status === 401 && !ehLogin) sessaoExpirada()
-    throw new ErroHttp(err.erro ?? `Erro ${res.status}`, res.status)
+    throw new ErroHttp(err.erro ?? err.Erro ?? `Erro ${res.status}`, res.status)
   }
  
   const text = await res.text()
@@ -305,6 +341,18 @@ export const campanhaService = {
     request<unknown>(`/campanha/${nome}`, 'DELETE'),
   addAtendimentos: (nome: string, nAtendimentos: number) =>
     request<unknown>(`/campanha/${nome}/addAtendimento`, 'PUT', undefined, { nAtendimentos }),
+
+  // ─── Participantes (dentistas convocados / pacientes confirmados) ───
+  // Admin recebe todos; dentista/paciente logado recebe só os próprios.
+  listarParticipantes: () =>
+    request<ParticipanteCampanhaBody[]>('/campanha/participantes'),
+  adicionarParticipante: (nomeCampanha: string, p: ParticipanteCampanhaBody) =>
+    request<unknown>(`/campanha/${encodeURIComponent(nomeCampanha)}/participantes`, 'POST', p),
+  removerParticipante: (nomeCampanha: string, tipo: 'dentista' | 'paciente', rgCpf: string) =>
+    request<unknown>(
+      `/campanha/${encodeURIComponent(nomeCampanha)}/participantes/${tipo}/${encodeURIComponent(rgCpf)}`,
+      'DELETE',
+    ),
 }
 
 // ─── TRIAGEM ──────────────────────────────────
@@ -328,7 +376,7 @@ export const triagemService = {
   listarConvitesDaTriagem: (idTriagem: number) =>
     request<ConviteBody[]>(`/triagem/convite/${idTriagem}`),
   listarConvitesDoDentista: (dentistaRgCpf: string) =>
-    request<ConviteBody[]>(`/triagem/dentista/${dentistaRgCpf}/convites`),
+    request<ConviteBody[]>(`/triagem/dentista/${encodeURIComponent(dentistaRgCpf)}/convites`),
   excluirConvite: (idConvite: number) =>
     request<unknown>(`/triagem/convite/${idConvite}`, 'DELETE'),
 
@@ -351,7 +399,7 @@ export const atendimentoService = {
   listarPorData: (data: string) =>
     request<AtendimentoBody[]>(`/atendimento/data/${data}`),
   listarPorDentista: (dentistaRgCpf: string) =>
-    request<AtendimentoBody[]>(`/atendimento/dentista/${dentistaRgCpf}`),
+    request<AtendimentoBody[]>(`/atendimento/dentista/${encodeURIComponent(dentistaRgCpf)}`),
   alterar: (idAtendimento: number, body: Partial<AtendimentoBody>) =>
     request<unknown>(`/atendimento/${idAtendimento}`, 'PUT', body),
   deletar: (idAtendimento: number) =>

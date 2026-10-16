@@ -138,7 +138,9 @@ export default function TriagensPage() {
       setConviteAlvo(null);
       refreshFila();
     } catch (err) {
-      toast.error('Não foi possível enviar o convite. Tente novamente.');
+      toast.error('Não foi possível enviar o convite.', {
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+      });
     } finally {
       setProcessando(false);
     }
@@ -373,7 +375,9 @@ export default function TriagensPage() {
                 {selected.historicoConvites.map((h, idx) => (
                   <div key={idx} className="text-2xs text-ink">
                     <span className="font-medium">{h.dentistaNome}</span>
-                    <span className="text-muted"> · {new Date(h.dataResposta).toLocaleDateString('pt-BR')}</span>
+                    {h.dataResposta && !isNaN(Date.parse(h.dataResposta)) && (
+                      <span className="text-muted"> · {new Date(h.dataResposta).toLocaleDateString('pt-BR')}</span>
+                    )}
                     {h.motivoRecusa && <span className="text-muted"> · {h.motivoRecusa}</span>}
                   </div>
                 ))}

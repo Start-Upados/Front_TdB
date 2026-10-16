@@ -180,7 +180,10 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
       console.log(ok);
       if (ok) {
         sessionStorage.setItem('tdb_rgCpf', rgCpf);
-        navigate('/meu-painel');
+        // Veio do QR Code (Validar paciente)? Volta para lá.
+        const destino = sessionStorage.getItem('tdb_pos_login');
+        sessionStorage.removeItem('tdb_pos_login');
+        navigate(destino && destino.startsWith('/validar-paciente') ? destino : '/meu-painel');
       }
     } catch (error) {
       console.log(error);

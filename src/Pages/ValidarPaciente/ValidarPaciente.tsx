@@ -1,84 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Smile, ShieldCheck, QrCode, Stethoscope, ClipboardList,
-  CheckCircle2, ArrowLeft, Check, ArrowRight, Circle, AlertCircle,
+  CheckCircle2, ArrowLeft, Check, ArrowRight, Circle, AlertCircle, LogIn,
 } from 'lucide-react'
-import { readSheet, appendSheet } from '../../Services/googleSheets'
-
-
-interface Consulta {
-  data:         string
-  hora:         string
-  procedimento: string
-  status:       'concluido' | 'proximo' | 'agendado'
-}
-
-interface Paciente {
-  protocolo:     string
-  cpf:           string
-  nome:          string
-  idade:         number
-  cidade:        string
-  programa:      string
-  dentista:      string
-  clinica:       string
-  status:        string
-  sessaoAtual:   number
-  totalSessoes:  number
-  procedimento:  string
-  historico:     Consulta[]
-}
-
-// ─── MOCK DATA ──────────────────────── (preservado, 2 pacientes)
-// TODO: substituir por fetch(`${import.meta.env.VITE_API_URL}/api/pacientes/protocolo/${protocolo}`)
-const MOCK_PACIENTES: Paciente[] = [
-  {
-    protocolo:    'TDB-2026-3118',
-    cpf:          '123.456.789-00',
-    nome:         'Joao Silva',
-    idade:        15,
-    cidade:       'Sao Paulo, SP',
-    programa:     'Dentista do Bem',
-    dentista:     'Dr. Carlos Mendes',
-    clinica:      'Clinica Oral Center',
-    status:       'Em andamento',
-    sessaoAtual:  2,
-    totalSessoes: 4,
-    procedimento: 'Tratamento de Canal',
-    historico: [
-      { data: '10/05/2025', hora: '09:00', procedimento: 'Avaliacao inicial',     status: 'concluido' },
-      { data: '15/05/2025', hora: '10:30', procedimento: 'Extracao preparatoria', status: 'concluido' },
-      { data: '18/05/2025', hora: '14:00', procedimento: 'Canal - sessao 1',      status: 'proximo'   },
-      { data: '25/05/2025', hora: '14:00', procedimento: 'Restauracao final',     status: 'agendado'  },
-    ],
-  },
-  {
-    protocolo:    'TDB-2026-9616',
-    cpf:          '987.654.321-00',
-    nome:         'Maria Santos',
-    idade:        13,
-    cidade:       'Rio de Janeiro, RJ',
-    programa:     'Apolônias do Bem',
-    dentista:     'Dra. Ana Paula Santos',
-    clinica:      'Clinica Sorria Bem',
-    status:       'Ativo',
-    sessaoAtual:  1,
-    totalSessoes: 3,
-    procedimento: 'Ortodontia',
-    historico: [
-      { data: '12/05/2025', hora: '09:00', procedimento: 'Avaliacao e moldagem',  status: 'concluido' },
-      { data: '20/05/2025', hora: '09:00', procedimento: 'Colocacao do aparelho', status: 'proximo'   },
-      { data: '20/06/2025', hora: '09:00', procedimento: 'Ajuste mensal',         status: 'agendado'  },
-    ],
-  },
-]
-
-function buscarPorProtocolo(protocolo: string): Paciente | null {
-  return MOCK_PACIENTES.find(
-    p => p.protocolo.toLowerCase() === protocolo.toLowerCase()
-  ) ?? null
-}
+import {
+  buscarPaciente,
+  confirmarSessao,
+  dentistaLogado,
+  lembrarDestino,
+  type ConsultaValidacao as Consulta,
+  type PacienteValidacao as Paciente,
+} from './validacao'
 
 
 // ─── TIMELINE (visual TdB) ───────────────────
@@ -119,7 +52,8 @@ function FichaPaciente({
   confirmando: boolean
   confirmado:  boolean
 }) {
-  const progresso = Math.round((paciente.sessaoAtual / paciente.totalSessoes) * 100)
+  const concluidas = paciente.historico.filter((c) => c.status === 'concluido').length
+  const progresso = paciente.totalSessoes > 0 ? Math.round((concluidas / paciente.totalSessoes) * 100) : 0
 
   return (
     <div className="w-full max-w-lg">
@@ -131,8 +65,7 @@ function FichaPaciente({
             {paciente.nome.charAt(0)}
           </div>
           <h2 className="text-[20px] font-extrabold text-[#9A3412] mb-1">{paciente.nome}</h2>
-          <p className="text-[#9A3412]/80 text-[13px]">{paciente.idade} anos · {paciente.cidade}</p>
-          <p className="text-[#9A3412]/70 text-[12px] mt-1">{paciente.programa}</p>
+          <p className="text-[#9A3412]/80 text-[13px]">{paciente.programa}</p>
 
           <div className="inline-flex items-center gap-1.5 bg-green-100 border border-green-300 rounded-full px-4 py-1.5 mt-3">
             <ShieldCheck size={14} className="text-green-700" strokeWidth={2.5} />
@@ -178,8 +111,7 @@ function FichaPaciente({
               <Stethoscope size={12} className="text-[#94A3B8]" strokeWidth={2} />
               <p className="text-[10px] text-[#94A3B8] uppercase tracking-wide font-bold">Dentista responsável</p>
             </div>
-            <p className="font-semibold text-[#0F172A] text-[14px]">{paciente.dentista}</p>
-            <p className="text-[#475569] text-[12px]">{paciente.clinica}</p>
+            <p className="font-semibold text-[#0F172A] text-[14px]">{paciente.dentista || 'Você'}</p>
           </div>
 
           {/* Histórico */}
@@ -188,8 +120,11 @@ function FichaPaciente({
               <ClipboardList size={14} className="text-[#E88407]" strokeWidth={2} />
               <p className="font-bold text-[#0F172A] text-[14px]">Histórico de consultas</p>
             </div>
+            {paciente.historico.length === 0 && (
+              <p className="text-[12px] text-[#94A3B8]">Nenhuma consulta registrada.</p>
+            )}
             {paciente.historico.map((c, i) => (
-              <TimelineItem key={i} consulta={c} isLast={i === paciente.historico.length - 1} />
+              <TimelineItem key={c.idAtendimento || i} consulta={c} isLast={i === paciente.historico.length - 1} />
             ))}
           </div>
 
@@ -199,6 +134,10 @@ function FichaPaciente({
               <CheckCircle2 size={24} className="text-green-600 mx-auto mb-2" strokeWidth={2} />
               <p className="text-green-700 font-bold text-[15px] mb-1">Atendimento confirmado!</p>
               <p className="text-green-600 text-[12px]">Registrado com sucesso no histórico da ONG.</p>
+            </div>
+          ) : !paciente.idAtendimentoAberto ? (
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-center mb-4 text-[12px] text-[#475569]">
+              Nenhuma sessão em aberto para confirmar.
             </div>
           ) : (
             <button
@@ -227,69 +166,33 @@ function FichaPaciente({
 
 // ─── TELA DE BUSCA (visual TdB) ───────────────
 function TelaBusca({
-  onEncontrado, protocoloInicial,
+  onEncontrado, onPrecisaLogin, protocoloInicial,
 }: {
   onEncontrado:     (p: Paciente) => void
+  onPrecisaLogin:   (protocolo: string) => void
   protocoloInicial: string
 }) {
   const [protocolo,  setProtocolo]  = useState(protocoloInicial)
   const [buscando,   setBuscando]   = useState(false)
   const [naoAchado,  setNaoAchado]  = useState(false)
 
-  // LÓGICA 100% PRESERVADA: readSheet com mesmos índices [16][6][0]..., fallback mock.
+  const [erro,       setErro]       = useState<string | null>(null)
+
   async function handleBuscar(e: React.FormEvent) {
     e.preventDefault()
     if (!protocolo.trim()) return
 
     setBuscando(true)
     setNaoAchado(false)
-
-    try {
-        // 1. Busca no Google Sheets primeiro
-        const rows = await readSheet('Pacientes!A:Q')
-        const encontrado = rows.slice(1).find(r => r[16] === protocolo.trim())
-
-        if (encontrado) {
-            onEncontrado({
-            protocolo:    encontrado[16] ?? '',
-            cpf:          encontrado[6]  ?? '',
-            nome:         encontrado[0]  ?? '',
-            idade:        Number(encontrado[1]) || 0,
-            cidade:       encontrado[2]  ?? '',
-            programa:     encontrado[3]  ?? '',
-            dentista:     encontrado[7]  ?? 'A definir',
-            clinica:      encontrado[10] ?? 'A definir',
-            status:       encontrado[4]  ?? 'Aguardando',
-            sessaoAtual:  Number(encontrado[12]) || 0,
-            totalSessoes: Number(encontrado[13]) || 0,
-            procedimento: encontrado[14] ?? '',
-            historico:    [],
-        })
-        return
-        }
-
-        // 2. Não achou no Sheets, tenta no MOCK
-        const mock = buscarPorProtocolo(protocolo.trim())
-        if (mock) {
-            onEncontrado(mock)
-            return
-        }
-
-        // 3. Não encontrou em nenhum lugar
-        setNaoAchado(true)
-
-    } catch {
-        // 4. Se Sheets falhar, tenta no MOCK
-        const mock = buscarPorProtocolo(protocolo.trim())
-        if (mock) {
-            onEncontrado(mock)
-        } else {
-            setNaoAchado(true)
-        }
-    } finally {
+    setErro(null)
+    const r = await buscarPaciente(protocolo)
     setBuscando(false)
+
+    if (r.tipo === 'ok') onEncontrado(r.paciente)
+    else if (r.tipo === 'nao-logado') onPrecisaLogin(protocolo.trim())
+    else if (r.tipo === 'nao-encontrado') setNaoAchado(true)
+    else setErro(r.mensagem)
   }
-}
 
   return (
     <div className="w-full max-w-md">
@@ -323,8 +226,17 @@ function TelaBusca({
               <AlertCircle size={14} className="shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">Protocolo não encontrado</p>
-                <p className="text-[11px] mt-0.5 opacity-80">Verifique o número e tente novamente.</p>
+                <p className="text-[11px] mt-0.5 opacity-80">
+                  Verifique o número. Só aparecem pacientes com atendimento agendado com você.
+                </p>
               </div>
+            </div>
+          )}
+
+          {erro && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-[12px] px-4 py-3 rounded-lg">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+              <p className="font-semibold">{erro}</p>
             </div>
           )}
 
@@ -354,57 +266,89 @@ function TelaBusca({
 
       <p className="text-center mt-5 text-[13px]">
         <Link
-          to="/login"
+          to="/meu-painel"
           className="text-[#E88407] hover:underline transition-colors inline-flex items-center gap-1.5 font-medium"
         >
           <ArrowLeft size={14} />
-          Voltar ao login
+          Voltar ao meu painel
         </Link>
       </p>
     </div>
   )
 }
 
+// ─── PRECISA LOGIN (o QR abre uma aba nova, sem sessão) ───
+function TelaLogin({ onEntrar }: { onEntrar: () => void }) {
+  return (
+    <div className="w-full max-w-md">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-sm text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FFEDD5] border-2 border-[#E88407] mb-4">
+          <ShieldCheck size={28} className="text-[#E88407]" strokeWidth={2} />
+        </div>
+        <h1 className="text-[20px] font-bold text-[#0F172A]">Entre para validar</h1>
+        <p className="text-[#475569] text-[13px] mt-2 mb-6">
+          Os dados do paciente são protegidos. Entre com sua conta de voluntário; depois do login você volta
+          direto para este paciente.
+        </p>
+        <button
+          onClick={onEntrar}
+          className="w-full bg-[#E88407] text-white font-bold py-3 rounded-xl hover:bg-[#D97706] transition-colors cursor-pointer border-none text-[14px] inline-flex items-center justify-center gap-2"
+        >
+          <LogIn size={16} strokeWidth={2.5} />
+          Entrar como voluntário
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── VALIDAR PACIENTE (PRINCIPAL) ─────────────
-// LÓGICA 100% PRESERVADA: useSearchParams, useEffect, appendSheet com mesmos campos.
 export default function ValidarPaciente() {
   const [searchParams]                  = useSearchParams()
+  const navigate                        = useNavigate()
   const [paciente,    setPaciente]      = useState<Paciente | null>(null)
   const [confirmando, setConfirmando]   = useState(false)
   const [confirmado,  setConfirmado]    = useState(false)
+  const [precisaLogin, setPrecisaLogin] = useState(() => !dentistaLogado())
+  const [buscandoUrl, setBuscandoUrl]   = useState(false)
 
   const protocoloUrl = searchParams.get('protocolo') ?? ''
 
+  // Veio pelo QR (?protocolo=...): busca direto
   useEffect(() => {
-    if (protocoloUrl) {
-      const resultado = buscarPorProtocolo(protocoloUrl)
-      if (resultado) setPaciente(resultado)
+    if (!protocoloUrl) return
+    if (!dentistaLogado()) {
+      lembrarDestino(protocoloUrl)
+      setPrecisaLogin(true)
+      return
     }
+    let ativo = true
+    setBuscandoUrl(true)
+    buscarPaciente(protocoloUrl).then((r) => {
+      if (!ativo) return
+      if (r.tipo === 'ok') setPaciente(r.paciente)
+      if (r.tipo === 'nao-logado') { lembrarDestino(protocoloUrl); setPrecisaLogin(true) }
+      setBuscandoUrl(false)
+    })
+    return () => { ativo = false }
   }, [protocoloUrl])
 
+  function irParaLogin(protocolo = protocoloUrl) {
+    lembrarDestino(protocolo)
+    navigate('/login')
+  }
+
   async function handleConfirmar() {
-    if (!paciente) return
+    if (!paciente?.idAtendimentoAberto) return
     setConfirmando(true)
-
-    const agora   = new Date()
-    const dataStr = agora.toLocaleDateString('pt-BR')
-    const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-
     try {
-      await appendSheet('Atendimentos!A:H', [[
-        paciente.protocolo,      // Protocolo
-        paciente.nome,           // Paciente
-        paciente.procedimento,   // Procedimento
-        paciente.dentista,       // Dentista
-        paciente.clinica,        // Clinica
-        'Realizado',             // Status
-        dataStr,                 // Data
-        horaStr,                 // Hora
-      ]])
+      await confirmarSessao(paciente.idAtendimentoAberto)
       setConfirmado(true)
+      // Recarrega do banco para a linha do tempo refletir a sessão concluída
+      const r = await buscarPaciente(paciente.protocolo)
+      if (r.tipo === 'ok') setPaciente(r.paciente)
     } catch (err) {
-      console.error('Erro ao confirmar:', err)
-      alert('Erro ao registrar. Tente novamente.')
+      alert(err instanceof Error ? err.message : 'Erro ao registrar. Tente novamente.')
     } finally {
       setConfirmando(false)
     }
@@ -417,7 +361,11 @@ export default function ValidarPaciente() {
 
   return (
     <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center p-4">
-      {paciente ? (
+      {precisaLogin ? (
+        <TelaLogin onEntrar={() => irParaLogin()} />
+      ) : buscandoUrl ? (
+        <p className="text-[#475569] text-[14px]">Buscando paciente...</p>
+      ) : paciente ? (
         <FichaPaciente
           paciente={paciente}
           onConfirmar={handleConfirmar}
@@ -428,6 +376,7 @@ export default function ValidarPaciente() {
       ) : (
         <TelaBusca
           onEncontrado={setPaciente}
+          onPrecisaLogin={(p) => { lembrarDestino(p); setPrecisaLogin(true) }}
           protocoloInicial={protocoloUrl}
         />
       )}
