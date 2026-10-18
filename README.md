@@ -14,7 +14,7 @@
 
 ### 🔗 Acesso ao Projeto
 
-[**🌐 Aplicação ao vivo**](https://www.startupados.com.br/) &nbsp;•&nbsp; [**📺 Demonstração (YouTube)**](https://www.youtube.com/watch?v=wU_QVad8MSQ) &nbsp;•&nbsp; [**💻 Repositório**](https://github.com/Start-Upados/Front_TdB)
+[**🌐 Aplicação ao vivo**](https://www.startupados.com.br/) &nbsp;•&nbsp; 
 
 </div>
 
@@ -522,8 +522,8 @@ Desenvolvido pelo grupo **StartUpados()** — FIAP 2026.
 
 | Nome | Responsabilidade | LinkedIn |
 |---|---|---|
-| **Pedro Henrique Falchi** | Frontend & Integrações | [LinkedIn](https://www.linkedin.com/in/pedro-henrique-falchi-4ab4b937b) |
-| **Matheus Guimarães** | Backend & Banco de Dados | [LinkedIn](https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b/) |
+| **Pedro Henrique Falchi**  [LinkedIn](https://www.linkedin.com/in/pedro-henrique-falchi-4ab4b937b) |
+| **Matheus Guimarães**  [LinkedIn](https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b/) |
 
 📧 **Contato:** startupados@gmail.com
 
