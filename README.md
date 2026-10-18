@@ -69,58 +69,6 @@ A plataforma **StartUpados()** foi desenvolvida para digitalizar e otimizar os p
 
 ---
 
-## 📸 Screenshots
-
-<div align="center">
-
-### 🌐 Site Institucional
-Primeiro contato do visitante com a ONG, com design responsivo e acessibilidade via VLibras.
-
-![Home do site institucional](docs/screenshots/home2.png)
-
-### 📊 Dashboard Executivo
-Painel administrativo com KPIs dinâmicos calculados a partir dos dados reais do Oracle.
-
-![Dashboard executivo com KPIs](docs/screenshots/adminDashboard.png)
-
-### 🌙 Dark Mode com Escopo
-Modo escuro aplicado condicionalmente apenas nas rotas do dashboard, preservando o site institucional em claro.
-
-![Dashboard em modo escuro](docs/screenshots/dashboardDark.png)
-
-### 📝 Solicitação de Atendimento
-Formulário multi-step com máscaras automáticas de CPF/CEP e validação de idade integrada.
-
-![Formulário de solicitação - Dentista do Bem](docs/screenshots/formJovem.png)
-
-### 🗓 Gestão de Atendimentos
-Ciclo de vida completo dos atendimentos: confirmar, iniciar, finalizar, cancelar e reagendar.
-
-![Página de atendimentos](docs/screenshots/atendimentos.png)
-
-### 💰 Financeiro
-Indicadores de doações e parceiros com gráficos interativos via Recharts.
-
-![Dashboard financeiro](docs/screenshots/financeiro.png)
-
-### 🏥 Gerenciar Mutirões
-Cadastro e acompanhamento de mutirões de atendimento, com cálculo automático de dias restantes.
-
-![Gestão de mutirões](docs/screenshots/mutiroes.png)
-
-### 💬 Central de Mensagens
-Hub omnichannel de todas as solicitações em tempo real, com transições automáticas de status.
-
-![Central de Mensagens](docs/screenshots/centralCanais.png)
-
-</div>
-
-> 💡 _Mais screenshots do projeto disponíveis em [`docs/screenshots/`](docs/screenshots/)._
-
----
-
----
-
 
 
 ## 🏛 Arquitetura
@@ -444,48 +392,6 @@ A segurança foi tratada como requisito de primeira classe neste projeto:
 
 ---
 
-## 🔧 Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto a partir do modelo abaixo. **Nunca commite valores reais** — utilize o `.env.example` como referência.
-
-```env
-# URL do backend Java (Quarkus)
-VITE_API_URL=https://<seu-backend>.onrender.com
-
-# Integração Google Sheets (fallback)
-VITE_GOOGLE_SHEET_ID=<id-da-sua-planilha>
-VITE_GOOGLE_CLIENT_EMAIL=<sua-service-account>@<projeto>.iam.gserviceaccount.com
-VITE_GOOGLE_PRIVATE_KEY="<sua-chave-privada>"
-```
-
----
-
-## ▶️ Como Rodar Localmente
-
-**Pré-requisitos:** Node.js 18+ e npm.
-
-```bash
-# 1. Clonar o repositório
-git clone https://github.com/Start-Upados/Front_TdB.git
-cd Front_TdB
-
-# 2. Instalar dependências
-npm install
-
-# 3. Configurar variáveis de ambiente
-cp .env.example .env   # e preencha os valores
-
-# 4. Rodar em modo desenvolvimento
-npm run dev
-
-# 5. Build de produção
-npm run build
-npm run preview
-```
-
-> 💡 **Dica:** se aparecer `Failed to fetch dynamically imported module`, limpe o cache do Vite com `rm -rf node_modules/.vite` e reinicie o `npm run dev`.
-
----
 
 ## 🚀 Deploy
 
@@ -520,10 +426,8 @@ npm run preview
 
 Desenvolvido pelo grupo **StartUpados()** — FIAP 2026.
 
-| Nome | Responsabilidade | LinkedIn |
-|---|---|---|
 | **Pedro Henrique Falchi**  [LinkedIn](https://www.linkedin.com/in/pedro-henrique-falchi-4ab4b937b) |
-| **Matheus Guimarães**  [LinkedIn](https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b/) |
+| **Matheus Guimarães**  [LinkedIn](https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b) |
 
 📧 **Contato:** startupados@gmail.com
 
