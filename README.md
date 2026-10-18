@@ -25,7 +25,6 @@
 ## 📑 Sumário
 
 - [Sobre o Projeto](#-sobre-o-projeto)
-- [📸 Screenshots](#-screenshots)
 - [Arquitetura](#-arquitetura)
 - [Stack Tecnológica](#-stack-tecnológica)
 - [Funcionalidades](#-funcionalidades)
@@ -35,7 +34,6 @@
 - [Integrações & Endpoints](#-integrações--endpoints)
 - [Segurança & Boas Práticas](#-segurança--boas-práticas)
 - [Variáveis de Ambiente](#-variáveis-de-ambiente)
-- [Como Rodar Localmente](#-como-rodar-localmente)
 - [Deploy](#-deploy)
 - [Roadmap](#-roadmap)
 - [Equipe](#-equipe)
@@ -225,12 +223,8 @@ Integração com a **WhatsApp Cloud API** orquestrada via **n8n**, seguindo arqu
 |---|---|---|
 | **Fase 1** | Recebimento de mensagens de pacientes (_inbound_) com deduplicação por WAMID | ✅ Funcional |
 | **Fase 2** | Lembretes de consulta via _templates_ aprovados pela Meta | ✅ Funcional |
-| **Fase 3** | Confirmação de presença com botões interativos | ✅ Funcional |
-| **Fase 4** | Disparo em massa / _broadcast_ | 📋 Planejado |
+| **Fase 3** | Disparo em massa / _broadcast_ | ✅ Funcional |
 
-> Convenção de payload de botões: `acao:tipo:id` (ex.: `confirmar:consulta:1023`), permitindo um roteador genérico de ações no backend.
-
----
 
 ## 🤖 Machine Learning — Priorização de Atendimentos
 
