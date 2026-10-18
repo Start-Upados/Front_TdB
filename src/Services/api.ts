@@ -230,7 +230,9 @@ async function request<T>(
     const err = await res.json().catch(() => ({ erro: 'Erro desconhecido' }))
     const ehLogin = endpoint.startsWith('/auth/') || endpoint.endsWith('/login')
     if (res.status === 401 && !ehLogin) sessaoExpirada()
-    throw new ErroHttp(err.erro ?? err.Erro ?? `Erro ${res.status}`, res.status)
+    const base = err.erro ?? err.Erro ?? `Erro ${res.status}`
+    // Alguns endpoints devolvem também a "causa" (ex.: o erro do Oracle) — mostra junto
+    throw new ErroHttp(err.causa ? `${base} — ${err.causa}` : base, res.status)
   }
  
   const text = await res.text()

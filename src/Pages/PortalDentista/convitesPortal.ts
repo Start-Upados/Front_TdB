@@ -128,8 +128,13 @@ function mensagemDeErro(err: unknown, acao: 'aceitar' | 'recusar'): string {
   if (err instanceof ErroHttp) {
     if (err.status === 403) return 'Esse convite não é seu.'
     if (err.status === 404) return 'Convite não encontrado.'
-    if (err.status === 400 && acao === 'aceitar') {
+    // 409 = o convite já foi aceito, recusado ou cancelado
+    if (err.status === 409) {
       return 'Esse convite não está mais disponível (pode ter sido cancelado ou aceito por outro voluntário).'
+    }
+    // 400 = falhou ao gravar: mostra o motivo que o backend mandou, para dar pra corrigir
+    if (err.status === 400) {
+      return `Não foi possível ${acao} o convite. Detalhe: ${err.message}`
     }
   }
   return `Não foi possível ${acao} o convite. Tente novamente.`
