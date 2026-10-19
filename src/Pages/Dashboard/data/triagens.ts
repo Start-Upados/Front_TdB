@@ -53,6 +53,7 @@ export interface Dentista {
   especialidade: string;
   cidade: string;
   estado: string;
+  bairro?: string;
   coords: { lat: number; lng: number };
   vinculos: number;
   rating: number;

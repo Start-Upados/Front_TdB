@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   Search, Plus, MessageSquare, School, Clock,
   MapPin, CalendarDays, Star, ChevronDown, ChevronUp,
-  ArrowRight, CheckCircle2, X, CloudOff,
+  ArrowRight, CheckCircle2, X, CloudOff, LoaderCircle,
 } from 'lucide-react';
 import { KpiCard } from '../components/KpiCard';
 import { Avatar } from '../components/Avatar';
@@ -13,13 +13,16 @@ import { Modal } from '../components/Modal';
 import {
   listarFila,
   obterKpis,
-  sugerirDentistas,
+  buscarSugestoes,
+  sugerirDentistasLocal,
   convidarDentista,
   cancelarConvite,
   criarTriagem,
   carregarTriagensReais,
   type SugestaoDentista,
+  type ResultadoSugestoes,
 } from '../services/triagens';
+import { formatarDistancia } from '../Utils/Geo';
 import type { Paciente, StatusVinculacao, Programa, Severidade } from '../data/triagens';
 
 const TOTAL_DENTISTAS_EXPANDIDO = 8;
@@ -66,6 +69,18 @@ function OrigemBadge({ origem, statusVinculacao, pendenteSync }: { origem: Pacie
   );
 }
 
+/** Tooltip do "local": onde fica o consultório e como a distância foi medida. */
+function tituloLocal(dentista: SugestaoDentista['dentista'], match: SugestaoDentista['match']): string {
+  const onde = [dentista.bairro, dentista.cidade && `${dentista.cidade}${dentista.estado ? `-${dentista.estado}` : ''}`]
+    .filter(Boolean)
+    .join(' · ');
+  const como =
+    match.tipoDistancia === 'rota' ? 'Distância de carro (Google Maps)' :
+    match.tipoDistancia === 'linha_reta' ? 'Distância aproximada em linha reta' :
+    'Distância não calculada (endereço do paciente ou do consultório não localizado)';
+  return onde ? `${onde}\n${como}` : como;
+}
+
 export default function TriagensPage() {
   const kpis = obterKpis();
 
@@ -110,19 +125,43 @@ export default function TriagensPage() {
 
   const selected = pacientes.find((p) => p.id === selectedId) ?? pacientes[0];
 
+  // ─── Match (backend: distância Google Maps + especialidade + avaliação) ───
+  // Resultado do backend guardado junto com a chave do paciente: se a chave não bate,
+  // ainda está carregando e a tela mostra o cálculo local (sem distância) no lugar.
+  const [matchBackend, setMatchBackend] = useState<{ chave: string; resultado: ResultadoSugestoes } | null>(null);
+  const chaveMatch = selected ? `${selected.id}|${selected.idTriagem ?? ''}` : '';
+
+  useEffect(() => {
+    if (!selected?.idTriagem) return;
+    let ativo = true;
+    const chave = chaveMatch;
+    buscarSugestoes(selected).then((resultado) => {
+      if (ativo) setMatchBackend({ chave, resultado });
+    });
+    return () => { ativo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chaveMatch]);
+
+  const matchLocal = useMemo(
+    () => (selected ? sugerirDentistasLocal(selected) : null),
+    [selected, pacientes], // pacientes muda quando os dentistas terminam de carregar
+  );
+  const carregandoMatch = !!selected?.idTriagem && matchBackend?.chave !== chaveMatch;
+  const resultadoMatch = matchBackend?.chave === chaveMatch ? matchBackend.resultado : matchLocal;
+
   const dentistasSugeridos = useMemo(
-    () => selected
-      ? sugerirDentistas(selected, expandido ? TOTAL_DENTISTAS_EXPANDIDO : TOTAL_DENTISTAS_COMPACTO)
-      : [],
-    [selected, expandido, pacientes],
+    () => (resultadoMatch?.sugestoes ?? []).slice(0, expandido ? TOTAL_DENTISTAS_EXPANDIDO : TOTAL_DENTISTAS_COMPACTO),
+    [resultadoMatch, expandido],
   );
 
-  const totalDentistasDisponiveis = useMemo(
-    () => selected ? sugerirDentistas(selected, 999).length : 0,
-    [selected],
-  );
-
+  const totalDentistasDisponiveis = resultadoMatch?.total ?? 0;
   const podeExpandir = totalDentistasDisponiveis > TOTAL_DENTISTAS_COMPACTO;
+  const avisoLocalizacao =
+    resultadoMatch?.localizacaoPaciente === 'nao_encontrada'
+      ? 'Não foi possível localizar o CEP do paciente — distâncias a confirmar.'
+      : resultadoMatch?.localizacaoPaciente === 'maps_desativado'
+      ? 'Distância indisponível: Google Maps não configurado no servidor.'
+      : null;
   const conviteAtivo = selected?.statusVinculacao === 'convite-enviado';
   const dentistaConvidadoId = selected?.dentistaConvidadoId;
 
@@ -335,6 +374,12 @@ export default function TriagensPage() {
               <span className="text-muted">Necessidade</span>
               <span className="font-medium text-ink">{selected.necessidade}</span>
             </div>
+            {resultadoMatch && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-2">
+                <span className="text-muted">Especialidade considerada</span>
+                <span className="text-ink text-right">{resultadoMatch.especialidadeConsiderada}</span>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-2">
               <span className="text-muted">Origem</span>
               <span className="text-ink text-right">{selected.origem.detalhe}</span>
@@ -388,8 +433,22 @@ export default function TriagensPage() {
           {/* Sugeridos */}
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-ink">Dentistas sugeridos</p>
-            <span className="text-2xs text-subtle">Ordenado por compatibilidade</span>
+            <span className="text-2xs text-subtle inline-flex items-center gap-1.5">
+              {carregandoMatch && <LoaderCircle className="w-3 h-3 animate-spin" strokeWidth={2} />}
+              {carregandoMatch ? 'Calculando distâncias…' : 'Ordenado por distância e especialidade'}
+            </span>
           </div>
+          {avisoLocalizacao && !carregandoMatch && (
+            <p className="text-2xs text-warning mb-3 inline-flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" strokeWidth={2} />
+              {avisoLocalizacao}
+            </p>
+          )}
+          {!carregandoMatch && dentistasSugeridos.length === 0 && (
+            <div className="p-6 text-center text-sm text-muted border border-line rounded-xl mb-3">
+              Nenhum dentista voluntário disponível para sugerir.
+            </div>
+          )}
 
           {dentistasSugeridos.map(({ dentista, match }, idx) => {            
             const isTop = idx === 0;
@@ -420,11 +479,12 @@ export default function TriagensPage() {
                   </div>
                   <p className="text-2xs text-muted mt-0.5">{dentista.especialidade}{dentista.vinculos > 0 ? ` · ${dentista.vinculos} atendimentos` : ''}</p>
                   <div className="flex items-center gap-3 mt-1.5 text-2xs text-subtle flex-wrap">
-                    <span className="inline-flex items-center gap-1">
+                    <span
+                      className={`inline-flex items-center gap-1 ${match.distanciaKm >= 0 ? 'text-ink' : ''}`}
+                      title={tituloLocal(dentista, match)}
+                    >
                       <MapPin className="w-3 h-3" strokeWidth={2} />
-                      {match.distanciaKm >= 0
-                        ? `${match.distanciaKm < 10 ? match.distanciaKm.toFixed(1) : Math.round(match.distanciaKm)} km`
-                        : 'local a confirmar'}
+                      {carregandoMatch && match.distanciaKm < 0 ? 'calculando…' : formatarDistancia(match)}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <CalendarDays className="w-3 h-3" strokeWidth={2} />
@@ -523,10 +583,8 @@ export default function TriagensPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted">Distância</span>
-                <span className="text-ink">
-                  {conviteAlvo.match.distanciaKm >= 0
-                    ? `${conviteAlvo.match.distanciaKm < 10 ? conviteAlvo.match.distanciaKm.toFixed(1) : Math.round(conviteAlvo.match.distanciaKm)} km`
-                    : 'a confirmar'}
+                <span className="text-ink text-right" title={tituloLocal(conviteAlvo.dentista, conviteAlvo.match)}>
+                  {formatarDistancia(conviteAlvo.match, 'a confirmar')}
                 </span>
               </div>
               <div className="flex items-center justify-between">

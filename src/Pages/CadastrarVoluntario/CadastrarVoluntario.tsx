@@ -365,7 +365,7 @@ async function nextStep() {
                   />
                 </Campo>
 
-                <Campo label="CEP" error={errors.cep?.message}>
+                <Campo label="CEP do consultório" error={errors.cep?.message}>
                   <input
                     {...register('cep', {
                       required: 'Obrigatório',
@@ -374,17 +374,23 @@ async function nextStep() {
                         message: 'Formato inválido. Ex.: 12345-000',
                       },
                     })}
-                    placeholder="Digite seu CEP"
+                    placeholder="CEP onde você atende"
                     maxLength={9}
                     className={inputCls}
                   />
                 </Campo>
 
-                <Campo label="Número do consultório" error={errors.nConsultorio?.message}>
+                {/* Número do ENDEREÇO (rua) do consultório: junto com o CEP, é o que o Google Maps
+                    usa para calcular a distância até o paciente na triagem. Não é número de sala. */}
+                <Campo label="Número do endereço do consultório" error={errors.nConsultorio?.message}>
                   <input
-                    {...register('nConsultorio', { required: 'Obrigatório' })}
-                    placeholder="Digite o número do seu consultório"
-                    maxLength={4}
+                    {...register('nConsultorio', {
+                      required: 'Obrigatório',
+                      pattern: { value: /^\d{1,6}$/, message: 'Só números. Ex.: 1500' },
+                    })}
+                    inputMode="numeric"
+                    placeholder="Ex.: 1500 (número da rua, não da sala)"
+                    maxLength={6}
                     className={inputCls}
                   />
                 </Campo>

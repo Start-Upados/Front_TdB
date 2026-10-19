@@ -18,7 +18,12 @@ import {
   type RespostaConvite,
 } from '../data/triagens';
 
-import type { MatchResult } from '../Utils/Geo';
+import {
+  calcularMatchLocal,
+  especialidadeNecessaria,
+  type MatchResult,
+} from '../Utils/Geo';
+import type { SugestaoDentistaBody, SugestoesTriagemBody } from '../../../Services/api';
 
 // ─── Helpers de mapeamento Backend ↔ Frontend ────
 function gerarIniciaisDoNome(nome: string): string {
@@ -64,10 +69,11 @@ function gerarRgCpfTemporario(): string {
 }
 
 function mapearTriagemBackend(t: TriagemBody): Paciente {
-  // Backend pode mandar EnderecoDTO com cidade/estado; se não vier, usa defaults
-  const dto = (t as TriagemBody & { dto?: { cidade?: string; estado?: string; uf?: string } }).dto;
-  const cidade = dto?.cidade ?? 'São Paulo';
-  const estado = (dto?.estado ?? dto?.uf ?? 'SP').toUpperCase();
+  // Endereço do CEP do paciente (ViaCEP, gravado pelo backend). EnderecoDTO usa
+  // "localidade" para a cidade e "uf" para a sigla ("estado" é o nome por extenso).
+  const dto = t.dto;
+  const cidade = dto?.localidade || 'São Paulo';
+  const estado = (dto?.uf || 'SP').toUpperCase();
   const coords = COORDS_POR_ESTADO[estado] ?? COORDS_POR_ESTADO.SP;
 
   // Mapeia prioridade (backend) → severidade (frontend) — mesmo conceito, nomes diferentes
@@ -98,8 +104,9 @@ function mapearTriagemBackend(t: TriagemBody): Paciente {
   };
 }
 
-  // O backend (DentistaBody) ainda não tem cidade/estado/slots. Esses campos ficam
-// "a confirmar" na UI até entrarem no banco (já listados no handoff do Matheus).
+// Cidade/UF/bairro do consultório vêm do endereço (ViaCEP) que o backend grava no cadastro.
+// A distância NÃO é calculada aqui: vem pronta de GET /triagem/{id}/sugestoes (Google Maps).
+// Agenda (slots) ainda não existe no banco → fica "a confirmar".
 let dentistasTriagem: Dentista[] = [];
 
 function mapearDentistaParaTriagem(b: DentistaBody): Dentista {
@@ -108,9 +115,10 @@ function mapearDentistaParaTriagem(b: DentistaBody): Dentista {
     nome: b.nome,
     iniciais: gerarIniciaisDoNome(b.nome),
     especialidade: b.especializacao ?? 'Clínico geral',
-    cidade: '',                            // backend ainda não fornece
-    estado: '',
-    coords: { lat: -23.55, lng: -46.64 },  // neutro — Opção A não usa distância
+    cidade: b.dto?.localidade ?? '',
+    estado: (b.dto?.uf ?? '').toUpperCase(),
+    bairro: b.dto?.bairro ?? '',
+    coords: { lat: -23.55, lng: -46.64 },  // não usado: a distância vem do backend
     vinculos: b.nAtendimentos ?? 0,        // proxy real (nº de atendimentos); troque por 0 se preferir
     rating: b.avaliacao ?? 0,
     slotsDisponiveis: -1,                  // -1 = sem dado de agenda (UI mostra "a confirmar")
@@ -141,7 +149,7 @@ export async function carregarDentistasTriagemReais(): Promise<{ count: number; 
    AMANHÃ: cada função vira fetch ao backend.
    - obterKpis()         vira GET    /api/triagens/kpis
    - listarFila()        vira GET    /api/triagens/fila
-   - sugerirDentistas()  vira POST   /api/triagens/{pacienteId}/matching
+   - buscarSugestoes()   JÁ USA    GET    /triagem/{idTriagem}/sugestoes (Google Maps no backend)
    - convidarDentista()  vira POST   /api/triagens/{pacienteId}/convites
    - cancelarConvite()   vira DELETE /api/triagens/{pacienteId}/convites
    - criarTriagem()      vira POST   /api/triagens
@@ -307,6 +315,7 @@ export async function carregarTriagensReais(): Promise<{
   count: number;
   fonte: 'backend' | 'mock';
 }> {
+  cacheSugestoes.clear(); // dentistas/endereços podem ter mudado desde a última visita
   try {
     await carregarDentistasTriagemReais();
     const lista = await triagemService.listar();
@@ -369,27 +378,97 @@ export function listarDentistas(): Dentista[] {
   return dentistasTriagem;
 }
 
-/** Retorna os N dentistas mais compatíveis com o paciente, ordenados por score. */
-export function sugerirDentistas(paciente: Paciente, limite = 3): SugestaoDentista[] {
-  // Opção A: sem coords/agenda reais, o score usa especialidade + rating.
-  //          distanciaKm = -1 sinaliza "sem localização" (a UI mostra "a confirmar").
-  return dentistasTriagem
-    .map((d) => {
-      let especialidadeScore: number;
-      if (d.especialidade === paciente.especialidadeNecessaria) especialidadeScore = 1;
-      else if (d.especialidade === 'Clínico geral') especialidadeScore = 0.85;
-      else especialidadeScore = 0.5;
+// ─── MATCH: dentistas sugeridos ──────────────────
+//
+// Fonte oficial: GET /triagem/{id}/sugestoes (MatchBO.java no backend)
+//   score = 60% proximidade (km de carro, Google Maps) + 30% especialidade + 10% avaliação
+// Fallback local (backend fora do ar / triagem ainda não salva no banco): mesmas regras,
+// mas sem distância → "local a confirmar".
 
-      const ratingScore = (d.rating ?? 0) / 5;              // 0..1
-      const score = 0.7 * especialidadeScore + 0.3 * ratingScore;
+export interface ResultadoSugestoes {
+  sugestoes: SugestaoDentista[];       // todas, já ordenadas (a página corta 3 / 8)
+  total: number;
+  fonte: 'backend' | 'local';
+  especialidadeConsiderada: string;
+  localizacaoPaciente: SugestoesTriagemBody['localizacaoPaciente'] | 'sem_backend';
+}
 
-      return {
-        dentista: d,
-        match: { score, scorePercent: Math.round(score * 100), distanciaKm: -1 },
-      };
-    })
-    .sort((a, b) => b.match.score - a.match.score)
-    .slice(0, limite);
+const TTL_SUGESTOES_MS = 5 * 60 * 1000;
+const cacheSugestoes = new Map<number, { em: number; resultado: ResultadoSugestoes }>();
+
+/** Match calculado no navegador (sem distância). Também serve de fallback. */
+export function sugerirDentistasLocal(paciente: Paciente): ResultadoSugestoes {
+  const necessaria = especialidadeNecessaria(paciente.especialidadeNecessaria, paciente.necessidade);
+  const sugestoes = dentistasTriagem
+    .map((d) => ({ dentista: d, match: calcularMatchLocal(necessaria, d) }))
+    .sort((a, b) => b.match.score - a.match.score || b.dentista.vinculos - a.dentista.vinculos);
+  return {
+    sugestoes,
+    total: sugestoes.length,
+    fonte: 'local',
+    especialidadeConsiderada: necessaria,
+    localizacaoPaciente: 'sem_backend',
+  };
+}
+
+function mapearSugestaoBackend(s: SugestaoDentistaBody): SugestaoDentista {
+  // Reaproveita o dentista já carregado (convidarDentista procura nessa lista)
+  let dentista = dentistasTriagem.find((d) => d.id === s.rgCpf);
+  if (!dentista) {
+    dentista = {
+      id: s.rgCpf,
+      nome: s.nome,
+      iniciais: gerarIniciaisDoNome(s.nome),
+      especialidade: s.especializacao ?? 'Clínico geral',
+      cidade: s.cidade ?? '',
+      estado: (s.uf ?? '').toUpperCase(),
+      bairro: s.bairro ?? '',
+      coords: { lat: -23.55, lng: -46.64 },
+      vinculos: s.nAtendimentos ?? 0,
+      rating: s.avaliacao ?? 0,
+      slotsDisponiveis: -1,
+    };
+    dentistasTriagem = [...dentistasTriagem, dentista];
+  }
+  return {
+    dentista,
+    match: {
+      score: s.score,
+      scorePercent: s.scorePercent,
+      distanciaKm: s.distanciaKm,
+      duracaoMin: s.duracaoMin,
+      tipoDistancia: s.tipoDistancia,
+    },
+  };
+}
+
+/**
+ * Dentistas sugeridos para o paciente, do mais compatível para o menos.
+ * Usa o backend (com distância real); se não der, cai no cálculo local.
+ */
+export async function buscarSugestoes(paciente: Paciente): Promise<ResultadoSugestoes> {
+  if (!paciente.idTriagem) return sugerirDentistasLocal(paciente);
+
+  const emCache = cacheSugestoes.get(paciente.idTriagem);
+  if (emCache && Date.now() - emCache.em < TTL_SUGESTOES_MS) return emCache.resultado;
+
+  try {
+    const r = await triagemService.sugestoes(paciente.idTriagem, 50);
+    if (!r || !Array.isArray(r.sugestoes)) throw new Error('resposta inválida');
+    const resultado: ResultadoSugestoes = {
+      sugestoes: r.sugestoes.map(mapearSugestaoBackend),
+      total: r.total ?? r.sugestoes.length,
+      fonte: 'backend',
+      especialidadeConsiderada: r.especialidadeConsiderada,
+      localizacaoPaciente: r.localizacaoPaciente,
+    };
+    cacheSugestoes.set(paciente.idTriagem, { em: Date.now(), resultado });
+    return resultado;
+  } catch (err) {
+    // 404 = backend ainda sem o endpoint (deploy pendente) ou triagem apagada
+    console.warn('[triagens] match do backend indisponível, usando cálculo local:', err);
+    return sugerirDentistasLocal(paciente);
+  }
 }
 
 /** Envia convite de um dentista para um paciente. Paciente passa pra status 'convite-enviado'. */

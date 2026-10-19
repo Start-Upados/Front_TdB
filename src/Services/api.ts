@@ -57,10 +57,20 @@ export interface SolicitacaoBody extends UsuarioBase {
   criadaEm?:    string
 }
  
+// ─── ENDEREÇO (EnderecoDTO.java) — preenchido pelo backend via ViaCEP ──
+export interface EnderecoBody {
+  logradouro?: string
+  bairro?:     string
+  localidade?: string   // cidade
+  uf?:         string
+  estado?:     string
+}
+
 // ─── DENTISTA (Dentista.java) ─────────────────
 export interface DentistaBody extends UsuarioBase {
   cep:            string
-  nConsultorio:   number
+  nConsultorio:   number   // número do endereço do consultório (usado na distância do match)
+  dto?:           EnderecoBody  // só leitura (GET)
   cro:            string
   nAtendimentos:  number
   especializacao: string
@@ -142,6 +152,35 @@ export interface TriagemBody {
   observacaoAdmin?:          string
   dataNasc?:                 string   // 'YYYY-MM-DD' — o backend grava em data_nasc
   dataEntradaFila?:          string | number[]  // gerado pelo backend (LocalDate)
+  dto?:                      EnderecoBody       // só leitura (GET) — endereço do CEP do paciente
+}
+
+// ─── MATCH TRIAGEM x DENTISTA — GET /triagem/{id}/sugestoes ──
+export interface SugestaoDentistaBody {
+  rgCpf:              string
+  nome:               string
+  especializacao?:    string
+  nAtendimentos?:     number
+  avaliacao?:         number
+  bairro?:            string
+  cidade?:            string
+  uf?:                string
+  distanciaKm:        number   // -1 = não calculada ("local a confirmar")
+  duracaoMin:         number   // -1 = sem rota de carro
+  tipoDistancia:      'rota' | 'linha_reta' | 'indisponivel'
+  scoreProximidade:   number
+  scoreEspecialidade: number
+  scoreAvaliacao:     number
+  score:              number   // 0..1
+  scorePercent:       number
+}
+
+export interface SugestoesTriagemBody {
+  idTriagem:                number
+  especialidadeConsiderada: string
+  localizacaoPaciente:      'ok' | 'nao_encontrada' | 'maps_desativado'
+  total:                    number
+  sugestoes:                SugestaoDentistaBody[]
 }
 
 // ─── CONVITE (Convite.java) — para dentistas em triagens ──
@@ -374,6 +413,10 @@ export const triagemService = {
     request<unknown>(`/triagem/${idTriagem}`, 'PUT', body),
   deletar: (idTriagem: number) =>
     request<unknown>(`/triagem/${idTriagem}`, 'DELETE'),
+
+  // ─── Match: dentistas sugeridos (distância Google Maps + especialidade) ─
+  sugestoes: (idTriagem: number, limite = 50) =>
+    request<SugestoesTriagemBody>(`/triagem/${idTriagem}/sugestoes`, 'GET', undefined, { limite }),
 
   // ─── Convites a dentistas ───────────────────
   convidar: (idTriagem: number, convite: ConviteBody) =>
