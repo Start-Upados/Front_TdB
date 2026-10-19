@@ -49,6 +49,7 @@ export interface MensagemCanal {
 export interface ResultadoResposta {
   gravada: boolean;
   entregue: boolean;
+  motivo?: string;   // por que não entregou (n8n/Meta), quando o backend informa
 }
 
 /** Cabeçalhos comuns, com o token de login do painel. */

@@ -218,9 +218,13 @@ export default function CanaisPanel() {
         toast.success('Mensagem enviada', { description: `Via ${selecionada.canal === 'instagram' ? 'Instagram' : 'WhatsApp'}` });
       } else {
         toast.warning('Mensagem gravada, mas não entregue', {
-          description: selecionada.canal === 'instagram'
-            ? 'O Instagram só aceita respostas até 24h após a última mensagem da pessoa.'
-            : 'O canal recusou o envio. Tente novamente mais tarde.',
+          // Motivo real vindo do backend (n8n/Meta); sem ele, o aviso genérico
+          description: r.motivo
+            ? `Motivo: ${r.motivo}`
+            : selecionada.canal === 'instagram'
+              ? 'O Instagram só aceita respostas até 24h após a última mensagem da pessoa.'
+              : 'O canal recusou o envio. Tente novamente mais tarde.',
+          duration: 12000,
         });
       }
       setResposta('');
