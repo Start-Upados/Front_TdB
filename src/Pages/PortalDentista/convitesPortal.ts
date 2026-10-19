@@ -6,6 +6,7 @@
  * direto no convite (POST /triagem/convite/{id}/aceitar | recusar).
  */
 import { triagemService, ErroHttp, type ConviteBody } from '../../Services/api'
+import { normalizarSexo, programaPorPerfil } from '../Dashboard/services/programa'
 
 export type PrioridadeConvite = 'Alta' | 'Media' | 'Baixa'
 
@@ -19,7 +20,8 @@ export interface ConvitePortal {
   uf:            string
   programa:      string
   prioridade?:   PrioridadeConvite
-  especialidade: string
+  especialidade: string   // tratamento indicado pela triagem ('' quando é o padrão "Clínico geral")
+  necessidade?:  string   // o que a paciente pediu na solicitação
   diasNaFila?:   number
   mensagem?:     string
 }
@@ -63,19 +65,32 @@ function diasDesde(data?: string): number | undefined {
   return dias >= 0 ? dias : undefined
 }
 
+/** Mulher = Apolônias do Bem; jovem homem 11–17 = Dentista do Bem (mesma regra da Central). */
+function programaDoConvite(c: ConviteBody, idade?: number): string {
+  if (normalizarSexo(c.sexo)) return programaPorPerfil(c.sexo, idade, c.protocolo)
+  const gravado = normalizarPrograma(c.programa)
+  // Dentista do Bem não atende adulto: triagem antiga gravada errado vira Apolônias
+  if (gravado === 'Dentista do Bem' && idade !== undefined && idade >= 18) return 'Apolônias do Bem'
+  return gravado || programaPorPerfil(undefined, idade, c.protocolo)
+}
+
 function mapear(c: ConviteBody): ConvitePortal {
+  const idade = idadeDe(c.dataNasc)
+  const especialidade = (c.especialidade ?? '').trim()
   return {
     idConvite:     c.idConvite ?? 0,
     idTriagem:     c.idTriagem ?? 0,
     protocolo:     c.protocolo,
     // Backend sem o resumo da triagem ainda: mostra o nº da triagem em vez de inventar dados
     pacienteNome:  c.pacienteNome?.trim() || `Paciente da triagem #${c.idTriagem ?? '?'}`,
-    idade:         idadeDe(c.dataNasc),
+    idade,
     cidade:        c.cidade ?? '',
     uf:            c.uf ?? '',
-    programa:      normalizarPrograma(c.programa),
+    programa:      programaDoConvite(c, idade),
     prioridade:    normalizarPrioridade(c.prioridade),
-    especialidade: c.especialidade ?? '',
+    // "Clínico geral" é o padrão gravado na aprovação: não informa nada, então não mostra
+    especialidade: semAcento(especialidade) === 'clinico geral' ? '' : especialidade,
+    necessidade:   c.necessidade?.trim() || undefined,
     diasNaFila:    diasDesde(c.dataEntradaFila),
     mensagem:      c.mensagem,
   }

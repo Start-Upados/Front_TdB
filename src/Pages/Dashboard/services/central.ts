@@ -1,5 +1,6 @@
 import { solicitacaoService, triagemService, type SolicitacaoBody } from '../../../Services/api';
 import { criarTriagem, type NovaTriagemInput } from './triagens';
+import { normalizarSexo, programaPorPerfil } from './programa';
 
 import {
   type Solicitacao, type KpiData, type Prioridade,
@@ -364,6 +365,11 @@ export async function carregarSolicitacoesReais(): Promise<{
         return {
           ...local,
           protocolo:         b.protocolo,
+          // perfil vem sempre do banco (o cache antigo podia ter o programa errado)
+          idade:             b.idade,
+          sexo:              b.sexo,
+          tipo:              b.tipo,
+          programa:          b.programa,
           status:            b.status,
           motivoFechamento:  b.motivoFechamento,
           infoRecusa:        local.infoRecusa ?? b.infoRecusa,
@@ -440,9 +446,13 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
   const ts = body.criadaEm && /^\d{4}-\d{2}-\d{2}/.test(body.criadaEm)
     ? new Date(body.criadaEm.slice(0, 10) + 'T12:00:00').toISOString()
     : new Date().toISOString();
-  const ehApolonia = body.protocolo?.startsWith('APO-') ?? false;
+  // Programa pelo perfil (sexo/idade), não só pelo prefixo do protocolo:
+  // mulher = Apolônias do Bem; jovem homem 11–17 = Dentista do Bem
+  const idade = calcularIdade(body.dataNasc);
+  const sexo = normalizarSexo(body.sexo);
+  const programa: Programa = programaPorPerfil(body.sexo, idade, body.protocolo);
+  const ehApolonia = programa === 'Apolônias do Bem';
   const tipo = ehApolonia ? 'Apolônia do Bem' : 'Beneficiário';
-  const programa: Programa = ehApolonia ? 'Apolônias do Bem' : 'Dentista do Bem';
 
   // Primeira mensagem do thread = necessidade + descrição (se houver)
   const textoInicial = body.descricao && body.descricao.trim()
@@ -462,7 +472,8 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
     protocolo: body.protocolo,                         
     nome: body.nome,
     iniciais: gerarIniciais(body.nome),
-    idade: calcularIdade(body.dataNasc),
+    idade,
+    sexo,
     cidade: undefined,
     telefone: body.telefone,                       // backend ainda não tem campo cidade
     canal: 'Site',                           // formulários públicos vêm do site

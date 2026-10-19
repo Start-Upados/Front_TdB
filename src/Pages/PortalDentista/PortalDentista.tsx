@@ -524,9 +524,14 @@ function SecaoConvitesPendentes({ rgCpf }: { rgCpf: string }) {
                 </div>
 
                 <div className="text-[12px] text-[#475569] mb-3 space-y-1">
+                  {c.necessidade && (
+                    <p>
+                      <span className="font-semibold">Necessidade:</span> {c.necessidade}
+                    </p>
+                  )}
                   {c.especialidade && (
                     <p>
-                      <span className="font-semibold">Especialidade:</span> {c.especialidade}
+                      <span className="font-semibold">Tratamento indicado:</span> {c.especialidade}
                     </p>
                   )}
                   {c.protocolo && (
@@ -632,7 +637,7 @@ function AceitarConviteModal({
           <div className="bg-[#F8FAFC] rounded-xl p-3 text-[12px] text-[#475569] border border-[#E2E8F0]">
             <p className="font-semibold text-[#0F172A]">{convite.programa || 'Atendimento'}</p>
             <p className="mt-1">
-              {[convite.especialidade, [convite.cidade, convite.uf].filter(Boolean).join('-')].filter(Boolean).join(' · ') || 'Detalhes com a equipe TdB'}
+              {[convite.necessidade || convite.especialidade, [convite.cidade, convite.uf].filter(Boolean).join('-')].filter(Boolean).join(' · ') || 'Detalhes com a equipe TdB'}
             </p>
           </div>
 

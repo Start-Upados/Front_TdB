@@ -206,16 +206,15 @@ export default function CentralPage() {
     if (!selected) return;
     setReclassificando(true);
     try {
-      const programa =
-        selected.tipo.includes('Voluntário') ? 'Voluntariado' :
-        (selected.idade !== undefined && selected.idade < 18) ? 'Dentista do Bem' :
-        selected.tipo.includes('Doador') ? 'Doações' : 'Apolônias do Bem';
+      // Programa já vem certo do cadastro (mulher = Apolônias; jovem homem 11–17 = Dentista do Bem)
+      const programa = selected.programa;
 
       const textoCompleto = selected.mensagens.filter((m) => m.autor === 'paciente').map((m) => m.texto).join(' ');
 
       const resultado = await classificarPrioridade({
         texto: textoCompleto,
         idade: selected.idade,
+        sexo: selected.sexo,
         canal: selected.canal,
         programa,
         tipo: selected.tipo,
@@ -738,7 +737,14 @@ function DetalheConversa({
                   <FeatureRow label="Idade" value={selected.featuresUsadas.idade} prioridade={selected.prioridade} />
                 )}
                 {selected.featuresUsadas.programa && (
-                  <FeatureRow label="Programa" value={selected.featuresUsadas.programa} prioridade={selected.prioridade} />
+                  <FeatureRow
+                    label="Programa"
+                    // nome do programa sempre do cadastro (classificação antiga podia ter gravado o errado)
+                    value={selected.programa
+                      ? [selected.programa, ...selected.featuresUsadas.programa.split(' · ').slice(1)].join(' · ')
+                      : selected.featuresUsadas.programa}
+                    prioridade={selected.prioridade}
+                  />
                 )}
                 {selected.featuresUsadas.canal && (
                   <FeatureRow label="Canal" value={selected.featuresUsadas.canal} prioridade={selected.prioridade} />

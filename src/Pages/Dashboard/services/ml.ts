@@ -1,4 +1,5 @@
 import type { Prioridade } from '../data/central';
+import { normalizarSexo, programaPorPerfil } from './programa';
 
 const ML_API_URL = import.meta.env.VITE_ML_API_URL ?? 'https://ml-tdb.onrender.com';
 const ML_TIMEOUT_MS = 60_000; // Render free tier tem cold start ~30-50s
@@ -35,6 +36,7 @@ interface MLResponse {
 export interface MLInput {
   texto: string;
   idade?: number;
+  sexo?: string;
   canal: string;
   programa?: string;
   tipo?: string;
@@ -57,14 +59,16 @@ function mapearPayload(input: MLInput): MLPayload {
   const t = input.texto.toLowerCase();
   const idade = input.idade ?? 30;
 
-  // ── Programa ──
-  let programa: ProgramaML;
-  if (idade < 18) programa = 'dentista_do_bem';
-  else if (input.tipo?.includes('Beneficiária')) programa = 'apolonas_do_bem';
-  else programa = 'dentista_do_bem';
+  // ── Programa ── (mulher = Apolônias; jovem homem 11–17 = Dentista do Bem)
+  const nomePrograma =
+    input.programa === 'Apolônias do Bem' || input.programa === 'Dentista do Bem'
+      ? input.programa
+      : programaPorPerfil(input.sexo, input.idade);
+  const programa: ProgramaML = nomePrograma === 'Apolônias do Bem' ? 'apolonas_do_bem' : 'dentista_do_bem';
 
-  // ── Sexo ── (heurística simples, default feminino pra Apolônias)
-  const sexo: SexoML = programa === 'apolonas_do_bem' ? 'feminino' : 'feminino';
+  // ── Sexo ── (do cadastro; sem ele, segue o programa)
+  const sexo: SexoML =
+    normalizarSexo(input.sexo) ?? (programa === 'apolonas_do_bem' ? 'feminino' : 'masculino');
 
   // ── Tipo de violência (palavras-chave) ──
   let tipo_violencia: ViolenciaML = 'nenhuma';

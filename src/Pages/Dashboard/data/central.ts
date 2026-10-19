@@ -85,6 +85,7 @@ export interface Solicitacao {
   nome: string;
   iniciais: string;
   idade?: number;
+  sexo?: 'feminino' | 'masculino';
   cidade?: string;
   telefone?: string;
   canal: Canal;

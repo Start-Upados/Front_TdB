@@ -9,6 +9,7 @@ import {
 import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
 import SessionWarning from '../../Components/SessionWarning/SessionWarning'
 import { beneficiarioService } from '../../Services/api'
+import { carregarAtendimentosDoPaciente, dadosDoTratamento } from './atendimentosPaciente'
 // NOVO ↓ — ajusta o caminho se a pasta do seu Dashboard for diferente
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
@@ -739,8 +740,10 @@ const PortalBeneficiario = () => {
         const dados = await beneficiarioService.buscar(cpfSalvo!)
         console.log('DADOS API:', dados)
         if (dados) {
-          console.log('DADOS RECEBIDOS:', dados);
-          setPaciente(mapearBackend(dados as unknown as Record<string, string>))
+          const base = mapearBackend(dados as unknown as Record<string, string>)
+          // Consulta marcada pela dentista (aceite do convite) e histórico — do backend
+          const tratamento = dadosDoTratamento(await carregarAtendimentosDoPaciente(cpfSalvo!))
+          setPaciente(tratamento ? { ...base, ...tratamento } : base)
           return
         }
       } catch {

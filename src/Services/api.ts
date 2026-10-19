@@ -164,6 +164,8 @@ export interface ConviteBody {
   uf?:               string
   dataNasc?:         string   // "YYYY-MM-DD"
   dataEntradaFila?:  string   // "YYYY-MM-DD"
+  sexo?:             string   // da solicitação de origem (decide o programa)
+  necessidade?:      string   // o que a paciente pediu
 }
 
 // ─── ATENDIMENTO (Atendimento.java) — gerado ao aceitar convite ──
@@ -185,6 +187,7 @@ export interface AtendimentoBody {
   ultimoProcedimento?: string
   criadoEm?:           string
   ultimaAtualizacao?:  string
+  localAtendimento?:   string   // endereço do consultório (só no portal do paciente)
 }
 
 // ─── MENSAGEM (Mensagem.java) ─────────────────
@@ -402,6 +405,8 @@ export const atendimentoService = {
     request<AtendimentoBody[]>(`/atendimento/data/${data}`),
   listarPorDentista: (dentistaRgCpf: string) =>
     request<AtendimentoBody[]>(`/atendimento/dentista/${encodeURIComponent(dentistaRgCpf)}`),
+  listarPorPaciente: (pacienteRgCpf: string) =>
+    request<AtendimentoBody[]>(`/atendimento/paciente/${encodeURIComponent(pacienteRgCpf)}`),
   alterar: (idAtendimento: number, body: Partial<AtendimentoBody>) =>
     request<unknown>(`/atendimento/${idAtendimento}`, 'PUT', body),
   deletar: (idAtendimento: number) =>
