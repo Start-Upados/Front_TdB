@@ -4,7 +4,7 @@ import {
   Activity, Calendar, MapPin, ClipboardList, Info,
   Stethoscope, LogOut, MessageSquare,
   Check, ArrowRight, Circle,
-  Send, Inbox,  // ← NOVO
+  Send, Inbox, Copy,  // ← NOVO (Copy: protocolo)
 } from 'lucide-react'
 import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
 import SessionWarning from '../../Components/SessionWarning/SessionWarning'
@@ -48,6 +48,7 @@ interface Paciente {
   proximaData:   string
   proximaHora:   string
   historico:     Consulta[]
+  protocolos?:   string[]   // do backend (atendimentos); vazio enquanto não há consulta marcada
 }
 
 // ─── MOCK DATA (PRESERVADO — todos os 10) ─────────
@@ -550,6 +551,53 @@ function SecaoMutiroes({ paciente }: { paciente: Paciente }) {
   )
 }
 
+// ─── PROTOCOLO(S) NO TOPO — o paciente informa ao dentista para validar a consulta ──
+function ProtocolosPaciente({ protocolos }: { protocolos: string[] }) {
+  const [copiado, setCopiado] = useState<string | null>(null)
+  if (protocolos.length === 0) return null
+
+  async function copiar(p: string) {
+    try {
+      await navigator.clipboard.writeText(p)
+      setCopiado(p)
+      setTimeout(() => setCopiado((atual) => (atual === p ? null : atual)), 2000)
+    } catch { /* navegador sem permissão: o número continua visível para copiar à mão */ }
+  }
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]/70">
+        {protocolos.length === 1 ? 'Seu protocolo' : 'Seus protocolos'}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {protocolos.map((p, i) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => copiar(p)}
+            title="Copiar protocolo"
+            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[13px] font-semibold tracking-wide transition-colors cursor-pointer ${
+              i === 0
+                ? 'border-[#E88407]/40 bg-white text-[#9A3412] hover:bg-[#FFF7ED]'
+                : 'border-orange-200 bg-white/60 text-[#9A3412]/80 hover:bg-white'
+            }`}
+          >
+            {p}
+            {copiado === p
+              ? <Check size={13} strokeWidth={2.5} className="text-green-600" />
+              : <Copy size={13} strokeWidth={2} className="opacity-60" />}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-[#9A3412]/70">
+        {protocolos.length === 1
+          ? 'Informe este número ao dentista no dia da consulta.'
+          : 'Informe ao dentista o protocolo da consulta. O primeiro é o do tratamento atual.'}
+      </p>
+    </div>
+  )
+}
+
 // ─── PAINEL DO PACIENTE (PRESERVADO + 1 linha nova) ──
 function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: () => void }) {
   // Progresso = só sessões que o dentista FINALIZOU (status 'concluido' no backend).
@@ -573,6 +621,7 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
           <p className="text-[#9A3412]/80 text-[14px]">
             {paciente.programa} · {paciente.cidade || 'Turma do Bem'}
           </p>
+          <ProtocolosPaciente protocolos={paciente.protocolos ?? []} />
         </div>
       </header>
 

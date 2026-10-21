@@ -685,18 +685,16 @@ function AceitarConviteModal({
   onConfirmar: (dados: DadosAceite) => Promise<void>
   processando: boolean
 }) {
-  const [data, setData] = useState('')
+  // Data sugerida: amanhã (data LOCAL — toISOString virava o dia depois das 21h).
+  // Hora sem padrão: o dentista escolhe o horário real (antes vinha 09:00 e ficava esse).
+  const [data, setData] = useState(() => {
+    const amanha = new Date()
+    amanha.setDate(amanha.getDate() + 1)
+    return `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, '0')}-${String(amanha.getDate()).padStart(2, '0')}`
+  })
   const [hora, setHora] = useState('')
   const [duracao, setDuracao] = useState(60)
   const [observacoes, setObservacoes] = useState('')
-
-  // Default: amanhã às 09:00
-  useEffect(() => {
-    const amanha = new Date()
-    amanha.setDate(amanha.getDate() + 1)
-    setData(amanha.toISOString().slice(0, 10))
-    setHora('09:00')
-  }, [])
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()

@@ -17,6 +17,7 @@ export interface DadosAtendimento {
   proximaData:  string
   proximaHora:  string
   historico:    ConsultaValidacao[]
+  protocolos:   string[]   // todos os protocolos do paciente; o do tratamento atual vem primeiro
 }
 
 function semAcento(v?: string): string {
@@ -58,6 +59,10 @@ export function dadosDoTratamento(lista: AtendimentoBody[]): DadosAtendimento | 
     : validos
 
   const p = montarPaciente(protocolo, doProtocolo)
+
+  // Cada solicitação gera um protocolo: lista todos, sem repetir, o atual primeiro
+  const protocolos = [protocolo, ...lista.map((a) => (a.protocolo ?? '').trim().toUpperCase())]
+    .filter((v, i, arr) => !!v && arr.indexOf(v) === i)
   const proximo = p.historico.find((c) => c.status === 'proximo')
   const especialidade = (referencia.especialidade ?? '').trim()
   const procedimento = !especialidade || semAcento(especialidade) === 'clinico geral'
@@ -74,6 +79,7 @@ export function dadosDoTratamento(lista: AtendimentoBody[]): DadosAtendimento | 
     procedimento,
     proximaData:  proximo?.data ?? 'Sem consulta marcada',
     proximaHora:  proximo?.hora ?? '—',
+    protocolos,
     historico:    p.historico.map((c) => ({ ...c, procedimento: c.procedimento && semAcento(c.procedimento) !== 'clinico geral' ? c.procedimento : 'Consulta odontológica' })),
   }
 }

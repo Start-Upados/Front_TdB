@@ -85,6 +85,12 @@ function rotuloStatus(s?: string): string {
   return 'Agendado'
 }
 
+/** "Clínico geral" é o padrão gravado no aceite: para quem lê, é uma consulta odontológica. */
+function nomeProcedimento(especialidade?: string): string {
+  const e = (especialidade ?? '').trim()
+  return !e || semAcento(e) === 'clinico geral' ? 'Consulta odontológica' : e
+}
+
 export function montarPaciente(protocolo: string, doProtocolo: AtendimentoBody[]): PacienteValidacao {
   const validos = doProtocolo
     .filter((a) => !DESCARTADO.includes(semAcento(a.status)))
@@ -101,7 +107,7 @@ export function montarPaciente(protocolo: string, doProtocolo: AtendimentoBody[]
     idAtendimento: a.idAtendimento ?? 0,
     data:          quando.data,
     hora:          quando.hora,
-    procedimento:  a.especialidade || 'Atendimento',
+    procedimento:  nomeProcedimento(a.especialidade),
     status:        CONCLUIDO.includes(semAcento(a.status)) ? 'concluido'
                  : a === aberto?.a                          ? 'proximo'
                  :                                            'agendado',
@@ -115,7 +121,7 @@ export function montarPaciente(protocolo: string, doProtocolo: AtendimentoBody[]
     status:        aberto ? rotuloStatus(aberto.a.status) : 'Tratamento concluído',
     sessaoAtual:   Math.min(concluidas + (aberto ? 1 : 0), totalSessoes),
     totalSessoes,
-    procedimento:  referencia?.especialidade || 'Atendimento',
+    procedimento:  nomeProcedimento(referencia?.especialidade),
     historico,
     idAtendimentoAberto: aberto?.a.idAtendimento || undefined,
   }
