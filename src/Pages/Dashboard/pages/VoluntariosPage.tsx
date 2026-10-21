@@ -21,6 +21,7 @@ import {
   listarEspecialidades,
   obterDistribuicaoRegional,
   carregarDentistasReais,
+  diasDesdeCadastro,
 } from '../services/voluntarios';
 import type { Regiao } from '../data/dentistas';
 
@@ -153,16 +154,20 @@ export default function VoluntariosPage() {
                 </div>
               </div>
 
-              <span className={`text-xs whitespace-nowrap ${
-                d.ultimaAtividadeDias >= 5
-                  ? 'text-warning'
-                  : 'text-subtle'
-              }`}>
-                há {d.ultimaAtividadeDias}{' '}
-                {d.ultimaAtividadeDias === 1
-                  ? 'dia'
-                  : 'dias'}
-              </span>
+              {(() => {
+                // Espera real: dias desde o cadastro do voluntário
+                const dias = diasDesdeCadastro(d);
+                return (
+                  <span
+                    className={`text-xs whitespace-nowrap ${dias !== null && dias >= 5 ? 'text-warning' : 'text-subtle'}`}
+                    title={d.voluntariaDesde ? `Cadastro em ${d.voluntariaDesde.split('-').reverse().join('/')}` : undefined}
+                  >
+                    {dias === null ? 'sem data de cadastro'
+                      : dias === 0 ? 'cadastro hoje'
+                      : `há ${dias} ${dias === 1 ? 'dia' : 'dias'}`}
+                  </span>
+                );
+              })()}
 
               <button
                 onClick={() => navigate(`/dashboard/voluntarios/${d.id}`)}

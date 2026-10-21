@@ -76,6 +76,10 @@ export interface DentistaBody extends UsuarioBase {
   especializacao: string
   status:         string
   avaliacao:      number
+  // ─── preenchidos pelo backend (GET) — LocalDate vem como "2026-10-17" ou [2026,10,17]
+  voluntarioDesde?: string | number[]   // data do cadastro
+  ultimaAtividade?: string | number[]
+  qtdAvaliacoes?:   number
 }
  
 // ─── FUNCIONÁRIO (Funcionario.java) ───────────

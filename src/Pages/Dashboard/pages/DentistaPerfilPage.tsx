@@ -24,6 +24,14 @@ import { listarProximosPorDentista, carregarAtendimentosReais, contarAtendimento
 import type { DentistaCompleto } from '../data/dentistas';
 import type { Atendimento } from '../data/atendimentos';
 
+/** "2026-10-17" → "outubro de 2026"; outros textos passam como estão. */
+function formatarDesde(v: string): string {
+  const m = (v ?? '').match(/^(\d{4})-(\d{2})/);
+  if (!m) return v || '—';
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${meses[Number(m[2]) - 1]} de ${m[1]}`;
+}
+
 
 type AcaoModal = 'contatar' | 'agenda' | 'suspender' | 'reativar' | 'aprovar' | 'rejeitar'
   | 'ver-paciente' | 'todos-pacientes' | 'configurar-disponibilidade' | null;
@@ -198,7 +206,7 @@ export default function DentistaPerfilPage() {
 
               {!isPendente && (
                 <p className="text-xs text-subtle mt-1.5">
-                  Voluntária desde {dentista.voluntariaDesde}
+                  Voluntária desde {formatarDesde(dentista.voluntariaDesde)}
                   {dentista.anosNaRede > 0 && ` · ${dentista.anosNaRede} anos de rede`}
                 </p>
               )}

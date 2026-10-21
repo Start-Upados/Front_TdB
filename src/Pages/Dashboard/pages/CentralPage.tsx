@@ -19,8 +19,9 @@ import {
   atualizarClassificacao, arquivarSolicitacao,
   responderSolicitacao, encaminharSolicitacao, promoverParaTriagem,
   resolverSolicitacao, reabrirSolicitacao, carregarSolicitacoesReais,
-  registrarTriagemOral, aprovarSolicitacao, recusarSolicitacao,
+  registrarTriagemOral, aprovarSolicitacao, recusarSolicitacao, tempoNaFila,
 } from '../services/central';
+import { useAgora } from '../Utils/tempo';
 import { classificarPrioridade } from '../services/ml';
 import type { Canal, Prioridade, Solicitacao, MotivoFechamento,
   TriagemOral, InfoRecusa, MotivoRecusa,
@@ -114,6 +115,7 @@ type AcaoModal = 'encaminhar' | 'arquivar' | 'resolver' | null;
 export default function CentralPage() {
   const navigate = useNavigate();
   const [versao, setVersao] = useState(0);
+  const agora = useAgora(30_000);   // tempo na fila atualiza sozinho
   const [vista, setVista] = useState<Vista>('ativas');
   const [modo, setModo] = useState<ModoCentral>('solicitacoes');
 
@@ -499,7 +501,7 @@ if (modo === 'canais') {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                       <p className="truncate text-sm font-medium text-ink md:text-base">{item.nome}</p>
-                      <span className="shrink-0 text-xs text-subtle">{item.data}</span>
+                      <span className="shrink-0 text-xs text-subtle" title="Tempo na fila desde o cadastro">{tempoNaFila(item, agora)}</span>
                     </div>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted md:text-sm">{item.preview}</p>
 
@@ -660,6 +662,7 @@ function DetalheConversa({
   onAbrirTriagem: () => void;
 }) {
   const ChannelIcon = CHANNEL_ICONS[selected.canal];
+  const agora = useAgora(30_000);
   const isFechada = selected.status === 'fechada';
   const motivoCfg = selected.motivoFechamento ? configMotivo(selected.motivoFechamento) : null;
 
@@ -695,7 +698,9 @@ function DetalheConversa({
             )}
           </div>
           <div className="sm:text-right">
-            <p className="text-xs text-subtle">{selected.data} atrás</p>
+            <p className="text-xs text-subtle">
+              {(() => { const t = tempoNaFila(selected, agora); return t === 'agora' ? 'chegou agora' : `há ${t} na fila`; })()}
+            </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-subtle sm:justify-end">
               via {selected.canal}
               <ChannelIcon className="h-3.5 w-3.5" strokeWidth={2} />

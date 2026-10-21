@@ -94,6 +94,7 @@ export interface Solicitacao {
   preview: string;
   mensagens: Mensagem[];
   data: string;
+  criadaEm?: string;            // quando a solicitação foi CADASTRADA (ISO) — tempo real na fila
   ultimaAtualizacao: string;
   prioridade: Prioridade;
   score: number;

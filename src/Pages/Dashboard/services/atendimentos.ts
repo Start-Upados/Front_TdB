@@ -9,6 +9,7 @@ import {
   type StatusAtendimento,
 } from '../data/atendimentos';
 import { atendimentoService, type AtendimentoBody } from '../../../Services/api';
+import { lerDataHora, temHora } from '../Utils/tempo';
 
 
 // ─── Persistência localStorage ────────────────────
@@ -50,6 +51,49 @@ function hidratarContagens(): Record<string, number> | null {
   } catch {
     return null;
   }
+}
+
+// ─── Início real dos atendimentos (cronômetro) ──────
+// O backend grava a hora em que o status mudou (ultima_atualizacao); em "em-andamento" é o início.
+// Enquanto o backend novo não estiver no ar, guarda aqui a hora do clique em "Iniciar".
+const LS_INICIOS = 'tdb_atendimentos_inicio';
+
+function lerInicios(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(LS_INICIOS) ?? '{}') as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function gravarInicio(id: string, iso: string | null): void {
+  try {
+    const mapa = lerInicios();
+    if (iso) mapa[id] = iso; else delete mapa[id];
+    localStorage.setItem(LS_INICIOS, JSON.stringify(mapa));
+  } catch { /* sem storage: o cronômetro parte de quando a tela abriu */ }
+}
+
+/** Início vindo do backend só vale se tiver hora e for plausível (até 24h atrás). */
+function inicioDoBackend(raw?: string): string | undefined {
+  if (!temHora(raw)) return undefined;
+  const d = lerDataHora(raw);
+  if (!d) return undefined;
+  const diff = Date.now() - d.getTime();
+  return diff >= -5 * 60_000 && diff <= 24 * 3_600_000 ? d.toISOString() : undefined;
+}
+
+/**
+ * Hora em que o atendimento começou de fato. Sem registro (atendimento iniciado em outro
+ * aparelho antes da atualização), passa a contar a partir de agora e guarda.
+ */
+export function inicioRealDe(a: Atendimento): Date {
+  const iso = a.inicioReal ?? lerInicios()[a.id];
+  const d = iso ? new Date(iso) : null;
+  if (d && !isNaN(d.getTime())) return d;
+  const agora = new Date();
+  gravarInicio(a.id, agora.toISOString());
+  return agora;
 }
 
 let atendimentos: Atendimento[] = hidratarAtendimentos() ?? [];
@@ -124,6 +168,9 @@ function mapearAtendimentoBackend(body: AtendimentoBody): Atendimento {
     local: '',                                        // backend não armazena
     programa: normalizarPrograma(body.programa),
     status: statusBackendParaFront(body.status),
+    inicioReal: statusBackendParaFront(body.status) === 'em-andamento'
+      ? inicioDoBackend(body.ultimaAtualizacao) ?? lerInicios()[body.idAtendimento ? `b${body.idAtendimento}` : '']
+      : undefined,
     observacoesPre: body.status !== 'concluido' ? body.observacoes : undefined,
     observacoesPos: body.status === 'concluido' ? body.observacoes : undefined,
   };
@@ -240,8 +287,10 @@ export async function iniciarAtendimento(id: string): Promise<void> {
       console.warn('[atendimentos] erro ao iniciar no backend:', err);
     }
   }
+  const inicio = new Date().toISOString();
+  gravarInicio(id, inicio);
   atendimentos = atendimentos.map((a) =>
-    a.id === id ? { ...a, status: 'em-andamento' as const } : a,
+    a.id === id ? { ...a, status: 'em-andamento' as const, inicioReal: inicio } : a,
   );
   persistir();
 }
@@ -264,8 +313,9 @@ export async function finalizarAtendimento(
       console.warn('[atendimentos] erro ao finalizar no backend:', err);
     }
   }
+  gravarInicio(id, null);
   atendimentos = atendimentos.map((a) =>
-    a.id === id ? { ...a, status: 'realizado' as const, observacoesPos } : a,
+    a.id === id ? { ...a, status: 'realizado' as const, observacoesPos, inicioReal: undefined } : a,
   );
   persistir();
 }

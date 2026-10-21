@@ -6,6 +6,15 @@ import {
 } from '../data/dentistas';
 
 import { dentistaService, type DentistaBody } from '../../../Services/api';
+import { diasDesde } from '../Utils/tempo';
+
+/** LocalDate do backend ("2026-10-17" ou [2026, 10, 17]) → "2026-10-17"; '' se não vier. */
+function dataIso(v?: string | number[]): string {
+  if (Array.isArray(v) && v.length >= 3) {
+    return `${v[0]}-${String(v[1]).padStart(2, '0')}-${String(v[2]).padStart(2, '0')}`;
+  }
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : '';
+}
 
 // Só voluntários cadastrados no banco — nada de dados de exemplo.
 let dentistas: DentistaCompleto[] = [];
@@ -84,11 +93,12 @@ function mapearDentistaBackend(b: DentistaBody): DentistaCompleto {
     vinculosAtivos: 0,
     atendimentosNoAno: b.nAtendimentos ?? 0,
     rating: b.avaliacao ?? 0,
-    ratingCount: 0,
+    ratingCount: b.qtdAvaliacoes ?? 0,
     taxaComparecimento: 0,
-    ultimaAtividadeDias: 0,
-    voluntariaDesde: '',
-    anosNaRede: 0,
+    // Datas reais do banco: cadastro (voluntarioDesde) e última atividade
+    ultimaAtividadeDias: diasDesde(dataIso(b.ultimaAtividade)) ?? 0,
+    voluntariaDesde: dataIso(b.voluntarioDesde),
+    anosNaRede: Math.floor((diasDesde(dataIso(b.voluntarioDesde)) ?? 0) / 365),
     programas: [],
     pacientesAtivos: [],
     disponibilidadeSemana: [],
@@ -146,11 +156,14 @@ export function contatoDoDentista(d: DentistaCompleto): ContatoDentista {
   };
 }
 
-function mesAtual(): string {
-  const meses = ['janeiro','fevereiro','março','abril','maio','junho',
-                 'julho','agosto','setembro','outubro','novembro','dezembro'];
+function hojeIso(): string {
   const d = new Date();
-  return `${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Dias desde o cadastro (tempo real de espera de quem está pendente). null = sem data. */
+export function diasDesdeCadastro(d: DentistaCompleto): number | null {
+  return diasDesde(d.voluntariaDesde);
 }
 
 export function listarDentistas(): DentistaCompleto[] {
@@ -196,7 +209,7 @@ export function obterKpis(): KpiData[] {
   const ativos    = todos.filter((d) => d.status === 'Ativa').length;
   const inativos  = todos.filter((d) => d.status === 'Inativo').length;
 
-  // "Novos este mês" só fica real quando o backend mandar voluntariaDesde (hoje vem vazio).
+  // "Novos este mês": pela data de cadastro (voluntarioDesde) que o backend manda.
   const d = new Date();
   const mesAtual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   const temDataCadastro = todos.some((x) => !!x.voluntariaDesde);
@@ -224,7 +237,7 @@ export async function aprovarDentista(id: string): Promise<void> {
   }
   dentistas = dentistas.map((d) =>
     d.id === id
-      ? { ...d, status: 'Ativa' as const, voluntariaDesde: mesAtual(), anosNaRede: 0 }
+      ? { ...d, status: 'Ativa' as const, voluntariaDesde: d.voluntariaDesde || hojeIso(), anosNaRede: 0 }
       : d,
   );
 }

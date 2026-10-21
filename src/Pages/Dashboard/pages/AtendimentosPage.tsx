@@ -17,12 +17,13 @@ import {
   listarDentistasFiltro, listarPacientes, listarDentistasCadastrados,
   marcarConfirmado, iniciarAtendimento, finalizarAtendimento,
   reagendarAtendimento, criarAtendimento,
-  carregarAtendimentosReais,
+  carregarAtendimentosReais, inicioRealDe,
   type FiltrosAtendimentos, type NovoAtendimentoInput, type ReagendarInput,
 } from '../services/atendimentos';
 import type { Atendimento, StatusAtendimento, ProgramaAtendimento } from '../data/atendimentos';
 import { ESPECIALIDADES_DISPONIVEIS, PROGRAMAS_FILTRO, REGIOES } from '../data/atendimentos';
 import { obterKpisAtendimentos } from '../services/atendimentos.ts';
+import { duracaoCurta, useAgora } from '../Utils/tempo';
 
 // ─── HELPERS ─────────────────────────────────────
 
@@ -78,8 +79,39 @@ function rotuloDaSemana(inicioIso: string, fimIso: string): string {
   return `${ini.getDate()} – ${fimTxt}`;
 }
 
-function horaAtual(): string {
-  return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+/** Hora marcada pelo dentista (Date local) ou null sem horário. */
+function horarioMarcado(a: Atendimento): Date | null {
+  if (!a.hora || a.hora === '00:00') return null;
+  const [h, m] = a.hora.split(':').map(Number);
+  const d = new Date(a.data + 'T00:00:00');
+  d.setHours(h, m, 0, 0);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Ainda não começou e já passou do horário marcado. */
+function atrasado(a: Atendimento, agora: number): boolean {
+  if (a.status !== 'aguardando' && a.status !== 'confirmado') return false;
+  const marcado = horarioMarcado(a);
+  return !!marcado && agora - marcado.getTime() >= 60_000;
+}
+
+/** Linha abaixo da hora do card, em tempo real: "em 2h15", "atrasado 10min", "em curso · 12min". */
+function situacaoAgora(a: Atendimento, agora: number): string {
+  if (a.status === 'em-andamento') {
+    const inicio = a.inicioReal ? new Date(a.inicioReal).getTime() : NaN;
+    return isNaN(inicio) ? 'em curso' : `em curso · ${duracaoCurta(agora - inicio)}`;
+  }
+  const marcado = horarioMarcado(a);
+  if (!marcado) return 'sem horário';
+  if (a.status === 'realizado' || a.status === 'no-show') return `${a.duracaoMinutos}min`;
+  const diff = marcado.getTime() - agora;
+  if (diff <= -60_000) return `atrasado ${duracaoCurta(-diff)}`;
+  if (diff < 60_000) return 'agora';
+  return diff < 24 * 3_600_000 ? `em ${duracaoCurta(diff)}` : `${a.duracaoMinutos}min`;
+}
+
+function horaAtual(agora = Date.now()): string {
+  return new Date(agora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatarTelefone(numero: string): string {
@@ -130,6 +162,7 @@ type AcaoModal = 'ver' | 'contatar' | 'acompanhar' | 'reagendar' | 'novo' | null
 
 export default function AtendimentosPage() {
   const hoje = dataDeHoje();
+  const agora = useAgora(30_000);   // atualiza os contadores dos cards a cada 30s
   const [dataSelecionada, setDataSelecionada] = useState(hoje);
   const [ancora, setAncora] = useState(hoje);
 
@@ -425,7 +458,7 @@ export default function AtendimentosPage() {
             {formatarDataLonga(dataSelecionada)} · {atendimentos.length} atendimento{atendimentos.length === 1 ? '' : 's'}
           </p>
           {dataSelecionada === hoje && (
-            <p className="text-xs text-subtle">Agora · {horaAtual()}</p>
+            <p className="text-xs text-subtle">Agora · {horaAtual(agora)}</p>
           )}
         </div>
 
@@ -441,12 +474,8 @@ export default function AtendimentosPage() {
                   <p className={`text-xl font-semibold leading-none lg:text-base ${a.status === 'em-andamento' ? 'text-info' : 'text-ink'}`}>
                     {a.hora === '00:00' ? '—' : a.hora}
                   </p>
-                  <p className={`mt-1 text-xs ${a.status === 'em-andamento' ? 'text-info' : 'text-subtle'}`}>
-                    {a.status === 'em-andamento'
-                      ? 'em curso'
-                      : a.hora === '00:00'
-                        ? 'sem horário'
-                        : `${a.duracaoMinutos}min`}
+                  <p className={`mt-1 text-xs ${a.status === 'em-andamento' ? 'text-info' : atrasado(a, agora) ? 'text-warning' : 'text-subtle'}`}>
+                    {situacaoAgora(a, agora)}
                   </p>
                 </div>
 
@@ -800,23 +829,18 @@ function AcompanharAtendimentoModal({
   processando: boolean;
 }) {
   const [observacoes, setObservacoes] = useState('');
-  const [tempoDecorrido, setTempoDecorrido] = useState('0min 00s');
 
-  // Início simulado: 18min antes da abertura do modal (mock)
-  const inicio = useMemo(() => new Date(Date.now() - 18 * 60 * 1000), [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    function tick() {
-      const diff = Date.now() - inicio.getTime();
-      const min = Math.floor(diff / 60000);
-      const sec = Math.floor((diff % 60000) / 1000);
-      setTempoDecorrido(`${min}min ${String(sec).padStart(2, '0')}s`);
-    }
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [open, inicio]);
+  // Início REAL: a hora em que o atendimento foi iniciado (backend ou clique em "Iniciar").
+  // Iniciou agora → começa em 0min 00s e segue contando até finalizar.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const inicio = useMemo(() => (atendimento ? inicioRealDe(atendimento) : new Date()), [open, atendimento?.id, atendimento?.inicioReal]);
+  const agora = useAgora(1000);
+  const decorrido = Math.max(0, agora - inicio.getTime());
+  const horas = Math.floor(decorrido / 3_600_000);
+  const minutos = Math.floor((decorrido % 3_600_000) / 60_000);
+  const segundos = Math.floor((decorrido % 60_000) / 1000);
+  const tempoDecorrido = `${horas > 0 ? `${horas}h ` : ''}${minutos}min ${String(segundos).padStart(2, '0')}s`;
+  const horaInicio = `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`;
 
   useEffect(() => {
     if (!open) setObservacoes('');
@@ -867,7 +891,8 @@ function AcompanharAtendimentoModal({
           <p className="text-xs uppercase tracking-wide text-info font-semibold mb-2">Tempo decorrido</p>
           <p className="text-4xl font-bold text-info tabular-nums">{tempoDecorrido}</p>
           <p className="text-xs text-muted mt-2">
-            Início {atendimento.hora} · Previsão {addMinutes(atendimento.hora, atendimento.duracaoMinutos)} ({atendimento.duracaoMinutos}min)
+            Início {horaInicio} · Previsão {addMinutes(horaInicio, atendimento.duracaoMinutos)} ({atendimento.duracaoMinutos}min)
+            {atendimento.hora !== '00:00' && atendimento.hora !== horaInicio ? ` · agendado ${atendimento.hora}` : ''}
           </p>
         </div>
 

@@ -6,7 +6,9 @@ import {
   Inbox, Send, ArrowRight,
   CalendarHeart, Calendar, Activity, Check,
   ClipboardCheck, CheckCircle2, XCircle, AlertCircle,
+  ClipboardList, Circle,
 } from 'lucide-react'
+import { carregarHistoricoDentista, type ConsultaDentista } from './historicoDentista'
 
 import { dentistaService, type DentistaBody } from '../../Services/api'
 import { salvarSessaoPortal } from '../../Services/sessao'
@@ -373,6 +375,91 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════
+// NOVO: HISTÓRICO DE CONSULTAS (mesmo visual do portal do paciente)
+// ═══════════════════════════════════════════════
+
+const CONFIG_HISTORICO = {
+  concluido: { Icon: Check,      bg: 'bg-green-500', text: 'text-green-700', label: 'Concluído',    border: 'border-green-200',  cardBg: 'bg-green-50' },
+  andamento: { Icon: Activity,   bg: 'bg-[#E88407]', text: 'text-[#9A3412]', label: 'Em andamento', border: 'border-orange-200', cardBg: 'bg-[#FFEDD5]' },
+  proximo:   { Icon: ArrowRight, bg: 'bg-[#E88407]', text: 'text-[#9A3412]', label: 'Próximo',      border: 'border-orange-200', cardBg: 'bg-[#FFEDD5]' },
+  agendado:  { Icon: Circle,     bg: 'bg-gray-300',  text: 'text-gray-500',  label: 'Agendado',     border: 'border-gray-200',   cardBg: 'bg-gray-50' },
+}
+
+function ItemHistorico({ consulta, isLast }: { consulta: ConsultaDentista; isLast: boolean }) {
+  const c = CONFIG_HISTORICO[consulta.status]
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div className={`w-9 h-9 rounded-full ${c.bg} flex items-center justify-center text-white shrink-0`}>
+          <c.Icon size={16} strokeWidth={2.5} />
+        </div>
+        {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" />}
+      </div>
+      <div className={`flex-1 mb-5 p-4 rounded-xl border ${c.border} ${c.cardBg}`}>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <p className="font-semibold text-[#0F172A] text-[14px]">{consulta.procedimento}</p>
+          <span className={`shrink-0 text-[11px] font-semibold ${c.text}`}>{c.label}</span>
+        </div>
+        <p className="text-[#475569] text-[12px]">{consulta.paciente}</p>
+        <p className="text-[#475569] text-[12px]">{consulta.data} às {consulta.hora}</p>
+      </div>
+    </div>
+  )
+}
+
+const LIMITE_HISTORICO = 8
+
+function SecaoHistoricoConsultas({ rgCpf }: { rgCpf: string }) {
+  const [consultas, setConsultas] = useState<ConsultaDentista[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [verTodas, setVerTodas] = useState(false)
+
+  useEffect(() => {
+    let ativo = true
+    carregarHistoricoDentista(rgCpf)
+      .then((lista) => { if (ativo) setConsultas(lista) })
+      .finally(() => { if (ativo) setCarregando(false) })
+    return () => { ativo = false }
+  }, [rgCpf])
+
+  // Lista longa: mostra as mais recentes primeiro do corte (mantendo a ordem cronológica)
+  const visiveis = verTodas || consultas.length <= LIMITE_HISTORICO
+    ? consultas
+    : consultas.slice(-LIMITE_HISTORICO)
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+      <div className="flex items-center gap-2 mb-5">
+        <ClipboardList size={18} className="text-[#E88407]" strokeWidth={2} />
+        <h2 className="font-bold text-[#0F172A] text-[16px]">Histórico de consultas</h2>
+      </div>
+
+      {carregando ? (
+        <p className="text-[#475569] text-[13px]">Carregando...</p>
+      ) : consultas.length === 0 ? (
+        <p className="text-[#475569] text-[13px]">
+          Nenhuma consulta ainda. Quando você aceitar um convite, ela aparece aqui.
+        </p>
+      ) : (
+        <>
+          {visiveis.map((c, i) => (
+            <ItemHistorico key={c.idAtendimento || i} consulta={c} isLast={i === visiveis.length - 1} />
+          ))}
+          {consultas.length > LIMITE_HISTORICO && (
+            <button
+              onClick={() => setVerTodas((v) => !v)}
+              className="w-full text-[13px] font-semibold text-[#E88407] py-2 rounded-lg hover:bg-[#FFEDD5] transition-colors bg-transparent border-none cursor-pointer"
+            >
+              {verTodas ? 'Mostrar menos' : `Ver todas (${consultas.length})`}
+            </button>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -870,6 +957,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
         {/* NOVO ↓ — Mensagens com a equipe TdB */}
         <SecaoMensagens dentistaNome={dentista.nome} />
         <SecaoMutiroes dentista={dentista} />
+        <SecaoHistoricoConsultas rgCpf={dentista.rgCpf} />
 
         {/* Informações profissionais */}
         <div className="bg-gradient-to-br from-[#E88407] to-[#F97316] rounded-2xl shadow-md p-6 mb-5 text-white">

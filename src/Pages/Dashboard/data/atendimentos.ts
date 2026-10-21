@@ -38,6 +38,7 @@ export interface Atendimento {
   local: string;
   programa: ProgramaAtendimento;
   status: StatusAtendimento;
+  inicioReal?: string;       // quando o atendimento foi INICIADO de fato (ISO) — cronômetro parte daqui
   observacoesPre?: string;
   observacoesPos?: string;
   proximaConsulta?: string;  // YYYY-MM-DD

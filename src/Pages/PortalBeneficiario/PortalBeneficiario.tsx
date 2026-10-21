@@ -552,8 +552,11 @@ function SecaoMutiroes({ paciente }: { paciente: Paciente }) {
 
 // ─── PAINEL DO PACIENTE (PRESERVADO + 1 linha nova) ──
 function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: () => void }) {
+  // Progresso = só sessões que o dentista FINALIZOU (status 'concluido' no backend).
+  // Antes usava sessaoAtual, que já conta a sessão agendada → "1 de 1 = 100%" sem ter começado.
+  const sessoesConcluidas = paciente.historico.filter((c) => c.status === 'concluido').length
   const progresso = paciente.totalSessoes > 0
-    ? Math.round((paciente.sessaoAtual / paciente.totalSessoes) * 100)
+    ? Math.min(100, Math.round((sessoesConcluidas / paciente.totalSessoes) * 100))
     : 0
 
   return (
