@@ -156,15 +156,17 @@ export default function VoluntariosPage() {
 
               {(() => {
                 // Espera real: dias desde o cadastro do voluntário
+                // (voluntarioDesde = dia em que o cadastro foi enviado pelo site; gravado pelo backend)
                 const dias = diasDesdeCadastro(d);
+                const dataCadastro = d.voluntariaDesde ? d.voluntariaDesde.split('-').reverse().join('/') : '';
                 return (
-                  <span
-                    className={`text-xs whitespace-nowrap ${dias !== null && dias >= 5 ? 'text-warning' : 'text-subtle'}`}
-                    title={d.voluntariaDesde ? `Cadastro em ${d.voluntariaDesde.split('-').reverse().join('/')}` : undefined}
-                  >
-                    {dias === null ? 'sem data de cadastro'
-                      : dias === 0 ? 'cadastro hoje'
-                      : `há ${dias} ${dias === 1 ? 'dia' : 'dias'}`}
+                  <span className="flex flex-col items-start sm:items-end text-xs whitespace-nowrap">
+                    <span className={dias !== null && dias >= 5 ? 'text-warning' : 'text-subtle'}>
+                      {dias === null ? 'sem data de cadastro'
+                        : dias === 0 ? 'aguardando desde hoje'
+                        : `aguardando há ${dias} ${dias === 1 ? 'dia' : 'dias'}`}
+                    </span>
+                    {dataCadastro && <span className="text-subtle">cadastro em {dataCadastro}</span>}
                   </span>
                 );
               })()}

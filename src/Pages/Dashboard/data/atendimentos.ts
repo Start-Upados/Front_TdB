@@ -228,6 +228,6 @@ const REGIAO_POR_UF: Record<string, string> = {
 
 /** Extrai a região a partir de uma string de localização "Cidade-UF". */
 export function regiaoDoLocal(local: string): string {
-  const m = local.match(/-([A-Z]{2})(?:$|\s|\b)/);
+  const m = local.match(/[-/]([A-Z]{2})(?:$|\s|\b)/);
   return m ? REGIAO_POR_UF[m[1]] ?? '' : '';
 }

@@ -604,7 +604,7 @@ function DetalhesAtendimentoModal({
         <div className="flex items-center gap-3">
           <Avatar initials={atendimento.paciente.iniciais} size="md" />
           <div className="flex-1 min-w-0">
-            <p className="text-base font-medium text-ink truncate">{atendimento.paciente.nome}, {atendimento.paciente.idade}</p>
+            <p className="text-base font-medium text-ink truncate">{atendimento.paciente.nome}{atendimento.paciente.idade ? `, ${atendimento.paciente.idade}` : ''}</p>
             <p className="text-xs text-muted">{atendimento.programa}</p>
           </div>
           <StatusPill status={atendimento.status} />
@@ -614,7 +614,7 @@ function DetalhesAtendimentoModal({
         <div className="bg-surface-soft rounded-xl p-4 space-y-2 text-sm">
           <Row icon={<Calendar className="w-3.5 h-3.5" strokeWidth={2} />} label="Data e hora" value={`${formatarDataCurta(atendimento.data)} · ${atendimento.hora} (${atendimento.duracaoMinutos}min)`} />
           <Row icon={<Stethoscope className="w-3.5 h-3.5" strokeWidth={2} />} label="Dentista" value={atendimento.dentista.nome} />
-          <Row icon={<MapPin className="w-3.5 h-3.5" strokeWidth={2} />} label="Local" value={atendimento.local} />
+          <Row icon={<MapPin className="w-3.5 h-3.5" strokeWidth={2} />} label="Local" value={atendimento.local || 'Endereço do consultório não cadastrado'} />
           <Row icon={<Check className="w-3.5 h-3.5" strokeWidth={2} />} label="Especialidade" value={atendimento.especialidade} />
         </div>
 
@@ -759,7 +759,7 @@ function ContatarPacienteModal({
         <div className="flex items-center gap-3 p-3 rounded-xl border border-line">
           <Avatar initials={atendimento.paciente.iniciais} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-ink truncate">{atendimento.paciente.nome}, {atendimento.paciente.idade}</p>
+            <p className="text-sm font-medium text-ink truncate">{atendimento.paciente.nome}{atendimento.paciente.idade ? `, ${atendimento.paciente.idade}` : ''}</p>
             <p className="text-xs text-muted">{formatarDataCurta(atendimento.data)} · {atendimento.hora} · {atendimento.dentista.nome}</p>
           </div>
         </div>
@@ -880,7 +880,7 @@ function AcompanharAtendimentoModal({
         <div className="flex items-center gap-3">
           <Avatar initials={atendimento.paciente.iniciais} size="md" tone="info" />
           <div className="flex-1 min-w-0">
-            <p className="text-base font-medium text-ink truncate">{atendimento.paciente.nome}, {atendimento.paciente.idade}</p>
+            <p className="text-base font-medium text-ink truncate">{atendimento.paciente.nome}{atendimento.paciente.idade ? `, ${atendimento.paciente.idade}` : ''}</p>
             <p className="text-xs text-muted">{atendimento.dentista.nome} · {atendimento.especialidade}</p>
           </div>
           <StatusPill status="em-andamento" />

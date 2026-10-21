@@ -8,7 +8,7 @@ import {
   type PacienteAtendimento,
   type StatusAtendimento,
 } from '../data/atendimentos';
-import { atendimentoService, type AtendimentoBody } from '../../../Services/api';
+import { atendimentoService, dentistaService, type AtendimentoBody, type DentistaBody } from '../../../Services/api';
 import { lerDataHora, temHora } from '../Utils/tempo';
 
 
@@ -146,6 +146,16 @@ function normalizarPrograma(bruto?: string): ProgramaAtendimento {
   return 'Dentista do Bem';
 }
 
+/** Endereço do consultório: "Rua I, 109 - Centro, São Paulo-SP" (mesmo formato do portal do paciente). */
+function enderecoDoDentista(d: DentistaBody): string {
+  const e = d.dto ?? {};
+  const rua = [e.logradouro?.trim(), d.nConsultorio ? String(d.nConsultorio) : ''].filter(Boolean).join(', ');
+  const cidade = [e.localidade?.trim(), e.uf?.trim()].filter(Boolean).join('-');
+  return [rua, [e.bairro?.trim(), cidade].filter(Boolean).join(', ')].filter(Boolean).join(' - ');
+}
+
+const soDigitos = (v?: string) => (v ?? '').replace(/\D/g, '');
+
 function mapearAtendimentoBackend(body: AtendimentoBody): Atendimento {
   const { data, hora } = parseDataAtendimento(body.dataAtendimento);
   return {
@@ -187,7 +197,15 @@ export async function carregarAtendimentosReais(): Promise<{
   try {
     const lista = await atendimentoService.listar();
     if (Array.isArray(lista) && lista.length > 0) {
-      const doBackend = lista.map(mapearAtendimentoBackend);      
+      // Local = consultório do dentista (a tabela atendimento não guarda endereço)
+      const dentistas = await dentistaService.listar().catch(() => [] as DentistaBody[]);
+      const enderecos = new Map(
+        (Array.isArray(dentistas) ? dentistas : []).map((d) => [soDigitos(d.rgCpf), enderecoDoDentista(d)]),
+      );
+      const doBackend = lista.map((b) => ({
+        ...mapearAtendimentoBackend(b),
+        local: b.localAtendimento?.trim() || enderecos.get(soDigitos(b.dentistaRgCpf)) || '',
+      }));
       atendimentos = doBackend;
       // Recalcula contagens das datas afetadas
       const datasAfetadas = new Set(doBackend.map((a) => a.data));
