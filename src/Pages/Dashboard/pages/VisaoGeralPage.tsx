@@ -368,7 +368,7 @@ export default function VisaoGeralPage() {
             text-sm
           ">
             <span className="text-muted">
-              Total no mês
+              Total no ano
             </span>
 
             <span className="font-medium text-ink">

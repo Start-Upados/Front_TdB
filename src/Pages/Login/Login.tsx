@@ -1,7 +1,24 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Stethoscope, LayoutDashboard, Plus, ArrowRight, ArrowLeft, Eye, EyeOff, AlertCircle, Heart } from 'lucide-react';
-import { authService } from '../../Services/api';
+import { authService, ErroHttp } from '../../Services/api';
+
+/**
+ * Mensagem certa para cada falha de login. Antes, qualquer erro (até servidor fora do ar)
+ * aparecia como "senha incorreta".
+ */
+function mensagemLogin(err: unknown, credencial: string): string {
+  if (err instanceof ErroHttp) {
+    if (err.status === 401) return `${credencial} ou senha incorretos.`;
+    if (err.status >= 500) return 'O servidor está com instabilidade. Tente novamente em alguns minutos.';
+    if (err.message) return err.message;
+  }
+  // fetch() rejeita com TypeError quando não há resposta (rede, servidor fora do ar, CORS)
+  if (err instanceof TypeError) {
+    return 'Não foi possível conectar ao servidor. Verifique sua internet e tente de novo em instantes.';
+  }
+  return 'Não foi possível entrar agora. Tente novamente.';
+}
 
 type Modo = 'selecao' | 'admin' | 'paciente' | 'dentista';
 
@@ -135,7 +152,8 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
             <Link to="/" className="text-[#E88407] font-extrabold hover:underline">
               StartUpados
             </Link>
-            <p className="mt-2 text-xs text-slate-500">
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
               <Link to="/turma-do-bem/privacidade" className="hover:text-orange-600 hover:underline">
                 Política de Privacidade
               </Link>
@@ -143,7 +161,6 @@ function TelaSelecao({ onSelect }: { onSelect: (modo: Modo) => void }) {
               <Link to="/turma-do-bem/privacidade#exclusao-de-dados" className="hover:text-orange-600 hover:underline">
                 Exclusão de dados
               </Link>
-            </p>
           </p>
         </div>
       </div>
@@ -163,7 +180,7 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
   const [rgCpf, setRgCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [erro, setErro] = useState(false);
+  const [erro, setErro] = useState('');
   const [buscando, setBuscando] = useState(false);
   const navigate = useNavigate();
 
@@ -173,7 +190,7 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
     if (!rgCpf || senha.length < 6) return;
 
     setBuscando(true);
-    setErro(false);
+    setErro('');
 
     try {
       const ok = await authService.loginDentista(rgCpf, senha);
@@ -187,7 +204,7 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
       }
     } catch (error) {
       console.log(error);
-      setErro(true);
+      setErro(mensagemLogin(error, 'RG/CPF'));
     } finally {
       setBuscando(false);
     }
@@ -239,7 +256,7 @@ function TelaDentista({ onVoltar }: { onVoltar: () => void }) {
           {erro && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-[12px] px-4 py-2.5 rounded-lg">
               <AlertCircle size={14} className="shrink-0" />
-              <span>RG/CPF ou senha incorretos.</span>
+              <span>{erro}</span>
             </div>
           )}
 
@@ -279,7 +296,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
   const [rgCpf, setRgCpf] = useState('');
   const [buscando, setBuscando] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [erro, setErro] = useState(false);
+  const [erro, setErro] = useState('');
   const navigate = useNavigate();
   const [senha, setSenha] = useState('');
 
@@ -289,7 +306,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
     if (!rgCpf || senha.length < 6) return;
 
     setBuscando(true);
-    setErro(false);
+    setErro('');
 
     try {
       const ok = await authService.loginPaciente(rgCpf, senha);
@@ -301,7 +318,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
       }
     } catch (error) {
       console.log(error);
-      setErro(true);
+      setErro(mensagemLogin(error, 'RG/CPF'));
     } finally {
       setBuscando(false);
     }
@@ -356,7 +373,7 @@ function TelaPaciente({ onVoltar }: { onVoltar: () => void }) {
           {erro && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-[12px] px-4 py-2.5 rounded-lg">
               <AlertCircle size={14} className="shrink-0" />
-              <span>RG/CPF ou senha incorretos.</span>
+              <span>{erro}</span>
             </div>
           )}
 
@@ -403,11 +420,7 @@ function TelaAdmin({ onVoltar }: { onVoltar: () => void }) {
         navigate('/dashboard');
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Erro inesperado');
-      }
+      setError(mensagemLogin(err, 'E-mail'));
     } finally {
       setLoading(false);
     }

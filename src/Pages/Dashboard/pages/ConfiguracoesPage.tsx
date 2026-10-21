@@ -79,11 +79,17 @@ export default function ConfiguracoesPage() {
     if (abaValida(abaUrl)) setAba(abaUrl);
   }, [abaUrl]);
 
-  // Puxa equipe do backend uma vez no mount + recarrega ao trocar pra aba Equipe
+  // Equipe vem só do backend: carrega ao abrir a aba Equipe
+  const [cargaEquipe, setCargaEquipe] = useState<'carregando' | 'ok' | 'erro'>('carregando');
   useEffect(() => {
-    if (aba === 'equipe') {
-      carregarEquipeReal().then(() => refresh()).catch(() => { /* silencioso */ });
-    }
+    if (aba !== 'equipe') return;
+    let vivo = true;
+    carregarEquipeReal().then((r) => {
+      if (!vivo) return;
+      setCargaEquipe(r.fonte === 'erro' ? 'erro' : 'ok');
+      refresh();
+    });
+    return () => { vivo = false; };
   }, [aba]);
 
   return (
@@ -108,7 +114,7 @@ export default function ConfiguracoesPage() {
         </div>
       </div>
 
-      {aba === 'equipe' && <AbaEquipe equipe={equipe} onChange={refresh} />}
+      {aba === 'equipe' && <AbaEquipe equipe={equipe} carga={cargaEquipe} onChange={refresh} />}
       {aba === 'integracoes' && <AbaIntegracoes integracoes={integracoes} onChange={refresh} />}
       {aba === 'organizacao' && <AbaOrganizacao org={org} onChange={refresh} />}
       {aba === 'preferencias' && <AbaPreferencias />}
@@ -123,13 +129,27 @@ export default function ConfiguracoesPage() {
 interface FormMembro {
   nome: string;
   email: string;
+  rgCpf: string;
+  senha: string;
   papel: PapelUsuario;
   regiao: string;
 }
 
+function mascaraCpf(v: string): string {
+  const n = v.replace(/\D/g, '').slice(0, 11);
+  if (n.length <= 3) return n;
+  if (n.length <= 6) return `${n.slice(0, 3)}.${n.slice(3)}`;
+  if (n.length <= 9) return `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6)}`;
+  return `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6, 9)}-${n.slice(9)}`;
+}
+
+function mensagem(err: unknown, padrao: string): string {
+  return err instanceof Error && err.message ? err.message : padrao;
+}
+
 function AbaEquipe({
-  equipe, onChange,
-}: { equipe: MembroEquipe[]; onChange: () => void }) {
+  equipe, carga, onChange,
+}: { equipe: MembroEquipe[]; carga: 'carregando' | 'ok' | 'erro'; onChange: () => void }) {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [editando, setEditando] = useState<MembroEquipe | null>(null);
@@ -142,12 +162,12 @@ function AbaEquipe({
     setEnviando(true);
     try {
       await adicionarMembro(data);
-      toast.success('Convite enviado', { description: `${data.nome} foi adicionado(a) à equipe.` });
-      reset({ nome: '', email: '', papel: 'Coordenador', regiao: 'Sudeste' });
+      toast.success('Membro adicionado', { description: `${data.nome} já pode entrar no painel com o e-mail e a senha inicial.` });
+      reset({ nome: '', email: '', rgCpf: '', senha: '', papel: 'Coordenador', regiao: 'Sudeste' });
       setMostrarForm(false);
       onChange();
-    } catch {
-      toast.error('Não foi possível adicionar o membro');
+    } catch (err) {
+      toast.error('Não foi possível adicionar o membro', { description: mensagem(err, 'Tente novamente.') });
     } finally {
       setEnviando(false);
     }
@@ -190,6 +210,31 @@ function AbaEquipe({
               {errors.email && <p className="mt-1 text-xs text-danger">E-mail inválido</p>}
             </div>
             <div>
+              <label className="mb-2 block text-xs text-muted">CPF *</label>
+              <input
+                {...register('rgCpf', {
+                  required: true,
+                  validate: (v) => v.replace(/\D/g, '').length === 11,
+                  onChange: (e) => { e.target.value = mascaraCpf(e.target.value); },
+                })}
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                className="w-full rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              />
+              {errors.rgCpf && <p className="mt-1 text-xs text-danger">CPF inválido</p>}
+            </div>
+            <div>
+              <label className="mb-2 block text-xs text-muted">Senha inicial *</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                {...register('senha', { required: true, minLength: 6 })}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full rounded-xl border border-line bg-surface shadow-card px-3 py-3 text-sm text-ink placeholder:text-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              />
+              {errors.senha && <p className="mt-1 text-xs text-danger">Mínimo 6 caracteres</p>}
+            </div>
+            <div>
               <label className="mb-2 block text-xs text-muted">Papel</label>
               <select
                 {...register('papel')}
@@ -214,13 +259,20 @@ function AbaEquipe({
               disabled={enviando}
               className="w-full rounded-xl bg-ink px-5 py-3 text-sm text-surface transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto"
             >
-              {enviando ? 'Enviando...' : 'Enviar convite'}
+              {enviando ? 'Salvando...' : 'Adicionar à equipe'}
             </button>
           </div>
         </form>
       )}
 
-      {/* LISTA */}
+      {/* LISTA — só quem está na tabela funcionario do backend */}
+      {equipe.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted">
+          {carga === 'carregando' && 'Carregando a equipe do servidor...'}
+          {carga === 'erro' && 'Não foi possível carregar a equipe do servidor. Tente recarregar a página.'}
+          {carga === 'ok' && 'Nenhum membro cadastrado.'}
+        </p>
+      )}
       <div className="divide-y divide-line">
         {equipe.map((m) => (
           <div key={m.id} className="flex flex-col gap-4 py-4 first:pt-1 sm:flex-row sm:items-center">
@@ -305,8 +357,8 @@ function EditarMembroModal({
       toast.success('Membro atualizado');
       onChange();
       onClose();
-    } catch {
-      toast.error('Não foi possível atualizar');
+    } catch (err) {
+      toast.error('Não foi possível atualizar', { description: mensagem(err, 'Tente novamente.') });
     } finally {
       setProcessando(false);
     }
@@ -320,8 +372,8 @@ function EditarMembroModal({
       toast.success('Membro removido da equipe');
       onChange();
       onClose();
-    } catch {
-      toast.error('Não foi possível remover');
+    } catch (err) {
+      toast.error('Não foi possível remover', { description: mensagem(err, 'Tente novamente.') });
     } finally {
       setProcessando(false);
     }
