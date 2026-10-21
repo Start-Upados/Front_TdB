@@ -8,7 +8,10 @@ import {
   type PacienteAtendimento,
   type StatusAtendimento,
 } from '../data/atendimentos';
-import { atendimentoService, dentistaService, type AtendimentoBody, type DentistaBody } from '../../../Services/api';
+import {
+  atendimentoService, dentistaService, beneficiarioService,
+  type AtendimentoBody, type DentistaBody, type BeneficiarioBody,
+} from '../../../Services/api';
 import { lerDataHora, temHora } from '../Utils/tempo';
 
 
@@ -156,6 +159,36 @@ function enderecoDoDentista(d: DentistaBody): string {
 
 const soDigitos = (v?: string) => (v ?? '').replace(/\D/g, '');
 
+/** Telefone do cadastro → número do WhatsApp (só dígitos, com 55). "" se não der para usar. */
+function numeroWhatsApp(telefone?: string): string {
+  const d = soDigitos(telefone).replace(/^0+/, '');
+  if (d.length === 10 || d.length === 11) return `55${d}`;          // DDD + número
+  if ((d.length === 12 || d.length === 13) && d.startsWith('55')) return d;
+  return '';
+}
+
+function idadeDe(dataNasc?: string): number {
+  const m = (dataNasc ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return 0;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - Number(m[1]);
+  if (hoje.getMonth() + 1 < Number(m[2]) || (hoje.getMonth() + 1 === Number(m[2]) && hoje.getDate() < Number(m[3]))) idade--;
+  return idade > 0 && idade < 130 ? idade : 0;
+}
+
+/** Contato e idade do paciente vêm do cadastro dele (beneficiário). */
+function dadosDoPaciente(b: BeneficiarioBody): { contato: Atendimento['paciente']['contato']; idade: number } {
+  const whatsapp = numeroWhatsApp(b.telefone);
+  return {
+    contato: {
+      whatsapp: whatsapp || undefined,
+      email:    b.email?.trim() || undefined,
+      telefone: b.telefone?.trim() ? (whatsapp ? `+${whatsapp}` : b.telefone.trim()) : undefined,
+    },
+    idade: idadeDe(b.dataNasc),
+  };
+}
+
 function mapearAtendimentoBackend(body: AtendimentoBody): Atendimento {
   const { data, hora } = parseDataAtendimento(body.dataAtendimento);
   return {
@@ -198,14 +231,26 @@ export async function carregarAtendimentosReais(): Promise<{
     const lista = await atendimentoService.listar();
     if (Array.isArray(lista) && lista.length > 0) {
       // Local = consultório do dentista (a tabela atendimento não guarda endereço)
-      const dentistas = await dentistaService.listar().catch(() => [] as DentistaBody[]);
+      // Contato e idade = cadastro do paciente (para os botões WhatsApp / Email / Telefone)
+      const [dentistas, pacientes] = await Promise.all([
+        dentistaService.listar().catch(() => [] as DentistaBody[]),
+        beneficiarioService.listar().catch(() => [] as BeneficiarioBody[]),
+      ]);
       const enderecos = new Map(
         (Array.isArray(dentistas) ? dentistas : []).map((d) => [soDigitos(d.rgCpf), enderecoDoDentista(d)]),
       );
-      const doBackend = lista.map((b) => ({
-        ...mapearAtendimentoBackend(b),
-        local: b.localAtendimento?.trim() || enderecos.get(soDigitos(b.dentistaRgCpf)) || '',
-      }));
+      const cadastros = new Map(
+        (Array.isArray(pacientes) ? pacientes : []).map((p) => [soDigitos(p.rgCpf), dadosDoPaciente(p)]),
+      );
+      const doBackend = lista.map((b) => {
+        const a = mapearAtendimentoBackend(b);
+        const pac = cadastros.get(soDigitos(b.pacienteRgCpf));
+        return {
+          ...a,
+          paciente: pac ? { ...a.paciente, contato: pac.contato, idade: pac.idade || a.paciente.idade } : a.paciente,
+          local: b.localAtendimento?.trim() || enderecos.get(soDigitos(b.dentistaRgCpf)) || '',
+        };
+      });
       atendimentos = doBackend;
       // Recalcula contagens das datas afetadas
       const datasAfetadas = new Set(doBackend.map((a) => a.data));

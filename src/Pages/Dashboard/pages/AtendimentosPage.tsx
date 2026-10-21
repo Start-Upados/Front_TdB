@@ -809,6 +809,11 @@ function ContatarPacienteModal({
               {contato?.telefone && <Copy className="w-3 h-3 opacity-60" />}
             </button>
           </div>
+          {!contato?.whatsapp && !contato?.email && !contato?.telefone && (
+            <p className="mt-2 text-xs text-muted">
+              Não encontramos telefone nem e-mail no cadastro deste paciente.
+            </p>
+          )}
         </div>
       </div>
     </Modal>
