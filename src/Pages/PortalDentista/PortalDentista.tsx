@@ -17,11 +17,12 @@ import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services
 import type { Solicitacao } from '../Dashboard/data/central'
 
 import {
-  listarProximosPorCidade,
+  listarMutiroesDoDentista,
   carregarMutiroesReais,
-  dentistaEstaConfirmado,
+  statusDoDentista,
   autoInscreverDentista,
   cancelarPresencaDentista,
+  recusarConviteMutirao,
 } from '../Dashboard/services/mutiroes'
 import type { Mutirao } from '../Dashboard/data/mutiroes'
 
@@ -249,16 +250,30 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
 
   // Filtro de especialidade: só mutirões que precisam da especialidade dele
   // (se o dentista é "Ortodontia" e o mutirão precisa de "Clínico geral, Periodontia", não mostra)
+  // Mutirões da cidade dele + os que a equipe TdB convidou ele (de qualquer cidade)
   const mutiroes = useMemo<Mutirao[]>(() => {
-    if (!dentista.cidade) return []
-    return listarProximosPorCidade(dentista.cidade)
+    return listarMutiroesDoDentista(dentista.cidade, dentista.rgCpf)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dentista.cidade, versao])
+  }, [dentista.cidade, dentista.rgCpf, versao])
+
+  async function handleRecusar(mutiraoId: string) {
+    if (!window.confirm('Recusar o convite para este mutirão?')) return
+    setProcessando(mutiraoId)
+    try {
+      await recusarConviteMutirao(mutiraoId, dentista.rgCpf)
+      setVersao((v) => v + 1)
+    } catch (err) {
+      console.error('[portal] erro ao recusar convite do mutirão:', err)
+      alert('Não foi possível recusar o convite agora. Tente novamente.')
+    } finally {
+      setProcessando(null)
+    }
+  }
 
   async function handleToggle(mutiraoId: string) {
     setProcessando(mutiraoId)
     try {
-      if (dentistaEstaConfirmado(mutiraoId, dentista.rgCpf)) {
+      if (statusDoDentista(mutiraoId, dentista.rgCpf) === 'confirmado') {
         await cancelarPresencaDentista(mutiraoId, dentista.rgCpf)
       } else {
         await autoInscreverDentista(mutiraoId, {
@@ -278,7 +293,7 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
     }
   }
 
-  if (!dentista.cidade) return null
+  if (!dentista.cidade && mutiroes.length === 0) return null
 
   if (mutiroes.length === 0) {
     return (
@@ -298,12 +313,14 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
       <div className="flex items-center gap-2 mb-4">
         <CalendarHeart size={18} className="text-[#E88407]" strokeWidth={2} />
-        <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões na sua cidade</h2>
+        <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões e convites</h2>
       </div>
 
       <div className="space-y-3">
         {mutiroes.map((m) => {
-          const confirmado = dentistaEstaConfirmado(m.id, dentista.rgCpf)
+          const situacao = statusDoDentista(m.id, dentista.rgCpf)
+          const confirmado = situacao === 'confirmado'
+          const convidado = situacao === 'pendente'
           const isProcessing = processando === m.id
           const vagas = m.dentistasNecessarios - m.dentistasConfirmados
           return (
@@ -312,9 +329,17 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
               className={`rounded-xl border p-4 ${
                 confirmado
                   ? 'border-green-300 bg-green-50/50'
-                  : 'border-[#E2E8F0] bg-[#F8FAFC]'
+                  : convidado
+                    ? 'border-[#E88407]/50 bg-[#FFF7ED]'
+                    : 'border-[#E2E8F0] bg-[#F8FAFC]'
               }`}
             >
+              {convidado && (
+                <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#FFEDD5] px-2.5 py-0.5 text-[11px] font-semibold text-[#9A3412]">
+                  <CalendarHeart size={12} strokeWidth={2.5} />
+                  Convite da equipe Turma do Bem
+                </p>
+              )}
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[#0F172A] text-[14px]">{m.nome ?? m.local}</p>
@@ -359,6 +384,24 @@ function SecaoMutiroes({ dentista }: { dentista: Dentista }) {
                     className="px-3 py-2 text-[12px] border border-[#E2E8F0] rounded-lg text-[#475569] hover:bg-white transition-colors disabled:opacity-50"
                   >
                     {isProcessing ? '...' : 'Cancelar'}
+                  </button>
+                </div>
+              ) : convidado ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleToggle(m.id)}
+                    disabled={isProcessing}
+                    className="flex-1 bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 border-none cursor-pointer"
+                  >
+                    <Check size={14} strokeWidth={2.5} />
+                    {isProcessing ? 'Confirmando...' : 'Aceitar convite'}
+                  </button>
+                  <button
+                    onClick={() => handleRecusar(m.id)}
+                    disabled={isProcessing}
+                    className="px-3 py-2.5 text-[12px] border border-[#E2E8F0] rounded-lg text-[#475569] bg-white hover:bg-[#F8FAFC] transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    Recusar
                   </button>
                 </div>
               ) : (

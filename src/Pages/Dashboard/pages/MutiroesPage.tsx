@@ -18,7 +18,7 @@ import {
   listarProximos, listarRecentes, obterMutirao, diasAte,
   criarMutirao, convocarVoluntarios, cancelarConvocacao,
   cancelarPresencaPaciente, listarVoluntariosDisponiveis, listarEspecialidadesParaFiltro,
-  carregarMutiroesReais,
+  carregarMutiroesReais, ajustarCampanhaParaBanco,
   type NovoMutiraoInput,
 } from '../services/mutiroes';
 import { campanhaService } from '../../../Services/api';
@@ -417,12 +417,13 @@ function CadastrarMutiraoModal({
 
       // ─── 1. Oracle (fonte de verdade) ──────────────────────
       let salvoNoOracle = false;
+      let motivoOracle = '';
       try {
         // Extrai número do endereço se houver (ex: "Rua das Flores, 123, Centro" → 123)
         const matchNumero = data.endereco?.match(/\d+/);
         const numeroLogradouro = matchNumero ? parseInt(matchNumero[0], 10) : 0;
 
-        await campanhaService.cadastrar({
+        await campanhaService.cadastrar(ajustarCampanhaParaBanco({
           nome:             data.nome,
           metaAtendidos:    Number(data.pacientesEsperados),
           nAtendidos:       0,
@@ -442,10 +443,11 @@ function CadastrarMutiraoModal({
           especialidades:   especialidades.join(', '),
           publicoAlvo:      data.publicoAlvo || undefined,
           cep:              data.cep || undefined,
-        });
+        }));
         salvoNoOracle = true;
       } catch (err) {
         console.warn('[mutirao] erro ao salvar no Oracle, vai continuar pro Sheets:', err);
+        motivoOracle = err instanceof Error ? err.message : '';
       }
 
       // ─── 2. Google Sheets (backup auditável, sempre roda) ──
@@ -483,8 +485,11 @@ function CadastrarMutiraoModal({
           description: `${data.nome} agendado para ${formatarDataLonga(data.data)}.`,
         });
       } else {
-        toast.warning('Mutirão salvo localmente', {
-          description: 'Backend offline. Foi pro Sheets como backup, mas Matheus pode não ver até o backend voltar.',
+        toast.warning('Mutirão não foi salvo no banco', {
+          description: motivoOracle
+            ? `${motivoOracle}. Ficou só neste navegador (e no Sheets); ao convocar, o sistema tenta salvar de novo.`
+            : 'Servidor indisponível. Ficou só neste navegador (e no Sheets); ao convocar, o sistema tenta salvar de novo.',
+          duration: 10000,
         });
       }
       onCriado();
@@ -803,7 +808,7 @@ function DetalhesMutiraoModal({
                     v.status === 'pendente'   ? 'bg-warning-soft text-warning' :
                                                 'bg-danger-soft text-danger'
                   }`}>
-                    {v.status}
+                    {v.status === 'confirmado' ? 'Confirmado' : v.status === 'pendente' ? 'Aguardando resposta' : 'Recusou'}
                   </span>
                   {m.status !== 'realizado' && (
                     <button
@@ -931,13 +936,14 @@ function ConvocarVoluntariosModal({
     setProcessando(true);
     try {
       await convocarVoluntarios(m!.id, Array.from(selecionados));
-      toast.success(`${selecionados.size} ${selecionados.size === 1 ? 'voluntário convocado' : 'voluntários convocados'}`, {
-        description: 'Eles receberão notificação e poderão confirmar presença.',
+      toast.success(`${selecionados.size} ${selecionados.size === 1 ? 'convite enviado' : 'convites enviados'}`, {
+        description: 'Aparece como confirmado quando o dentista aceitar no painel dele.',
       });
       onConvocado();
     } catch (err) {
       toast.error('Não foi possível enviar todos os convites', {
         description: err instanceof Error ? err.message : undefined,
+        duration: 12000,
       });
       onConvocado();   // atualiza a lista com quem foi salvo
     } finally {

@@ -3,6 +3,7 @@ import {
   type Mutirao,
   type StatusMutirao,
   type VoluntarioConvocado,
+  type StatusConvite,
   type TipoMutirao,
   type ProgramaMutirao,
 } from '../data/mutiroes';
@@ -359,7 +360,7 @@ export interface NovoMutiraoInput {
 export async function criarMutirao(input: NovoMutiraoInput): Promise<Mutirao> {
   const novo: Mutirao = {
     id: 'm' + (Date.now() % 100000),
-    nome: input.nome,
+    nome: input.nome.trim(),
     data: input.data,
     horaInicio: input.horaInicio,
     horaFim: input.horaFim,
@@ -391,6 +392,99 @@ function nomeNoBanco(m: Mutirao): string {
   return m.nome || m.local;
 }
 
+function mensagemDe(err: unknown): string {
+  return err instanceof Error ? err.message : String(err ?? '');
+}
+
+function semAcentoMin(v: string): string {
+  return v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/** O backend respondeu que o mutirão não existe no banco (ficou só neste navegador). */
+function ehMutiraoInexistente(err: unknown): boolean {
+  return semAcentoMin(mensagemDe(err)).includes('mutirao nao encontrado');
+}
+
+/** Corta o texto para caber em VARCHAR2(maxBytes) — acentos ocupam 2 bytes em UTF-8. */
+function cortarBytes(v: string | undefined, maxBytes: number): string {
+  let t = (v ?? '').trim();
+  const enc = new TextEncoder();
+  while (enc.encode(t).length > maxBytes) t = t.slice(0, -1);
+  return t;
+}
+
+/** "Rua X, 123, Pinheiros" → "Pinheiros" (o form pede "Rua, número, bairro"). */
+function bairroDoEndereco(endereco?: string): string {
+  const partes = (endereco ?? '').split(',').map((p) => p.trim()).filter(Boolean);
+  const ultimo = partes.length >= 3 ? partes[partes.length - 1] : '';
+  return ultimo && !/^\d+$/.test(ultimo) ? ultimo : '';
+}
+
+/**
+ * Deixa o corpo dentro das regras da tabela campanha (Oracle):
+ * bairro, logradouro, cidade e estado são NOT NULL — e no Oracle texto vazio vira NULL,
+ * então mandar bairro '' fazia o INSERT falhar (ORA-01400) e o mutirão não era gravado.
+ * Também respeita o tamanho das colunas (descricao 100, bairro 50, numero_logradouro 4 dígitos).
+ */
+export function ajustarCampanhaParaBanco(c: CampanhaBody): CampanhaBody {
+  const limitar = (n: number | undefined, max: number) => Math.min(Math.max(Math.trunc(Number(n) || 0), 0), max);
+  return {
+    ...c,
+    nome:             (c.nome ?? '').trim(),
+    descricao:        cortarBytes(c.descricao, 100) || 'Mutirão Turma do Bem',
+    logradouro:       cortarBytes(c.logradouro, 100) || cortarBytes(c.nome, 100),
+    bairro:           cortarBytes(c.bairro || bairroDoEndereco(c.logradouro), 50) || 'Não informado',
+    cidade:           cortarBytes(c.cidade, 50) || 'Não informado',
+    estado:           cortarBytes(c.estado, 50) || 'Não informado',
+    numeroLogradouro: limitar(c.numeroLogradouro, 9999),
+    metaAtendidos:    limitar(c.metaAtendidos, 999999),
+    nAtendidos:       limitar(c.nAtendidos, 999999),
+    nDentistas:       limitar(c.nDentistas, 99999),
+    horaInicio:       c.horaInicio ? c.horaInicio.slice(0, 5) : undefined,
+    horaFim:          c.horaFim ? c.horaFim.slice(0, 5) : undefined,
+    programa:         c.programa ? cortarBytes(c.programa, 50) : undefined,
+    tipo:             c.tipo ? cortarBytes(c.tipo, 60) : undefined,
+    especialidades:   c.especialidades ? cortarBytes(c.especialidades, 400) : undefined,
+    publicoAlvo:      c.publicoAlvo ? cortarBytes(c.publicoAlvo, 200) : undefined,
+    cep:              c.cep ? cortarBytes(c.cep, 9) : undefined,
+  };
+}
+
+/** Mesmo corpo do cadastro (MutiroesPage) — usado para reenviar um mutirão que só existe no navegador. */
+function campanhaDoMutirao(m: Mutirao): CampanhaBody {
+  const numero = m.endereco?.match(/\d+/);
+  return {
+    nome:             nomeNoBanco(m),
+    metaAtendidos:    m.pacientesEsperados ?? 0,
+    nAtendidos:       m.atendimentosRealizados ?? 0,
+    nDentistas:       m.dentistasNecessarios ?? 0,
+    descricao:        m.observacoes || m.publicoAlvo || `${m.tipo} — ${m.programa}`,
+    logradouro:       m.endereco || m.local,
+    bairro:           '',
+    cidade:           m.cidade,
+    estado:           m.estado,
+    numeroLogradouro: numero ? parseInt(numero[0], 10) : 0,
+    dataEvento:       m.data || undefined,
+    horaInicio:       m.horaInicio || undefined,
+    horaFim:          m.horaFim || undefined,
+    programa:         m.programa,
+    tipo:             m.tipo,
+    especialidades:   (m.especialidades ?? []).join(', '),
+    publicoAlvo:      m.publicoAlvo || undefined,
+    cep:              m.cep || undefined,
+  };
+}
+
+/** Grava no banco um mutirão que ficou só no navegador. "Nome já usado" = já está lá. */
+async function enviarMutiraoParaBanco(m: Mutirao): Promise<void> {
+  try {
+    await campanhaService.cadastrar(ajustarCampanhaParaBanco(campanhaDoMutirao(m)));
+  } catch (err) {
+    if (semAcentoMin(mensagemDe(err)).includes('ja esta sendo usado')) return;
+    throw err;
+  }
+}
+
 function aplicar(mutiraoId: string, f: (m: Mutirao) => Mutirao): void {
   mutiroes = mutiroes.map((m) => {
     if (m.id !== mutiraoId) return m;
@@ -414,7 +508,7 @@ export async function convocarVoluntarios(
     .filter((d): d is DentistaCompleto => !!d);
 
   // Grava no banco primeiro; só entra na tela quem foi salvo
-  const resultados = await Promise.allSettled(
+  const enviar = () => Promise.allSettled(
     alvos.map((d) =>
       campanhaService.adicionarParticipante(nomeNoBanco(m), {
         tipo: 'dentista',
@@ -423,10 +517,25 @@ export async function convocarVoluntarios(
         especialidade: d.especialidade,
         cidade: d.cidade,
         estado: d.estado,
-        status: 'confirmado',
+        // Convite do admin fica PENDENTE: só vira confirmado quando o dentista aceita no painel dele
+        status: 'pendente',
       }),
     ),
   );
+  let resultados = await enviar();
+
+  // Mutirão que ficou só no navegador (o cadastro no banco falhou): grava ele e tenta de novo
+  if (resultados.some((r) => r.status === 'rejected' && ehMutiraoInexistente(r.reason))) {
+    try {
+      await enviarMutiraoParaBanco(m);
+    } catch (err) {
+      throw new Error(`O mutirão "${nomeNoBanco(m)}" não está salvo no banco e o servidor recusou salvar: ${mensagemDe(err)}`);
+    }
+    resultados = await enviar();
+    if (resultados.some((r) => r.status === 'rejected' && ehMutiraoInexistente(r.reason))) {
+      throw new Error(`O mutirão "${nomeNoBanco(m)}" não está salvo no banco. O servidor não conseguiu gravá-lo (veja o log do Render no horário do envio).`);
+    }
+  }
   const salvos = alvos.filter((_, i) => resultados[i].status === 'fulfilled');
   const hoje = hojeLocal();
 
@@ -439,15 +548,23 @@ export async function convocarVoluntarios(
       cidade: d.cidade,
       estado: d.estado,
       convocadoEm: hoje,
-      status: 'confirmado',
+      status: 'pendente',
     }));
     const lista = [...atual.voluntariosConvocados, ...novos];
-    return { ...atual, voluntariosConvocados: lista, dentistasConfirmados: atual.dentistasConfirmados + novos.length };
+    // dentistasConfirmados não muda: convite enviado ainda não é presença confirmada
+    return { ...atual, voluntariosConvocados: lista };
   });
 
   const falhas = alvos.length - salvos.length;
   if (falhas > 0) {
-    throw new Error(`${falhas} ${falhas === 1 ? 'convocação não foi salva' : 'convocações não foram salvas'} no banco`);
+    // Mostra o motivo que o backend devolveu (antes só dizia "não foi salva", sem a causa)
+    const motivos = resultados
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map((r) => (r.reason instanceof Error ? r.reason.message : String(r.reason)))
+      .filter((v, i, arr) => !!v && arr.indexOf(v) === i);
+    console.warn('[mutiroes] convocações recusadas pelo backend:', motivos);
+    const prefixo = `${falhas} ${falhas === 1 ? 'convocação não foi salva' : 'convocações não foram salvas'} no banco`;
+    throw new Error(motivos.length ? `${prefixo}: ${motivos.join(' · ')}` : prefixo);
   }
 }
 
@@ -457,7 +574,9 @@ export async function cancelarConvocacao(mutiraoId: string, dentistaId: string):
   await campanhaService.removerParticipante(nomeNoBanco(m), 'dentista', dentistaId);
   aplicar(mutiraoId, (atual) => {
     const filtrados = atual.voluntariosConvocados.filter((v) => !mesmoCpf(v.dentistaId, dentistaId));
-    const removidos = atual.voluntariosConvocados.length - filtrados.length;
+    // Só desconta quem já tinha confirmado (convite pendente não estava na contagem)
+    const removidos = atual.voluntariosConvocados
+      .filter((v) => mesmoCpf(v.dentistaId, dentistaId) && v.status === 'confirmado').length;
     return {
       ...atual,
       voluntariosConvocados: filtrados,
@@ -561,9 +680,29 @@ export async function cancelarPresencaPaciente(mutiraoId: string, pacienteCpf: s
 }
 
 // ─── Dentistas ───
-export function dentistaEstaConfirmado(mutiraoId: string, dentistaId: string): boolean {
+/** Situação do dentista no mutirão: convite pendente, confirmado, recusado ou null (sem convite). */
+export function statusDoDentista(mutiraoId: string, dentistaId: string): StatusConvite | null {
   const m = obterMutirao(mutiraoId);
-  return !!m?.voluntariosConvocados.some((v) => mesmoCpf(v.dentistaId, dentistaId));
+  return m?.voluntariosConvocados.find((v) => mesmoCpf(v.dentistaId, dentistaId))?.status ?? null;
+}
+
+export function dentistaEstaConfirmado(mutiraoId: string, dentistaId: string): boolean {
+  return statusDoDentista(mutiraoId, dentistaId) === 'confirmado';
+}
+
+/** Mutirões que o dentista vê no painel: os da cidade dele + os que ele foi convidado (qualquer cidade). */
+export function listarMutiroesDoDentista(cidade: string, dentistaId: string): Mutirao[] {
+  const daCidade = cidade ? listarProximosPorCidade(cidade) : [];
+  const convidado = listarProximos().filter((m) =>
+    m.voluntariosConvocados.some((v) => mesmoCpf(v.dentistaId, dentistaId) && v.status !== 'recusado'));
+  const ids = new Set(daCidade.map((m) => m.id));
+  return [...convidado.filter((m) => !ids.has(m.id)), ...daCidade]
+    .sort((a, b) => (a.data || '9999').localeCompare(b.data || '9999'));
+}
+
+/** Dentista recusa o convite do admin: o convite sai da lista do mutirão. */
+export async function recusarConviteMutirao(mutiraoId: string, dentistaId: string): Promise<void> {
+  return cancelarConvocacao(mutiraoId, dentistaId);
 }
 
 export async function autoInscreverDentista(
@@ -572,7 +711,11 @@ export async function autoInscreverDentista(
 ): Promise<void> {
   const m = mutiroes.find((x) => x.id === mutiraoId);
   if (!m) throw new Error('Mutirão não encontrado');
-  if (m.voluntariosConvocados.some((v) => mesmoCpf(v.dentistaId, dentista.id))) return;
+  const existente = m.voluntariosConvocados.find((v) => mesmoCpf(v.dentistaId, dentista.id));
+  if (existente?.status === 'confirmado') return;
+  // Aceitar convite pendente: o backend não troca o status de quem já está na lista,
+  // então remove o convite e grava de novo como confirmado (o dentista só mexe no próprio CPF)
+  if (existente) await campanhaService.removerParticipante(nomeNoBanco(m), 'dentista', dentista.id);
   await campanhaService.adicionarParticipante(nomeNoBanco(m), {
     tipo: 'dentista',
     rgCpf: dentista.id,
@@ -585,7 +728,7 @@ export async function autoInscreverDentista(
   aplicar(mutiraoId, (atual) => ({
     ...atual,
     voluntariosConvocados: [
-      ...atual.voluntariosConvocados,
+      ...atual.voluntariosConvocados.filter((v) => !mesmoCpf(v.dentistaId, dentista.id)),
       {
         dentistaId: dentista.id,
         nome: dentista.nome,
