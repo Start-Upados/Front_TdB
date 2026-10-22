@@ -66,6 +66,17 @@ export interface EnderecoBody {
   estado?:     string
 }
 
+// ─── ENDEREÇO DO CONSULTÓRIO — PUT /dentista/{rgCpf}/endereco ──
+export interface EnderecoConsultorioBody {
+  cep:         string
+  numero:      number
+  logradouro?: string
+  bairro?:     string
+  localidade?: string
+  uf?:         string
+  estado?:     string
+}
+
 // ─── DENTISTA (Dentista.java) ─────────────────
 export interface DentistaBody extends UsuarioBase {
   cep:            string
@@ -369,6 +380,9 @@ export const dentistaService = {
     request<unknown>(`/dentista/${rgCpf}`, 'DELETE'),
   addAtendimento: (rgCpf: string, nAtendimento: number) =>
     request<unknown>(`/dentista/${rgCpf}/addAtendimento`, 'PUT', undefined, { nAtendimento }),
+  /** Só o endereço do consultório (o dentista edita o próprio). Devolve o cadastro atualizado. */
+  alterarEndereco: (rgCpf: string, body: EnderecoConsultorioBody) =>
+    request<DentistaBody>(`/dentista/${encodeURIComponent(rgCpf)}/endereco`, 'PUT', body),
   removeAtendimento: (rgCpf: string, nAtendimento: number) =>
     request<unknown>(`/dentista/${rgCpf}/removeAtendimento`, 'PUT', undefined, { nAtendimento }),
   getDesconto: (rgCpf: string) =>

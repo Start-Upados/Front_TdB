@@ -6,11 +6,11 @@ import {
   Inbox, Send, ArrowRight,
   CalendarHeart, Calendar, Activity, Check,
   ClipboardCheck, CheckCircle2, XCircle, AlertCircle,
-  ClipboardList, Circle,
+  ClipboardList, Circle, Pencil,
 } from 'lucide-react'
 import { carregarHistoricoDentista, type ConsultaDentista } from './historicoDentista'
 
-import { dentistaService, type DentistaBody } from '../../Services/api'
+import { dentistaService, ErroHttp, type DentistaBody } from '../../Services/api'
 import { salvarSessaoPortal } from '../../Services/sessao'
 // NOVO ↓ — ajusta o caminho se a pasta do Dashboard for diferente
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
@@ -50,6 +50,29 @@ interface Dentista {
   status:            string
   cidade:            string
   endereco:          string   // endereço completo do consultório (cadastro)
+  enderecoPartes:    EnderecoPartes
+}
+
+interface EnderecoPartes {
+  cep: string
+  numero: string
+  logradouro: string
+  bairro: string
+  localidade: string
+  uf: string
+}
+
+function partesDoEndereco(d: DentistaBody): EnderecoPartes {
+  const e = d.dto ?? {}
+  const cep = (d.cep ?? '').replace(/\D/g, '')
+  return {
+    cep: cep.length === 8 ? `${cep.slice(0, 5)}-${cep.slice(5)}` : (d.cep ?? ''),
+    numero: d.nConsultorio ? String(d.nConsultorio) : '',
+    logradouro: e.logradouro ?? '',
+    bairro: e.bairro ?? '',
+    localidade: e.localidade ?? '',
+    uf: e.uf ?? '',
+  }
 }
 
 /** "Rua I, 109 - Centro, São Paulo-SP · CEP 01000-000" a partir do cadastro do dentista. */
@@ -957,8 +980,169 @@ function RecusarConviteModal({
 }
 
 
+// ─── EDITAR ENDEREÇO DO CONSULTÓRIO ───────────
+const inputEndereco = 'w-full bg-white border border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] rounded-lg px-3 py-2.5 text-[13px] outline-none focus:border-[#E88407] focus:ring-2 focus:ring-[#E88407]/15'
+
+function EditarEnderecoModal({ rgCpf, inicial, onClose, onSalvo }: {
+  rgCpf: string
+  inicial: EnderecoPartes
+  onClose: () => void
+  onSalvo: (d: DentistaBody) => void
+}) {
+  const [f, setF] = useState<EnderecoPartes>(inicial)
+  const [buscandoCep, setBuscandoCep] = useState(false)
+  const [avisoCep, setAvisoCep] = useState<string | null>(null)
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const campo = (k: keyof EnderecoPartes) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setF((atual) => ({ ...atual, [k]: e.target.value }))
+
+  // CEP completo → preenche rua, bairro, cidade e UF pelo ViaCEP (o número fica com o dentista)
+  async function buscarCep(valor: string) {
+    const cep = valor.replace(/\D/g, '')
+    if (cep.length !== 8) return
+    setBuscandoCep(true)
+    setAvisoCep(null)
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const d = await r.json() as { erro?: boolean; logradouro?: string; bairro?: string; localidade?: string; uf?: string }
+      if (d.erro) { setAvisoCep('CEP não encontrado. Preencha o endereço à mão.'); return }
+      setF((atual) => ({
+        ...atual,
+        logradouro: d.logradouro || atual.logradouro,
+        bairro: d.bairro || atual.bairro,
+        localidade: d.localidade || atual.localidade,
+        uf: d.uf || atual.uf,
+      }))
+    } catch {
+      setAvisoCep('Não foi possível consultar o CEP agora. Preencha o endereço à mão.')
+    } finally {
+      setBuscandoCep(false)
+    }
+  }
+
+  function mudarCep(e: React.ChangeEvent<HTMLInputElement>) {
+    const n = e.target.value.replace(/\D/g, '').slice(0, 8)
+    const formatado = n.length > 5 ? `${n.slice(0, 5)}-${n.slice(5)}` : n
+    setF((atual) => ({ ...atual, cep: formatado }))
+    if (n.length === 8) buscarCep(n)
+  }
+
+  const numero = Number(f.numero)
+  const valido = f.cep.replace(/\D/g, '').length === 8 && Number.isInteger(numero) && numero > 0 && numero <= 9999
+    && f.logradouro.trim() && f.localidade.trim() && /^[A-Za-z]{2}$/.test(f.uf.trim())
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault()
+    if (!valido) return
+    setSalvando(true)
+    setErro(null)
+    try {
+      const atualizado = await dentistaService.alterarEndereco(rgCpf, {
+        cep: f.cep,
+        numero,
+        logradouro: f.logradouro.trim(),
+        bairro: f.bairro.trim(),
+        localidade: f.localidade.trim(),
+        uf: f.uf.trim().toUpperCase(),
+      })
+      onSalvo(atualizado)
+    } catch (err) {
+      if (err instanceof ErroHttp && [403, 404, 405].includes(err.status)) {
+        setErro('O servidor ainda não tem essa função. Peça para a equipe TdB atualizar o sistema.')
+      } else {
+        setErro(err instanceof Error && err.message ? err.message : 'Não foi possível salvar. Tente novamente.')
+      }
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-lg"
+      >
+        <div className="p-6 border-b border-[#E2E8F0]">
+          <h3 className="font-bold text-[#0F172A] text-[18px]">Endereço do consultório</h3>
+          <p className="text-[#475569] text-[13px] mt-1">É o endereço que o paciente vê para ir à consulta.</p>
+        </div>
+
+        <form onSubmit={salvar} className="p-6 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+              CEP *
+              <input value={f.cep} onChange={mudarCep} inputMode="numeric" placeholder="00000-000" className={inputEndereco} />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+              Número *
+              <input value={f.numero} onChange={campo('numero')} inputMode="numeric" placeholder="109" className={inputEndereco} />
+            </label>
+          </div>
+          {(buscandoCep || avisoCep) && (
+            <p className={`text-[11px] ${avisoCep ? 'text-[#9A3412]' : 'text-[#94A3B8]'}`}>
+              {buscandoCep ? 'Buscando o CEP...' : avisoCep}
+            </p>
+          )}
+          <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+            Rua *
+            <input value={f.logradouro} onChange={campo('logradouro')} className={inputEndereco} />
+          </label>
+          <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+            Bairro
+            <input value={f.bairro} onChange={campo('bairro')} className={inputEndereco} />
+          </label>
+          <div className="grid grid-cols-[1fr_80px] gap-3">
+            <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+              Cidade *
+              <input value={f.localidade} onChange={campo('localidade')} className={inputEndereco} />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+              UF *
+              <input value={f.uf} onChange={(e) => setF((a) => ({ ...a, uf: e.target.value.toUpperCase().slice(0, 2) }))} className={inputEndereco} />
+            </label>
+          </div>
+
+          {erro && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-[12px] px-3 py-2.5 rounded-lg">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+              <p>{erro}</p>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={salvando}
+              className="flex-1 bg-white border border-[#E2E8F0] text-[#475569] font-semibold py-2.5 rounded-lg hover:bg-[#F8FAFC] transition-colors text-[13px] cursor-pointer disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!valido || salvando}
+              className="flex-1 bg-[#E88407] text-white font-semibold py-2.5 rounded-lg hover:bg-[#D97706] transition-colors text-[13px] border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {salvando ? 'Salvando...' : 'Salvar endereço'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+
 // ─── PAINEL DO DENTISTA (visual TdB) ──────────
-function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () => void }) {
+function PainelDentista({ dentista, onSair, onEnderecoSalvo }: {
+  dentista: Dentista
+  onSair: () => void
+  onEnderecoSalvo: (d: DentistaBody) => void
+}) {
+  const [editandoEndereco, setEditandoEndereco] = useState(false)
   return (
     <div className="min-h-screen bg-[#FAFBFD]">
 
@@ -1057,9 +1241,26 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
               <p className="font-semibold text-[#475569] mt-0.5 leading-relaxed">
                 {dentista.endereco || dentista.numero_consultorio || '—'}
               </p>
+              <button
+                type="button"
+                onClick={() => setEditandoEndereco(true)}
+                className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#E88407] hover:underline bg-transparent border-none cursor-pointer p-0"
+              >
+                <Pencil size={12} strokeWidth={2.4} />
+                Editar endereço
+              </button>
             </div>
           </div>
         </div>
+
+        {editandoEndereco && (
+          <EditarEnderecoModal
+            rgCpf={dentista.rgCpf}
+            inicial={dentista.enderecoPartes}
+            onClose={() => setEditandoEndereco(false)}
+            onSalvo={(d) => { onEnderecoSalvo(d); setEditandoEndereco(false) }}
+          />
+        )}
 
         {/* Botões */}
         <div className="flex flex-col gap-3">
@@ -1118,6 +1319,7 @@ const PainelDentistaPage = () => {
           status: resultado.status ?? 'Ativo',
           cidade: resultado.dto?.localidade ?? '',
           endereco: enderecoConsultorio(resultado),
+          enderecoPartes: partesDoEndereco(resultado),
         })
 
       } catch (erro) {
@@ -1151,7 +1353,20 @@ const PainelDentistaPage = () => {
 
   if (!dentista) return null
 
-  return <PainelDentista dentista={dentista} onSair={handleSair} />
+  return (
+    <PainelDentista
+      dentista={dentista}
+      onSair={handleSair}
+      onEnderecoSalvo={(d) => setDentista((atual) => atual && {
+        ...atual,
+        cep: d.cep ?? atual.cep,
+        numero_consultorio: String(d.nConsultorio ?? atual.numero_consultorio),
+        cidade: d.dto?.localidade ?? atual.cidade,
+        endereco: enderecoConsultorio(d),
+        enderecoPartes: partesDoEndereco(d),
+      })}
+    />
+  )
 }
 
 export default PainelDentistaPage;
