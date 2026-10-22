@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Smile, ShieldCheck, QrCode, Stethoscope, ClipboardList,
-  CheckCircle2, ArrowLeft, Check, ArrowRight, Circle, AlertCircle, LogIn,
+  CheckCircle2, ArrowLeft, Check, ArrowRight, Circle, AlertCircle, LogIn, Camera,
 } from 'lucide-react'
+import { LeitorQrCode } from './LeitorQrCode'
+import { protocoloDoQr } from './qr'
 import {
   buscarPaciente,
   confirmarSessao,
@@ -177,21 +179,33 @@ function TelaBusca({
   const [naoAchado,  setNaoAchado]  = useState(false)
 
   const [erro,       setErro]       = useState<string | null>(null)
+  const [lendoQr,    setLendoQr]    = useState(false)
 
-  async function handleBuscar(e: React.FormEvent) {
-    e.preventDefault()
-    if (!protocolo.trim()) return
-
+  async function buscar(valor: string) {
+    if (!valor.trim()) return
     setBuscando(true)
     setNaoAchado(false)
     setErro(null)
-    const r = await buscarPaciente(protocolo)
+    const r = await buscarPaciente(valor)
     setBuscando(false)
 
     if (r.tipo === 'ok') onEncontrado(r.paciente)
-    else if (r.tipo === 'nao-logado') onPrecisaLogin(protocolo.trim())
+    else if (r.tipo === 'nao-logado') onPrecisaLogin(valor.trim())
     else if (r.tipo === 'nao-encontrado') setNaoAchado(true)
     else setErro(r.mensagem)
+  }
+
+  function handleBuscar(e: React.FormEvent) {
+    e.preventDefault()
+    buscar(protocolo)
+  }
+
+  // QR lido pela câmera: preenche o protocolo e já busca o paciente
+  function handleQrLido(texto: string) {
+    setLendoQr(false)
+    const lido = protocoloDoQr(texto)
+    setProtocolo(lido)
+    buscar(lido)
   }
 
   return (
@@ -204,6 +218,22 @@ function TelaBusca({
           </div>
           <h1 className="text-[20px] font-bold text-[#0F172A]">Validar paciente</h1>
           <p className="text-[#475569] text-[12px] mt-1">Digite ou escaneie o protocolo do paciente</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setLendoQr(true)}
+          disabled={buscando}
+          className="mb-4 w-full inline-flex items-center justify-center gap-2 bg-[#0F172A] text-white font-bold py-3 rounded-xl hover:bg-[#1E293B] transition-colors duration-200 cursor-pointer border-none text-[14px] disabled:opacity-50"
+        >
+          <Camera size={18} strokeWidth={2.2} />
+          Escanear QR Code com a câmera
+        </button>
+
+        <div className="mb-4 flex items-center gap-3 text-[11px] uppercase tracking-wide text-[#94A3B8]">
+          <span className="h-px flex-1 bg-[#E2E8F0]" />
+          ou digite
+          <span className="h-px flex-1 bg-[#E2E8F0]" />
         </div>
 
         <form onSubmit={handleBuscar} className="flex flex-col gap-4">
@@ -256,13 +286,15 @@ function TelaBusca({
             <p className="text-[11px] text-[#9A3412] font-bold uppercase tracking-wide">Como usar</p>
           </div>
           <div className="flex flex-col gap-1.5 text-[12px] text-[#9A3412]/80">
-            <p>1. Escaneie o QR Code da carteirinha do paciente</p>
-            <p>2. O protocolo será preenchido automaticamente</p>
-            <p>3. Ou digite manualmente o número do protocolo</p>
+            <p>1. Toque em <b>Escanear QR Code</b> e aponte para o QR do comprovante do paciente</p>
+            <p>2. O protocolo é lido e o paciente aparece na hora</p>
+            <p>3. Ou digite o número do protocolo (o paciente vê no portal dele)</p>
           </div>
         </div>
 
       </div>
+
+      {lendoQr && <LeitorQrCode onLido={handleQrLido} onFechar={() => setLendoQr(false)} />}
 
       <p className="text-center mt-5 text-[13px]">
         <Link

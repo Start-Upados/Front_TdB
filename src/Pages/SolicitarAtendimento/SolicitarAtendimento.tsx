@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { Smile, HeartHandshake, ArrowRight, ArrowLeft, Check, CheckCircle2 } from 'lucide-react'
+import { Smile, HeartHandshake, ArrowRight, ArrowLeft, Check, CheckCircle2, Download } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { appendSheet } from '../../Services/googleSheets'
+import { baixarComprovante, urlValidacao } from '../../Services/comprovanteQr'
 import { solicitacaoService, beneficiarioService } from '../../Services/api'
 
 
@@ -177,6 +178,23 @@ function TelaSucesso({ protocolo, tipo, onVoltar, senha }: {
   const programaColor     = isApolonas ? '#CED600' : '#E88407'
   const programaColorSoft = isApolonas ? '#ECFCCB' : '#FFEDD5'
   const programaColorDark = isApolonas ? '#3F6212' : '#9A3412'
+  const qrRef = useRef<SVGSVGElement>(null)
+  const [baixando, setBaixando] = useState(false)
+  const [erroDownload, setErroDownload] = useState<string | null>(null)
+
+  async function handleBaixarQr() {
+    if (!qrRef.current) return
+    setBaixando(true)
+    setErroDownload(null)
+    try {
+      await baixarComprovante(qrRef.current, protocolo, isApolonas ? 'Apolônias do Bem' : 'Dentista do Bem', programaColor)
+    } catch (err) {
+      console.error('[comprovante] erro ao gerar a imagem:', err)
+      setErroDownload('Não foi possível baixar a imagem. Tire um print desta tela para guardar o QR Code.')
+    } finally {
+      setBaixando(false)
+    }
+  }
 
   return (
     <div className="w-full max-w-md">
@@ -212,15 +230,28 @@ function TelaSucesso({ protocolo, tipo, onVoltar, senha }: {
         <div className="flex flex-col items-center mb-5">
           <div className="bg-white p-3 rounded-xl border border-[#E2E8F0]">
             <QRCodeSVG
-              value={`https://www.startupados.com.br/validar-paciente?protocolo=${protocolo}`}
+              ref={qrRef}
+              value={urlValidacao(protocolo)}
               size={150}
               bgColor="#ffffff"
               fgColor="#0F172A"
               level="H"
             />
           </div>
-          <p className="text-[#475569] text-[12px] mt-3">Escaneie para validar seu atendimento</p>
+          <p className="text-[#475569] text-[12px] mt-3">Mostre este QR Code ao dentista no dia da consulta</p>
           <p className="text-[#94A3B8] text-[10px] mt-1 font-mono">startupados.com.br/validar-paciente</p>
+          <button
+            type="button"
+            onClick={handleBaixarQr}
+            disabled={baixando}
+            style={{ borderColor: programaColor, color: programaColorDark }}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl border-2 bg-white px-4 py-2 text-[13px] font-semibold hover:bg-[#F8FAFC] transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Download size={15} strokeWidth={2.4} />
+            {baixando ? 'Gerando imagem...' : 'Baixar QR Code'}
+          </button>
+          {erroDownload && <p className="mt-2 text-[11px] text-red-600">{erroDownload}</p>}
+          <p className="mt-2 text-[10px] text-[#94A3B8]">A imagem leva o QR Code e o protocolo. Anote a senha à parte.</p>
         </div>
 
         <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 mb-6 text-left">

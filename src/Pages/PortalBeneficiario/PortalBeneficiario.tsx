@@ -1,15 +1,17 @@
-import { useState, useEffect, useMemo } from 'react'  // ← NOVO: useMemo
+import { useState, useEffect, useMemo, useRef } from 'react'  // ← NOVO: useMemo
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity, Calendar, MapPin, ClipboardList, Info,
   Stethoscope, LogOut, MessageSquare,
   Check, ArrowRight, Circle,
-  Send, Inbox, Copy,  // ← NOVO (Copy: protocolo)
+  Send, Inbox, Copy, QrCode, Download,  // ← NOVO (Copy: protocolo · QrCode/Download: comprovante)
 } from 'lucide-react'
 import { useSessionTimeout } from '../../Hooks/useSessionTimeout'
 import SessionWarning from '../../Components/SessionWarning/SessionWarning'
 import { beneficiarioService } from '../../Services/api'
 import { carregarAtendimentosDoPaciente, dadosDoTratamento } from './atendimentosPaciente'
+import { QRCodeSVG } from 'qrcode.react'
+import { baixarComprovante, urlValidacao } from '../../Services/comprovanteQr'
 // NOVO ↓ — ajusta o caminho se a pasta do seu Dashboard for diferente
 import { listarSolicitacoes, responderComoPaciente } from '../Dashboard/services/central'
 import type { Solicitacao } from '../Dashboard/data/central'
@@ -598,6 +600,82 @@ function ProtocolosPaciente({ protocolos }: { protocolos: string[] }) {
   )
 }
 
+// ─── QR CODE DO COMPROVANTE — o dentista lê no dia da consulta ──
+function QrCodePaciente({ protocolos, programa }: { protocolos: string[]; programa: string }) {
+  const [escolhido, setEscolhido] = useState(0)
+  const [baixando, setBaixando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  const qrRef = useRef<SVGSVGElement>(null)
+  if (protocolos.length === 0) return null
+
+  const indice = Math.min(escolhido, protocolos.length - 1)
+  const protocolo = protocolos[indice]
+  const isApolonia = programa === 'Apolônias do Bem'
+  const cor = isApolonia ? '#CED600' : '#E88407'
+
+  async function baixar() {
+    if (!qrRef.current) return
+    setBaixando(true)
+    setErro(null)
+    try {
+      await baixarComprovante(qrRef.current, protocolo, programa || 'Turma do Bem', cor)
+    } catch (err) {
+      console.error('[portal] erro ao gerar o comprovante:', err)
+      setErro('Não foi possível baixar a imagem. Tire um print desta tela para guardar o QR Code.')
+    } finally {
+      setBaixando(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
+      <div className="flex items-center gap-2 mb-4">
+        <QrCode size={18} className="text-[#E88407]" strokeWidth={2} />
+        <h2 className="font-bold text-[#0F172A] text-[16px]">Seu QR Code</h2>
+      </div>
+
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+        <div className="bg-white p-3 rounded-xl border border-[#E2E8F0] shrink-0">
+          <QRCodeSVG ref={qrRef} value={urlValidacao(protocolo)} size={150} bgColor="#ffffff" fgColor="#0F172A" level="H" />
+        </div>
+
+        <div className="flex-1 text-center sm:text-left">
+          <p className="text-[#475569] text-[13px]">
+            Mostre este QR Code ao dentista no dia da consulta. Ele confirma o seu atendimento lendo o código.
+          </p>
+          <p className="mt-2 font-mono text-[15px] font-bold tracking-wide text-[#9A3412]">{protocolo}</p>
+
+          {protocolos.length > 1 && (
+            <label className="mt-2 flex flex-col gap-1 text-[11px] text-[#475569] sm:max-w-[220px]">
+              Outro protocolo
+              <select
+                value={indice}
+                onChange={(e) => setEscolhido(Number(e.target.value))}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#0F172A]"
+              >
+                {protocolos.map((p, i) => (
+                  <option key={p} value={i}>{p}{i === 0 ? ' (atual)' : ''}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <button
+            type="button"
+            onClick={baixar}
+            disabled={baixando}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#E88407] px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-[#D97706] transition-colors border-none cursor-pointer disabled:opacity-50"
+          >
+            <Download size={15} strokeWidth={2.4} />
+            {baixando ? 'Gerando imagem...' : 'Baixar QR Code'}
+          </button>
+          {erro && <p className="mt-2 text-[11px] text-red-600">{erro}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── PAINEL DO PACIENTE (PRESERVADO + 1 linha nova) ──
 function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: () => void }) {
   // Progresso = só sessões que o dentista FINALIZOU (status 'concluido' no backend).
@@ -694,6 +772,9 @@ function PainelPaciente({ paciente, onVoltar }: { paciente: Paciente; onVoltar: 
             </div>
           )}
         </div>
+
+        {/* QR Code do comprovante (dentista lê no dia da consulta) */}
+        <QrCodePaciente protocolos={paciente.protocolos ?? []} programa={paciente.programa} />
 
         {/* NOVO ↓ — Seção de mensagens da Central */}
         <SecaoMensagens pacienteNome={paciente.nome} />
