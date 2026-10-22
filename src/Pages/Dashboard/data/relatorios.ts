@@ -1,18 +1,46 @@
+/**
+ * Tipos da página Relatórios e impacto.
+ * Todos os números vêm do backend (services/relatorios.ts) — aqui não há dados de exemplo.
+ */
+
 export type PeriodoRelatorio = 'mes' | 'trimestre' | 'ano' | 'personalizado';
 export type PublicoRelatorio = 'doador' | 'parceiro' | 'ods' | 'interno';
 
 export interface OpcoesRelatorio {
   periodo: PeriodoRelatorio;
   publico: PublicoRelatorio;
+  /** Só no período personalizado: datas YYYY-MM-DD (inclusive). */
+  inicio?: string;
+  fim?: string;
 }
 
-export interface KpisImpacto {
-  sorrisosTransformados: number;
-  jovensBeneficiados: number;
-  mulheresAcolhidas: number;
-  municipiosAlcancados: number;
-  metaAnual: number;
-  novosMunicipiosVsAnoPassado: number;
+/** Intervalo de datas já resolvido (YYYY-MM-DD, inclusive). */
+export interface IntervaloRelatorio {
+  inicio: string;
+  fim: string;
+  /** "01/01/2026 a 21/10/2026" */
+  texto: string;
+  /** "em 2026", "nos últimos 30 dias", "no trimestre"... */
+  rotulo: string;
+}
+
+export interface LinhaPrograma {
+  programa: string;
+  atendimentos: number;
+  pacientes: number;
+}
+
+export interface LinhaContagem {
+  nome: string;
+  total: number;
+}
+
+export interface MesContagem {
+  /** "2026-10" */
+  mes: string;
+  /** "out/26" */
+  rotulo: string;
+  total: number;
 }
 
 export interface ODS {
@@ -23,33 +51,65 @@ export interface ODS {
   contribuicao: string;
 }
 
+/** Tudo o que a página, o PDF e o CSV mostram — calculado de uma vez para o período escolhido. */
+export interface DadosRelatorio {
+  intervalo: IntervaloRelatorio;
+  geradoEm: string;                    // ISO
+
+  // Impacto (atendimentos concluídos no período)
+  sorrisos: number;                    // consultas concluídas + atendimentos em mutirões
+  consultasConcluidas: number;
+  atendimentosMutirao: number;
+  pacientesAtendidos: number;          // pacientes distintos com consulta concluída
+  jovens: number;                      // pacientes do Dentista do Bem
+  mulheres: number;                    // pacientes do Apolônias do Bem
+  porPrograma: LinhaPrograma[];
+  porEspecialidade: LinhaContagem[];
+  porMes: MesContagem[];
+
+  // Território
+  municipios: LinhaContagem[];         // "São Paulo-SP" → atendimentos
+  municipiosNovos: number;             // alcançados no período e nunca antes
+  porRegiao: LinhaContagem[];
+
+  // Operação no período
+  agendados: number;                   // consultas marcadas de hoje em diante
+  faltasCancelamentos: number;
+  taxaComparecimento: number | null;   // % (concluídas / (concluídas + faltas)); null sem base
+  solicitacoesRecebidas: number;
+  solicitacoesPorStatus: LinhaContagem[];
+  dentistasAtuantes: number;           // dentistas com consulta concluída no período
+  topDentistas: LinhaContagem[];       // só no relatório interno
+  mutiroesRealizados: number;
+  proximosMutiroes: { nome: string; data: string; cidade: string; dentistas: string }[];
+
+  // Situação atual (não depende do período)
+  voluntariosAtivos: number;
+  voluntariosPendentes: number;
+  filaAguardando: number;
+  esperaMediaFilaDias: number | null;
+
+  // Comparação com o período anterior de mesmo tamanho
+  sorrisosPeriodoAnterior: number;
+
+  // Meta anual (a mesma da barra "Meta TdB" do menu)
+  meta: { ano: number; meta: number; realizados: number; pct: number };
+
+  ods: ODS[];
+
+  /** Fontes que não responderam (o relatório sai com o que veio). */
+  avisos: string[];
+}
+
 export interface RelatorioGerado {
   id: string;
   titulo: string;
-  publico: string;
-  geradoEm: string;
+  publico: PublicoRelatorio;
+  publicoLabel: string;
+  intervaloTexto: string;
+  geradoEm: string;                    // ISO
   paginas: number;
+  opcoes: OpcoesRelatorio;
+  /** Números do momento em que foi gerado: o "Baixar" refaz o mesmo PDF. */
+  dados: DadosRelatorio;
 }
-
-export const KPIS_IMPACTO_MOCK: KpisImpacto = {
-  sorrisosTransformados: 8247,
-  jovensBeneficiados: 5694,
-  mulheresAcolhidas: 847,
-  municipiosAlcancados: 142,
-  metaAnual: 9000,
-  novosMunicipiosVsAnoPassado: 18,
-};
-
-export const ODS_MOCK: ODS[] = [
-  { numero: 3,  cor: '#4C9F38', nome: 'Saúde',        metrica: '8.247', contribuicao: 'atendimentos gratuitos'  },
-  { numero: 4,  cor: '#C5192D', nome: 'Educação',     metrica: '5.694', contribuicao: 'jovens em idade escolar' },
-  { numero: 5,  cor: '#FF3A21', nome: 'Igualdade',    metrica: '847',   contribuicao: 'mulheres acolhidas'      },
-  { numero: 10, cor: '#DD1367', nome: 'Desigualdade', metrica: '100%',  contribuicao: 'vulnerabilidade social'  },
-];
-
-export const RELATORIOS_GERADOS_MOCK: RelatorioGerado[] = [
-  { id: 'r1', titulo: 'Relatório anual 2024',              publico: 'Versão para doador',   geradoEm: '18 jan 2025', paginas: 32 },
-  { id: 'r2', titulo: 'Relatório Q3/2025',                 publico: 'Versão para parceiro', geradoEm: '5 out 2025',  paginas: 18 },
-  { id: 'r3', titulo: 'Relatório personalizado · Colgate', publico: 'Versão para parceiro', geradoEm: '22 set 2025', paginas: 14 },
-  { id: 'r4', titulo: 'Relatório ODS · Instituto Avon',    publico: 'ODS / ESG',            geradoEm: '12 ago 2025', paginas: 22 },
-];
