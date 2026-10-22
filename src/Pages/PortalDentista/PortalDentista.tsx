@@ -49,6 +49,18 @@ interface Dentista {
   avaliacao:         number
   status:            string
   cidade:            string
+  endereco:          string   // endereço completo do consultório (cadastro)
+}
+
+/** "Rua I, 109 - Centro, São Paulo-SP · CEP 01000-000" a partir do cadastro do dentista. */
+function enderecoConsultorio(d: DentistaBody): string {
+  const e = d.dto ?? {}
+  const rua = [e.logradouro?.trim(), d.nConsultorio ? String(d.nConsultorio) : ''].filter(Boolean).join(', ')
+  const cidade = [e.localidade?.trim(), e.uf?.trim()].filter(Boolean).join('-')
+  const local = [rua, [e.bairro?.trim(), cidade].filter(Boolean).join(', ')].filter(Boolean).join(' - ')
+  const cep = (d.cep ?? '').replace(/\D/g, '')
+  const cepFmt = cep.length === 8 ? `${cep.slice(0, 5)}-${cep.slice(5)}` : ''
+  return [local, cepFmt && `CEP ${cepFmt}`].filter(Boolean).join(' · ')
 }
 
 // (mock antigo mantido no arquivo original, comentado, foi preservado;
@@ -1032,7 +1044,7 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
             <Award size={16} className="text-[#475569]" strokeWidth={2} />
             <h2 className="font-bold text-[#0F172A] text-[14px]">Informações adicionais</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-[13px]">
+          <div className="grid grid-cols-1 gap-3 text-[13px] sm:grid-cols-2">
             <div>
               <p className="text-[#94A3B8] text-[11px] uppercase tracking-wide">Total de pacientes atendidos</p>
               <p className="font-extrabold text-[#475569] text-[18px] mt-1">{dentista.n_atendimentos}</p>
@@ -1042,7 +1054,9 @@ function PainelDentista({ dentista, onSair }: { dentista: Dentista; onSair: () =
                 <Building size={11} strokeWidth={2} />
                 <p className="text-[11px] uppercase tracking-wide">Consultório</p>
               </div>
-              <p className="font-semibold text-[#475569] mt-0.5">{dentista.numero_consultorio || '—'}</p>
+              <p className="font-semibold text-[#475569] mt-0.5 leading-relaxed">
+                {dentista.endereco || dentista.numero_consultorio || '—'}
+              </p>
             </div>
           </div>
         </div>
@@ -1102,7 +1116,8 @@ const PainelDentistaPage = () => {
           n_atendimentos: resultado.nAtendimentos ?? 0,
           avaliacao: resultado.avaliacao ?? 0,
           status: resultado.status ?? 'Ativo',
-          cidade: (resultado as unknown as { dto?: { localidade?: string } }).dto?.localidade ?? '',
+          cidade: resultado.dto?.localidade ?? '',
+          endereco: enderecoConsultorio(resultado),
         })
 
       } catch (erro) {
