@@ -170,19 +170,17 @@ export default function RelatoriosPage() {
             ? 'carregando...'
             : dados.atendimentosMutirao > 0
               ? `${dados.intervalo.rotulo} · ${fmt(dados.consultasConcluidas)} consultas + ${fmt(dados.atendimentosMutirao)} em mutirões`
-              : periodo === 'ano'
-                ? `${dados.intervalo.rotulo} · meta: ${fmt(dados.meta.realizados)} de ${fmt(dados.meta.meta)}`
-                : dados.intervalo.rotulo}
+              : `${fmt(dados.pacientesAtendidos)} ${dados.pacientesAtendidos === 1 ? 'paciente' : 'pacientes'} ${dados.intervalo.rotulo}`}
         />
         <KpiCard
           label="Jovens beneficiados"
           value={v(dados?.jovens)}
-          sub="Dentista do Bem"
+          sub={dados && dados.jovens === 1 ? 'paciente · Dentista do Bem' : 'pacientes · Dentista do Bem'}
         />
         <KpiCard
           label="Mulheres acolhidas"
           value={v(dados?.mulheres)}
-          sub="Apolônias do Bem"
+          sub={dados && dados.mulheres === 1 ? 'paciente · Apolônias do Bem' : 'pacientes · Apolônias do Bem'}
         />
         <KpiCard
           label="Municípios alcançados"

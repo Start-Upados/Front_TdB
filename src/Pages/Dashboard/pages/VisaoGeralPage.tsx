@@ -238,7 +238,7 @@ export default function VisaoGeralPage() {
             </h2>
 
             <span className="text-xs text-subtle">
-              Últimos 6 meses
+              Consultas concluídas · últimos 6 meses
             </span>
           </div>
 
@@ -368,11 +368,11 @@ export default function VisaoGeralPage() {
             text-sm
           ">
             <span className="text-muted">
-              Total no ano
+              Concluídos em {new Date().getFullYear()}
             </span>
 
             <span className="font-medium text-ink">
-              {total} atendimentos
+              {total} {total === 1 ? 'atendimento' : 'atendimentos'}
             </span>
           </div>
         </div>

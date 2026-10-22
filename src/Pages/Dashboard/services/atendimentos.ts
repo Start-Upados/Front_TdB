@@ -13,6 +13,7 @@ import {
   type AtendimentoBody, type DentistaBody, type BeneficiarioBody,
 } from '../../../Services/api';
 import { lerDataHora, temHora } from '../Utils/tempo';
+import { programaPorPerfil } from './programa';
 
 
 // ─── Persistência localStorage ────────────────────
@@ -177,7 +178,7 @@ function idadeDe(dataNasc?: string): number {
 }
 
 /** Contato e idade do paciente vêm do cadastro dele (beneficiário). */
-function dadosDoPaciente(b: BeneficiarioBody): { contato: Atendimento['paciente']['contato']; idade: number } {
+function dadosDoPaciente(b: BeneficiarioBody): { contato: Atendimento['paciente']['contato']; idade: number; sexo: string } {
   const whatsapp = numeroWhatsApp(b.telefone);
   return {
     contato: {
@@ -186,6 +187,7 @@ function dadosDoPaciente(b: BeneficiarioBody): { contato: Atendimento['paciente'
       telefone: b.telefone?.trim() ? (whatsapp ? `+${whatsapp}` : b.telefone.trim()) : undefined,
     },
     idade: idadeDe(b.dataNasc),
+    sexo: b.sexo ?? '',
   };
 }
 
@@ -245,8 +247,14 @@ export async function carregarAtendimentosReais(): Promise<{
       const doBackend = lista.map((b) => {
         const a = mapearAtendimentoBackend(b);
         const pac = cadastros.get(soDigitos(b.pacienteRgCpf));
+        // Programa pela mesma regra da Central e dos Relatórios (mulher = Apolônias; jovem homem = Dentista do Bem).
+        // Atendimento antigo gravado com o programa errado deixa de distorcer as contagens.
+        const programa = pac?.sexo && a.programa !== 'Mutirão'
+          ? programaPorPerfil(pac.sexo, pac.idade || undefined, b.protocolo)
+          : a.programa;
         return {
           ...a,
+          programa,
           paciente: pac ? { ...a.paciente, contato: pac.contato, idade: pac.idade || a.paciente.idade } : a.paciente,
           local: b.localAtendimento?.trim() || enderecos.get(soDigitos(b.dentistaRgCpf)) || '',
         };
@@ -509,14 +517,17 @@ export function contarAtendimentosPorMes(meses = 6): { ano: number; mes: number;
   for (let i = meses - 1; i >= 0; i--) {
     const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    out.push({ ano: d.getFullYear(), mes: d.getMonth() + 1, total: atendimentos.filter((a) => a.data.startsWith(ym)).length });
+    out.push({ ano: d.getFullYear(), mes: d.getMonth() + 1, total: atendimentos.filter((a) => a.status === 'realizado' && a.data.startsWith(ym)).length });
   }
   return out;
 }
 
-export function contarAtendimentosPorPrograma(): { programa: string; total: number }[] {
+/** Atendimentos concluídos no ano, por programa ("Total no ano" da Visão Geral). */
+export function contarAtendimentosPorPrograma(ano = new Date().getFullYear()): { programa: string; total: number }[] {
   const map = new Map<string, number>();
-  atendimentos.forEach((a) => map.set(a.programa, (map.get(a.programa) ?? 0) + 1));
+  atendimentos
+    .filter((a) => a.status === 'realizado' && a.data.startsWith(String(ano)))
+    .forEach((a) => map.set(a.programa, (map.get(a.programa) ?? 0) + 1));
   return Array.from(map.entries()).map(([programa, total]) => ({ programa, total }));
 }
 
@@ -533,6 +544,7 @@ export function contarAtendimentosNoMes(): {
   anterior: number;
   variacaoPct: number;
   nomeMesAnterior: string;
+  agendadosNoMes: number;
 } {
   const refDate = new Date(hojeISO() + 'T12:00:00');
   const anoMesAtual = `${refDate.getFullYear()}-${String(refDate.getMonth() + 1).padStart(2, '0')}`;
@@ -541,8 +553,13 @@ export function contarAtendimentosNoMes(): {
   refAnterior.setMonth(refAnterior.getMonth() - 1);
   const anoMesAnterior = `${refAnterior.getFullYear()}-${String(refAnterior.getMonth() + 1).padStart(2, '0')}`;
 
-  const atual = atendimentos.filter((a) => a.data.startsWith(anoMesAtual)).length;
-  const anterior = atendimentos.filter((a) => a.data.startsWith(anoMesAnterior)).length;
+  // Atendimento = consulta CONCLUÍDA (mesma conta da meta do menu e dos Relatórios)
+  const atual = atendimentos.filter((a) => a.status === 'realizado' && a.data.startsWith(anoMesAtual)).length;
+  const anterior = atendimentos.filter((a) => a.status === 'realizado' && a.data.startsWith(anoMesAnterior)).length;
+  // Ainda vão acontecer neste mês (marcadas, não concluídas)
+  const hoje = hojeISO();
+  const agendadosNoMes = atendimentos.filter((a) =>
+    a.data.startsWith(anoMesAtual) && a.data >= hoje && ['aguardando', 'confirmado', 'em-andamento'].includes(a.status)).length;
 
   const variacaoPct = anterior === 0
     ? (atual > 0 ? 100 : 0)
@@ -550,7 +567,7 @@ export function contarAtendimentosNoMes(): {
 
   const nomeMesAnterior = refAnterior.toLocaleDateString('pt-BR', { month: 'long' });
 
-  return { atual, anterior, variacaoPct, nomeMesAnterior };
+  return { atual, anterior, variacaoPct, nomeMesAnterior, agendadosNoMes };
 }
 
 /**

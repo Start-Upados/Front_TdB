@@ -48,10 +48,14 @@ export function obterKpis(): KpiData[] {
     // [0] Atendimentos no mês — DINÂMICO via services/atendimentos
     (() => {
       const m = contarAtendimentosNoMes();
-      const subTexto =
+      const comparacao =
         m.anterior === 0
           ? `Sem comparação vs ${m.nomeMesAnterior}`
           : `${m.variacaoPct > 0 ? '+' : ''}${m.variacaoPct}% vs ${m.nomeMesAnterior}`;
+      // value = consultas concluídas no mês; as marcadas que ainda vão acontecer aparecem à parte
+      const subTexto = m.agendadosNoMes > 0
+        ? `${comparacao} · +${m.agendadosNoMes} ${m.agendadosNoMes === 1 ? 'agendado' : 'agendados'}`
+        : comparacao;
       return {
         ...KPIS_VISAO_GERAL_MOCK[0],
         value: String(m.atual),
