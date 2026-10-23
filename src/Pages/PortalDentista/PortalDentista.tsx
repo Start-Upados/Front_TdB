@@ -490,7 +490,7 @@ function ItemHistorico({ consulta, isLast }: { consulta: ConsultaDentista; isLas
   )
 }
 
-const LIMITE_HISTORICO = 8
+const LIMITE_HISTORICO = 5
 
 function SecaoHistoricoConsultas({ rgCpf }: { rgCpf: string }) {
   const [consultas, setConsultas] = useState<ConsultaDentista[]>([])
@@ -505,10 +505,10 @@ function SecaoHistoricoConsultas({ rgCpf }: { rgCpf: string }) {
     return () => { ativo = false }
   }, [rgCpf])
 
-  // Lista longa: mostra as mais recentes primeiro do corte (mantendo a ordem cronológica)
-  const visiveis = verTodas || consultas.length <= LIMITE_HISTORICO
-    ? consultas
-    : consultas.slice(-LIMITE_HISTORICO)
+  // Mais recentes no topo; as 5 primeiras na tela e o resto no "Ver mais"
+  const ordenadas = [...consultas].reverse()
+  const visiveis = verTodas ? ordenadas : ordenadas.slice(0, LIMITE_HISTORICO)
+  const escondidas = ordenadas.length - LIMITE_HISTORICO
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-5 border border-[#E2E8F0]">
@@ -528,12 +528,12 @@ function SecaoHistoricoConsultas({ rgCpf }: { rgCpf: string }) {
           {visiveis.map((c, i) => (
             <ItemHistorico key={c.idAtendimento || i} consulta={c} isLast={i === visiveis.length - 1} />
           ))}
-          {consultas.length > LIMITE_HISTORICO && (
+          {escondidas > 0 && (
             <button
               onClick={() => setVerTodas((v) => !v)}
-              className="w-full text-[13px] font-semibold text-[#E88407] py-2 rounded-lg hover:bg-[#FFEDD5] transition-colors bg-transparent border-none cursor-pointer"
+              className="mt-1 w-full text-[13px] font-semibold text-[#E88407] py-2.5 rounded-lg border border-[#FED7AA] bg-transparent hover:bg-[#FFEDD5] transition-colors cursor-pointer"
             >
-              {verTodas ? 'Mostrar menos' : `Ver todas (${consultas.length})`}
+              {verTodas ? 'Ver menos' : `Ver mais (${escondidas})`}
             </button>
           )}
         </>
