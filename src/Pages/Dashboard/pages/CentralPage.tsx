@@ -669,7 +669,7 @@ function DetalheConversa({
   const motivoCfg = selected.motivoFechamento ? configMotivo(selected.motivoFechamento) : null;
 
   return (
-    <div className="flex flex-col xl:col-span-7 xl:max-h-[760px]">
+    <div className="flex flex-col xl:col-span-7 xl:max-h-[760px] xl:overflow-y-auto">
 
       {/* HEADER */}
       <div className="border-b border-line p-4 md:p-5">
@@ -781,7 +781,7 @@ function DetalheConversa({
       </div>
 
       {/* THREAD */}
-      <div ref={threadRef} className="flex-1 overflow-y-auto p-4 md:p-5 space-y-3">
+      <div ref={threadRef} className="flex-1 min-h-[280px] overflow-y-auto p-4 md:p-5 space-y-3">
         <p className="text-xs tracking-wider text-muted mb-2">CONVERSA ({selected.mensagens.length})</p>
         {selected.mensagens.map((msg) => {
           const isAdmin = msg.autor === 'admin';
