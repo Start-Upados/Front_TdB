@@ -85,8 +85,8 @@ function mapearDentistaBackend(b: DentistaBody): DentistaCompleto {
     cro: b.cro ?? '',
     especialidade: b.especializacao ?? 'Clínico geral',
     tags: [],
-    cidade: '',                       // backend não fornece — derivar do CEP é trabalho futuro
-    estado: '',
+    cidade: b.dto?.localidade ?? '',  // cidade do CEP (ViaCEP) — usada no filtro de convocação por cidade
+    estado: b.dto?.uf ?? b.dto?.estado ?? '',
     regiao: regiaoDoCep(b.cep),                
     status: statusDe(b.status),
     vinculosTotal: 0,

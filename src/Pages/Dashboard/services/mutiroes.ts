@@ -600,20 +600,21 @@ export function listarVoluntariosDisponiveis(
   filtroEspecialidade: string = 'Todas',
 ): VoluntarioDisponivel[] {
   const jaConvocados = new Set(mutirao.voluntariosConvocados.map((v) => v.dentistaId));
+  const cidadeMutirao = semAcento(extrairCidade(mutirao.cidade));
 
   return listarDentistas()
     .filter((d) => d.status === 'Ativa')
     .filter((d) => !jaConvocados.has(d.id))
+    // Só dentistas da MESMA cidade do mutirão (ignora acento e maiúsc/minúsc).
+    // Dentista sem cidade (CEP não resolveu) não entra, pra não convocar de fora.
+    .filter((d) => cidadeMutirao !== '' && semAcento(extrairCidade(d.cidade)) === cidadeMutirao)
     .filter((d) => filtroEspecialidade === 'Todas' || d.especialidade === filtroEspecialidade)
     .map((d) => ({
       dentista: d,
       slotsLivres: d.disponibilidadeSemana.reduce((acc, dia) => acc + (dia.total - dia.ocupados), 0),
-      ehLocal: d.cidade === mutirao.cidade,
+      ehLocal: true,
     }))
-    .sort((a, b) => {
-      if (a.ehLocal !== b.ehLocal) return a.ehLocal ? -1 : 1;
-      return b.slotsLivres - a.slotsLivres;
-    });
+    .sort((a, b) => b.slotsLivres - a.slotsLivres);
 }
 
 export function listarEspecialidadesParaFiltro(): string[] {
