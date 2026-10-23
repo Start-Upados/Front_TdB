@@ -365,6 +365,7 @@ export async function carregarSolicitacoesReais(): Promise<{
         return {
           ...local,
           protocolo:         b.protocolo,
+          mensagens: local.mensagens.map((m) => (m.id === b.mensagens[0]?.id ? b.mensagens[0] : m)),
           // perfil vem sempre do banco (o cache antigo podia ter o programa errado)
           idade:             b.idade,
           sexo:              b.sexo,
@@ -442,6 +443,46 @@ function estadoDoBackend(
   return { status: padrao, motivoFechamento: undefined };
 }
 
+/** Valores das listas do formulário (gravados sem acento) como a pessoa leu na tela. */
+const ROTULOS_FORMULARIO: Record<string, string> = {
+  'tratamento de canal': 'Tratamento de canal',
+  'extracao': 'Extração',
+  'restauracao': 'Restauração',
+  'ortodontia (aparelho)': 'Ortodontia (aparelho)',
+  'limpeza e prevencao': 'Limpeza e prevenção',
+  'vitima de violencia com denticao afetada': 'Vítima de violência com dentição afetada',
+  'triagem odontologica': 'Triagem odontológica',
+  'ate 1 salario minimo': 'Até 1 salário mínimo',
+  '1 a 2 salarios minimos': '1 a 2 salários mínimos',
+  '2 a 3 salarios minimos': '2 a 3 salários mínimos',
+  'acima de 3 salarios minimos': 'Acima de 3 salários mínimos',
+  'mae': 'Mãe',
+  'avo/ava': 'Avô/Avó',
+  'outro responsavel': 'Outro responsável',
+  'indicacao de amigo/familiar': 'Indicação de amigo/familiar',
+  'posto de saude': 'Posto de saúde',
+};
+
+function rotulo(valor?: string): string {
+  const v = (valor ?? '').trim();
+  return ROTULOS_FORMULARIO[v.toLowerCase()] ?? v;
+}
+
+/** Necessidade, observações, responsável, renda e origem — um por linha, só o que veio preenchido. */
+function fichaDoFormulario(body: SolicitacaoBody): string {
+  const vazio = (v?: string) => !v || !v.trim() || /^nao se aplica$/i.test(v.trim());
+  const linhas: string[] = [];
+  if (!vazio(body.necessidade)) linhas.push(`Necessidade: ${rotulo(body.necessidade)}`);
+  if (!vazio(body.descricao)) linhas.push(`Observações: ${body.descricao.trim()}`);
+  const responsavelEhOProprio = (body.responsavel ?? '').trim().toLowerCase() === (body.nome ?? '').trim().toLowerCase();
+  if (!vazio(body.responsavel) && !responsavelEhOProprio) {
+    linhas.push(`Responsável: ${body.responsavel.trim()}${vazio(body.parentesco) ? '' : ` (${rotulo(body.parentesco)})`}`);
+  }
+  if (!vazio(body.renda)) linhas.push(`Renda familiar: ${rotulo(body.renda)}`);
+  if (!vazio(body.comoSoube)) linhas.push(`Como soube: ${rotulo(body.comoSoube)}`);
+  return linhas.join('\n') || body.necessidade || '';
+}
+
 function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
   // Data real de criação (o backend guarda só o dia); sem ela, usa agora
   const ts = body.criadaEm && /^\d{4}-\d{2}-\d{2}/.test(body.criadaEm)
@@ -456,9 +497,7 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
   const tipo = ehApolonia ? 'Apolônia do Bem' : 'Beneficiário';
 
   // Primeira mensagem do thread = necessidade + descrição (se houver)
-  const textoInicial = body.descricao && body.descricao.trim()
-    ? `${body.necessidade}\n\n${body.descricao}`
-    : body.necessidade;
+  const textoInicial = fichaDoFormulario(body);
 
   const p = (body.prioridade ?? '').toLowerCase();
   const prioridadeDoBanco: Prioridade | undefined =

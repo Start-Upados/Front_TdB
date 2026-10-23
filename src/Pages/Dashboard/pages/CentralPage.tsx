@@ -793,7 +793,7 @@ function DetalheConversa({
                 tone={isAdmin ? 'info' : undefined}
               />
               <div className={`max-w-[80%] flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
-                <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line break-words ${
                   isAdmin
                     ? 'bg-ink text-surface rounded-tr-sm'
                     : 'bg-surface-soft text-ink rounded-tl-sm'
