@@ -94,7 +94,6 @@ export interface Solicitacao {
   preview: string;
   mensagens: Mensagem[];
   data: string;
-  criadaEm?: string;            // quando a solicitação foi CADASTRADA (ISO) — tempo real na fila
   ultimaAtualizacao: string;
   prioridade: Prioridade;
   score: number;
@@ -105,6 +104,16 @@ export interface Solicitacao {
     idade?: string;
     programa?: string;
     canal?: string;
+    motivos?: string;   // ML v2: principais fatores da pontuação
+    alertas?: string;   // ML v2: ex. fora do perfil do programa
+  };
+  // Dados do formulário do site usados pelo ML (renda, necessidade...)
+  dadosCadastro?: {
+    renda?: string;
+    necessidade?: string;
+    descricao?: string;
+    comoSoube?: string;
+    criadaEm?: string;
   };
   triagemOral?: TriagemOral;                              // ← NOVO
   infoRecusa?: InfoRecusa;                                // ← NOVO

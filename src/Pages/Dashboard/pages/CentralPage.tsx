@@ -19,9 +19,8 @@ import {
   atualizarClassificacao, arquivarSolicitacao,
   responderSolicitacao, encaminharSolicitacao, promoverParaTriagem,
   resolverSolicitacao, reabrirSolicitacao, carregarSolicitacoesReais,
-  registrarTriagemOral, aprovarSolicitacao, recusarSolicitacao, tempoNaFila,
+  registrarTriagemOral, aprovarSolicitacao, recusarSolicitacao,
 } from '../services/central';
-import { useAgora } from '../Utils/tempo';
 import { classificarPrioridade } from '../services/ml';
 import type { Canal, Prioridade, Solicitacao, MotivoFechamento,
   TriagemOral, InfoRecusa, MotivoRecusa,
@@ -115,7 +114,6 @@ type AcaoModal = 'encaminhar' | 'arquivar' | 'resolver' | null;
 export default function CentralPage() {
   const navigate = useNavigate();
   const [versao, setVersao] = useState(0);
-  const agora = useAgora(30_000);   // tempo na fila atualiza sozinho
   const [vista, setVista] = useState<Vista>('ativas');
   const [modo, setModo] = useState<ModoCentral>('solicitacoes');
 
@@ -220,6 +218,11 @@ export default function CentralPage() {
         canal: selected.canal,
         programa,
         tipo: selected.tipo,
+        // ML v2: dados do formulário do site (renda, necessidade, como soube, data da solicitação)
+        renda: selected.dadosCadastro?.renda,
+        necessidade: selected.dadosCadastro?.necessidade,
+        comoSoube: selected.dadosCadastro?.comoSoube,
+        desde: selected.dadosCadastro?.criadaEm ?? selected.mensagens[0]?.timestamp,
       });
 
       await atualizarClassificacao(selected.id, {
@@ -501,7 +504,7 @@ if (modo === 'canais') {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                       <p className="truncate text-sm font-medium text-ink md:text-base">{item.nome}</p>
-                      <span className="shrink-0 text-xs text-subtle" title="Tempo na fila desde o cadastro">{tempoNaFila(item, agora)}</span>
+                      <span className="shrink-0 text-xs text-subtle">{item.data}</span>
                     </div>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted md:text-sm">{item.preview}</p>
 
@@ -662,7 +665,6 @@ function DetalheConversa({
   onAbrirTriagem: () => void;
 }) {
   const ChannelIcon = CHANNEL_ICONS[selected.canal];
-  const agora = useAgora(30_000);
   const isFechada = selected.status === 'fechada';
   const motivoCfg = selected.motivoFechamento ? configMotivo(selected.motivoFechamento) : null;
 
@@ -698,9 +700,7 @@ function DetalheConversa({
             )}
           </div>
           <div className="sm:text-right">
-            <p className="text-xs text-subtle">
-              {(() => { const t = tempoNaFila(selected, agora); return t === 'agora' ? 'chegou agora' : `há ${t} na fila`; })()}
-            </p>
+            <p className="text-xs text-subtle">{selected.data} atrás</p>
             <p className="mt-1 flex items-center gap-1 text-xs text-subtle sm:justify-end">
               via {selected.canal}
               <ChannelIcon className="h-3.5 w-3.5" strokeWidth={2} />
@@ -752,7 +752,27 @@ function DetalheConversa({
                   />
                 )}
                 {selected.featuresUsadas.canal && (
-                  <FeatureRow label="Canal" value={selected.featuresUsadas.canal} prioridade={selected.prioridade} />
+                  <FeatureRow
+                    label={selected.featuresUsadas.motivos ? 'Decisão' : 'Canal'}
+                    value={selected.featuresUsadas.canal}
+                    prioridade={selected.prioridade}
+                  />
+                )}
+                {selected.featuresUsadas.motivos && (
+                  <div className="flex flex-col gap-1 py-2">
+                    <span className="text-xs text-muted">Principais fatores</span>
+                    <ul className="text-sm text-ink space-y-0.5">
+                      {selected.featuresUsadas.motivos.split('; ').map((m) => (
+                        <li key={m}>• {m}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {selected.featuresUsadas.alertas && (
+                  <div className="flex flex-col gap-1 py-2">
+                    <span className="text-xs text-muted">Atenção</span>
+                    <span className="text-sm text-warning">{selected.featuresUsadas.alertas}</span>
+                  </div>
                 )}
               </div>
             </>

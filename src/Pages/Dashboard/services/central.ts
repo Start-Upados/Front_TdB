@@ -1,7 +1,6 @@
 import { solicitacaoService, triagemService, type SolicitacaoBody } from '../../../Services/api';
 import { criarTriagem, type NovaTriagemInput } from './triagens';
 import { normalizarSexo, programaPorPerfil } from './programa';
-import { duracaoCurta, lerDataHora } from '../Utils/tempo';
 
 import {
   type Solicitacao, type KpiData, type Prioridade,
@@ -46,29 +45,16 @@ export function listarArquivo(): Solicitacao[] {
   return solicitacoes.filter((s) => s.status === 'fechada');
 }
 
-/** Dia LOCAL (YYYY-MM-DD) de um instante — toISOString usava o dia em UTC (errado depois das 21h). */
-function diaLocal(iso?: string): string {
-  const d = iso ? new Date(iso) : null;
-  if (!d || isNaN(d.getTime())) return '';
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-/** Tempo real na fila: desde o CADASTRO da solicitação (não desde a última ação na Central). */
-export function tempoNaFila(s: Solicitacao, agora = Date.now()): string {
-  const base = new Date(s.criadaEm ?? s.ultimaAtualizacao).getTime();
-  return isNaN(base) ? '—' : duracaoCurta(agora - base);
-}
-
 export function obterKpis(): KpiData[] {
-  const hoje  = diaLocal(new Date().toISOString());
-  const ontem = diaLocal(new Date(Date.now() - 86_400_000).toISOString());
+  const hoje  = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD
+  const ontem = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 
-  // 1. Solicitações novas hoje (+ delta vs ontem) — pela data de cadastro
+  // 1. Solicitações novas hoje (+ delta vs ontem)
   const novasHoje = solicitacoes.filter(
-    (s) => diaLocal(s.criadaEm ?? s.ultimaAtualizacao) === hoje,
+    (s) => s.ultimaAtualizacao?.slice(0, 10) === hoje,
   ).length;
   const novasOntem = solicitacoes.filter(
-    (s) => diaLocal(s.criadaEm ?? s.ultimaAtualizacao) === ontem,
+    (s) => s.ultimaAtualizacao?.slice(0, 10) === ontem,
   ).length;
   const delta = novasHoje - novasOntem;
   const sinal = delta >= 0 ? '+' : '';
@@ -379,12 +365,12 @@ export async function carregarSolicitacoesReais(): Promise<{
         return {
           ...local,
           protocolo:         b.protocolo,
-          criadaEm:          b.criadaEm ?? local.criadaEm,   // cadastro real, do banco
           // perfil vem sempre do banco (o cache antigo podia ter o programa errado)
           idade:             b.idade,
           sexo:              b.sexo,
           tipo:              b.tipo,
           programa:          b.programa,
+          dadosCadastro:     b.dadosCadastro ?? local.dadosCadastro,
           status:            b.status,
           motivoFechamento:  b.motivoFechamento,
           infoRecusa:        local.infoRecusa ?? b.infoRecusa,
@@ -457,10 +443,10 @@ function estadoDoBackend(
 }
 
 function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
-  // Data e hora reais do cadastro (backend novo manda "yyyy-MM-dd HH:mm:ss"; antigos, só o dia)
-  const criada = lerDataHora(body.criadaEm);
-  const criadaEm = criada ? criada.toISOString() : undefined;
-  const ts = criadaEm ?? new Date().toISOString();
+  // Data real de criação (o backend guarda só o dia); sem ela, usa agora
+  const ts = body.criadaEm && /^\d{4}-\d{2}-\d{2}/.test(body.criadaEm)
+    ? new Date(body.criadaEm.slice(0, 10) + 'T12:00:00').toISOString()
+    : new Date().toISOString();
   // Programa pelo perfil (sexo/idade), não só pelo prefixo do protocolo:
   // mulher = Apolônias do Bem; jovem homem 11–17 = Dentista do Bem
   const idade = calcularIdade(body.dataNasc);
@@ -504,11 +490,17 @@ function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
       },
     ],
     data: atualizarTempoRelativo(ts),
-    criadaEm,
     ultimaAtualizacao: ts,
     prioridade: prioridadeDoBanco ?? 'Media',   // default até admin clicar "Reclassificar"
     score: prioridadeDoBanco && body.scoreMl ? body.scoreMl : 0.5,
     prioridadeDoBanco: !!prioridadeDoBanco,
+    dadosCadastro: {
+      renda:       body.renda,
+      necessidade: body.necessidade,
+      descricao:   body.descricao,
+      comoSoube:   body.comoSoube,
+      criadaEm:    body.criadaEm,
+    },
     ...estadoDoBackend(body, ehApolonia ? 'pendente-triagem' : 'pendente-aprovacao'),
     ...(body.recusadoEm || body.recusadoPor
       ? { infoRecusa: { motivo: 'outro' as const, detalhe: body.detalhe, recusadaEm: (body.recusadoEm ?? '').slice(0, 10), recusadaPor: body.recusadoPor ?? 'Admin' } }

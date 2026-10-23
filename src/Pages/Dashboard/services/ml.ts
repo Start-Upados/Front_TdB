@@ -4,34 +4,35 @@ import { normalizarSexo, programaPorPerfil } from './programa';
 const ML_API_URL = import.meta.env.VITE_ML_API_URL ?? 'https://ml-tdb.onrender.com';
 const ML_TIMEOUT_MS = 60_000; // Render free tier tem cold start ~30-50s
 
-// ─── Tipos do contrato da API ─────────────────────────
+// ─── Contrato da API v2 ───────────────────────────────
+// A API lê os textos do formulário como estão ("Ate 1 salario minimo",
+// "Tratamento de canal", "Delegacia/CREAS"...) e a descrição livre do paciente.
+// Regras e pontuação ficam todas no ML_TdB (regras.py) — aqui só enviamos dados.
 
-type ProgramaML = 'apolonas_do_bem' | 'dentista_do_bem';
-type SexoML = 'feminino' | 'masculino';
-type ViolenciaML = 'nenhuma' | 'leve' | 'grave';
-type VulnerabilidadeML = 'baixa' | 'media' | 'alta';
-type DanoML = 'nenhum' | 'leve' | 'moderado' | 'grave';
-type PedidoML = 'consulta' | 'emergencia';
-type TratamentoML = 'canal' | 'extracao' | 'restauracao' | 'limpeza';
-
-interface MLPayload {
-  programa: ProgramaML;
-  tempo_espera: number;
-  sexo: SexoML;
+interface MLPayloadV2 {
+  programa: 'Dentista do Bem' | 'Apolônias do Bem';
   idade: number;
-  tipo_violencia: ViolenciaML;
-  vulnerabilidade: VulnerabilidadeML;
-  dano_dentario: DanoML;
-  tipo_pedido: PedidoML;
-  tipo_tratamento: TratamentoML;
+  sexo: 'feminino' | 'masculino';
+  renda_familiar?: string;
+  necessidade?: string;
+  como_soube?: string;
+  texto: string;
+  tempo_espera: number;
 }
 
-interface MLResponse {
+interface MLResponseV2 {
   prediction: 'ALTA' | 'BAIXA' | 'MEDIA';
   probabilities?: { ALTA?: number; BAIXA?: number; MEDIA?: number };
+  confianca?: number;
+  pontuacao?: number;
+  regra_critica?: string | null;
+  fatores?: { fator: string; pontos: number }[];
+  alertas?: string[];
+  modelo_versao?: string;
+  entrada_interpretada?: { renda?: string; sintoma?: string; vitima?: string; necessidade?: string };
 }
 
-// ─── Interface pública (mantida) ──────────────────────
+// ─── Interface pública ────────────────────────────────
 
 export interface MLInput {
   texto: string;
@@ -40,6 +41,12 @@ export interface MLInput {
   canal: string;
   programa?: string;
   tipo?: string;
+  // Dados do formulário do site (quando a solicitação veio de lá)
+  renda?: string;
+  necessidade?: string;
+  comoSoube?: string;
+  /** Quando a solicitação chegou (ISO ou yyyy-mm-dd) — vira "dias na fila". */
+  desde?: string;
 }
 
 export interface MLResult {
@@ -49,92 +56,86 @@ export interface MLResult {
     idade?: string;
     programa?: string;
     canal?: string;
+    motivos?: string;
+    alertas?: string;
   };
   modeloVersao?: string;
 }
 
-// ─── Heurística: extrai os 9 campos da API a partir do texto + contexto ──
+// ─── Montagem do payload ──────────────────────────────
 
-function mapearPayload(input: MLInput): MLPayload {
-  const t = input.texto.toLowerCase();
-  const idade = input.idade ?? 30;
+function diasDesde(quando?: string): number {
+  if (!quando) return 0;
+  const t = new Date(/^\d{4}-\d{2}-\d{2}$/.test(quando) ? `${quando}T12:00:00` : quando).getTime();
+  if (Number.isNaN(t)) return 0;
+  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+}
 
-  // ── Programa ── (mulher = Apolônias; jovem homem 11–17 = Dentista do Bem)
-  const nomePrograma =
+function montarPayload(input: MLInput): MLPayloadV2 {
+  const programa =
     input.programa === 'Apolônias do Bem' || input.programa === 'Dentista do Bem'
       ? input.programa
       : programaPorPerfil(input.sexo, input.idade);
-  const programa: ProgramaML = nomePrograma === 'Apolônias do Bem' ? 'apolonas_do_bem' : 'dentista_do_bem';
+  const sexo = normalizarSexo(input.sexo) ?? (programa === 'Apolônias do Bem' ? 'feminino' : 'masculino');
 
-  // ── Sexo ── (do cadastro; sem ele, segue o programa)
-  const sexo: SexoML =
-    normalizarSexo(input.sexo) ?? (programa === 'apolonas_do_bem' ? 'feminino' : 'masculino');
+  // Sem idade (ex.: contato por Instagram sem cadastro): usa a faixa típica do programa
+  const idade = input.idade && input.idade > 0 ? input.idade : programa === 'Dentista do Bem' ? 14 : 35;
 
-  // ── Tipo de violência (palavras-chave) ──
-  let tipo_violencia: ViolenciaML = 'nenhuma';
-  if (/(violência|violencia|vítima|vitima|agressão|agressao|abuso)/.test(t)) {
-    tipo_violencia = 'grave';
-  } else if (/(briga|conflito|machucad)/.test(t)) {
-    tipo_violencia = 'leve';
-  }
-
-  // ── Vulnerabilidade ──
-  let vulnerabilidade: VulnerabilidadeML = 'media';
-  if (/(situação difícil|situacao dificil|pobreza|sem condições|sem condicoes|baixa renda|carente)/.test(t)) {
-    vulnerabilidade = 'alta';
-  } else if (input.canal === 'Email' && input.tipo?.includes('Doador')) {
-    vulnerabilidade = 'baixa';
-  }
-
-  // ── Dano dentário ──
-  let dano_dentario: DanoML = 'leve';
-  if (/(dor forte|dor muito|dias.*dor|dor.*dias|não consigo|emergência|emergencia|urgente|sangue|sangrando|quebrou|quebrado)/.test(t)) {
-    dano_dentario = 'grave';
-  } else if (/(dor|inflamad|infeccion)/.test(t)) {
-    dano_dentario = 'moderado';
-  } else if (/(dúvida|duvida|confirmação|confirmacao|agendamento|consulta marcada)/.test(t)) {
-    dano_dentario = 'nenhum';
-  }
-
-  // ── Tipo de pedido ──
-  const tipo_pedido: PedidoML =
-    dano_dentario === 'grave' || /(urgente|emergência|emergencia|socorro)/.test(t)
-      ? 'emergencia'
-      : 'consulta';
-
-  // ── Tipo de tratamento (default contextual) ──
-  let tipo_tratamento: TratamentoML = 'restauracao';
-  if (/(canal|endodontia)/.test(t)) tipo_tratamento = 'canal';
-  else if (/(extra[íi]r|arrancar|tirar dente)/.test(t)) tipo_tratamento = 'extracao';
-  else if (/(limpeza|profilaxia|tártaro|tartaro)/.test(t)) tipo_tratamento = 'limpeza';
-
-  // ── Tempo de espera (em dias) ──
-  // Heurística: solicitação recém-chegada = 1 dia. Pode ser refinado.
-  const tempo_espera = 1;
-
-  return { programa, sexo, idade, tempo_espera, tipo_violencia, vulnerabilidade, dano_dentario, tipo_pedido, tipo_tratamento };
+  return {
+    programa,
+    idade,
+    sexo,
+    renda_familiar: input.renda,
+    necessidade: input.necessidade,
+    como_soube: input.comoSoube,
+    texto: input.texto,
+    tempo_espera: diasDesde(input.desde),
+  };
 }
 
 // ─── Mapping da resposta ──────────────────────────────
 
-const MAPA_PRIORIDADE: Record<MLResponse['prediction'], Prioridade> = {
+const MAPA_PRIORIDADE: Record<MLResponseV2['prediction'], Prioridade> = {
   ALTA: 'Alta',
   BAIXA: 'Baixa',
   MEDIA: 'Media',
 };
 
-function descreverFeatures(payload: MLPayload): MLResult['featuresUsadas'] {
+const ROTULO_RENDA: Record<string, string> = {
+  ate_1: 'renda até 1 SM',
+  '1_a_2': 'renda 1 a 2 SM',
+  '2_a_3': 'renda 2 a 3 SM',
+  acima_3: 'renda acima de 3 SM',
+};
+
+function descrever(payload: MLPayloadV2, r: MLResponseV2): MLResult['featuresUsadas'] {
+  const ent = r.entrada_interpretada ?? {};
+  const faixaIdade = payload.programa === 'Dentista do Bem'
+    ? payload.idade >= 11 && payload.idade <= 17
+      ? `janela do programa${payload.idade >= 16 ? ' fechando' : ''}`
+      : 'fora da faixa 11–17'
+    : payload.idade < 18 ? 'menor de idade' : payload.idade >= 50 ? '50+' : 'adulta';
+  const programaDetalhe = payload.programa === 'Dentista do Bem'
+    ? (ent.renda && ROTULO_RENDA[ent.renda]) || 'renda não informada'
+    : ent.vitima === 'sim' ? 'vítima de violência' : ent.vitima === 'nao' ? 'sem relato de violência' : 'violência não informada';
+
+  const motivos = (r.fatores ?? []).slice(0, 4).map((f) => `${f.fator} (+${f.pontos})`).join('; ');
+
   return {
-    idade: `${payload.idade} anos · ${payload.idade < 18 ? 'menor de idade · faixa crítica' : payload.idade >= 50 ? 'idade vulnerável (50+)' : 'adulto'}`,
-    programa: `${payload.programa === 'apolonas_do_bem' ? 'Apolônias do Bem' : 'Dentista do Bem'} · vulnerabilidade ${payload.vulnerabilidade}`,
-    canal: `${payload.tipo_pedido === 'emergencia' ? 'Emergência' : 'Consulta'} · dano ${payload.dano_dentario} · violência ${payload.tipo_violencia}`,
+    idade: `${payload.idade} anos · ${faixaIdade}`,
+    programa: `${payload.programa} · ${programaDetalhe}`,
+    canal: r.regra_critica
+      ? `Regra crítica · ${r.regra_critica}`
+      : `Pontuação ${r.pontuacao ?? '—'}/100 · sintoma ${ent.sintoma ?? 'não informado'}`,
+    ...(motivos ? { motivos } : {}),
+    ...(r.alertas && r.alertas.length ? { alertas: r.alertas.join('; ') } : {}),
   };
 }
 
 // ─── Chamada à API ────────────────────────────────────
 
 export async function classificarPrioridade(input: MLInput): Promise<MLResult> {
-  const payload = mapearPayload(input);
+  const payload = montarPayload(input);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), ML_TIMEOUT_MS);
@@ -153,22 +154,20 @@ export async function classificarPrioridade(input: MLInput): Promise<MLResult> {
       throw new Error(`API retornou ${response.status}: ${erroDetalhe.slice(0, 200)}`);
     }
 
-    const data = (await response.json()) as MLResponse;
+    const data = (await response.json()) as MLResponseV2;
 
     if (!data.prediction || !MAPA_PRIORIDADE[data.prediction]) {
       throw new Error(`Resposta inesperada da API: ${JSON.stringify(data).slice(0, 200)}`);
     }
 
-    const prioridade = MAPA_PRIORIDADE[data.prediction];
-
-    // Score = probabilidade da classe predita (não a max)
-    const score = data.probabilities?.[data.prediction] ?? 0.85;
+    // Confiança = probabilidade da classe escolhida
+    const score = data.confianca ?? data.probabilities?.[data.prediction] ?? 0.5;
 
     return {
-      prioridade,
+      prioridade: MAPA_PRIORIDADE[data.prediction],
       score: Math.round(score * 100) / 100,
-      featuresUsadas: descreverFeatures(payload),
-      modeloVersao: 'ml-tdb-v1',
+      featuresUsadas: descrever(payload, data),
+      modeloVersao: data.modelo_versao ?? 'ml-tdb',
     };
   } catch (err) {
     clearTimeout(timeoutId);
