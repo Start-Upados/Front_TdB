@@ -6,7 +6,7 @@ import {
   Search, Sparkles, RefreshCw, Send, ArrowRight, Share2, Archive,
   MessageSquare, Globe, Mail, MessageCircle, Phone, AlertCircle,
   Inbox, FileCheck, RotateCcw, CheckCircle2,
-  ClipboardCheck, XCircle, Upload, Trash2, Camera,
+  ClipboardCheck, XCircle, Upload, Trash2, Camera, ChevronDown,
 } from 'lucide-react';
 
 import { KpiCard } from '../components/KpiCard';
@@ -667,6 +667,9 @@ function DetalheConversa({
   const ChannelIcon = CHANNEL_ICONS[selected.canal];
   const isFechada = selected.status === 'fechada';
   const motivoCfg = selected.motivoFechamento ? configMotivo(selected.motivoFechamento) : null;
+    // "Entenda mais" começa fechado e fecha de novo ao trocar de solicitação
+  const [explicacaoDe, setExplicacaoDe] = useState<string | null>(null);
+  const explicacaoAberta = explicacaoDe === selected.id;
 
   return (
     <div className="flex flex-col xl:col-span-7 xl:max-h-[760px] xl:overflow-y-auto">
@@ -729,13 +732,24 @@ function DetalheConversa({
             )}
           </div>
 
-          <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <PriorityPill prioridade={selected.prioridade} size="md" />
             <span className="text-sm text-ink">{Math.round(selected.score * 100)}% de confiança</span>
+            {selected.featuresUsadas && (
+              <button
+                type="button"
+                onClick={() => setExplicacaoDe(explicacaoAberta ? null : selected.id)}
+                aria-expanded={explicacaoAberta}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-sm text-info transition-colors hover:bg-surface-soft"
+              >
+                {explicacaoAberta ? 'Fechar' : 'Entenda mais'}
+                <ChevronDown className={`h-4 w-4 transition-transform ${explicacaoAberta ? 'rotate-180' : ''}`} strokeWidth={2} />
+              </button>
+            )}
           </div>
 
-          {selected.featuresUsadas && (
-            <>
+          {selected.featuresUsadas && explicacaoAberta && (
+            <div className="mt-4">
               <p className="mb-2 text-xs tracking-wider text-muted">POR QUE ESSA PRIORIDADE</p>
               <div className="divide-y divide-line">
                 {selected.featuresUsadas.idade && (
@@ -775,7 +789,7 @@ function DetalheConversa({
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
