@@ -32,17 +32,17 @@ export function StatsSection() {
 const PROJECTS = [
   {
     tag:   'ONG · Case de Sucesso',
-    title: 'Dashboard Turma do Bem',
-    desc:  'Sistema completo de gestão para a ONG, conectando +18 mil dentistas voluntários a adolescentes em todo o Brasil.',
+    title: 'Plataforma Turma do Bem',
+    desc:  'Sistema completo de gestão para a ONG, conectando +18 mil dentistas voluntários a adolescentes e mulheres cis e transgênero em + de 17 países.',
     tech:  ['React', 'TypeScript', 'Google Sheets', 'Tailwind'],
     color: '#00D4AA',
     link:  '/dashboard',
     cta:   'Ver Dashboard',
   },
   {
-    tag:   'Startup · Em desenvolvimento',
-    title: 'Plataforma StartUpados()',
-    desc:  'Site institucional moderno com dashboard administrativo, integração com Google Sheets e backend em Quarkus + Oracle.',
+    tag:   'Startup · Desenvolvimento de Soluções',
+    title: 'Web Application StartUpados()',
+    desc:  'Site institucional moderno com dashboard administrativo, integração com APIs META e backend em Quarkus + Oracle.',
     tech:  ['React', 'Quarkus', 'Oracle', 'Java'],
     color: '#40C4FF',
     link:  '/NossosServicos',
@@ -51,7 +51,7 @@ const PROJECTS = [
   {
     tag:   'Inovação · Tecnologia',
     title: 'Seu projeto aqui',
-    desc:  'Desenvolvemos soluções digitais completas — do planejamento à entrega — para empresas que querem crescer com tecnologia.',
+    desc:  'Desenvolvemos soluções digitais completas. Do planejamento à entrega, para empresas que querem crescer com tecnologia. Nossa meta é resolver problemas.',
     tech:  ['React', 'Node.js', 'Cloud', 'API'],
     color: '#D4AF37',
     link:  '/FaleConosco',
