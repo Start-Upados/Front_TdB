@@ -1,6 +1,7 @@
 import { solicitacaoService, triagemService, type SolicitacaoBody } from '../../../Services/api';
 import { criarTriagem, type NovaTriagemInput } from './triagens';
 import { normalizarSexo, programaPorPerfil } from './programa';
+import { lerDataHora } from '../Utils/tempo';
 
 import {
   type Solicitacao, type KpiData, type Prioridade,
@@ -365,6 +366,7 @@ export async function carregarSolicitacoesReais(): Promise<{
         return {
           ...local,
           protocolo:         b.protocolo,
+          data:              b.data,
           mensagens: local.mensagens.map((m) => (m.id === b.mensagens[0]?.id ? b.mensagens[0] : m)),
           // perfil vem sempre do banco (o cache antigo podia ter o programa errado)
           idade:             b.idade,
@@ -485,9 +487,9 @@ function fichaDoFormulario(body: SolicitacaoBody): string {
 
 function mapearSolicitacaoBackend(body: SolicitacaoBody): SolicitacaoMapeada {
   // Data real de criação (o backend guarda só o dia); sem ela, usa agora
-  const ts = body.criadaEm && /^\d{4}-\d{2}-\d{2}/.test(body.criadaEm)
-    ? new Date(body.criadaEm.slice(0, 10) + 'T12:00:00').toISOString()
-    : new Date().toISOString();
+    // Data e hora reais do cadastro ("yyyy-MM-dd HH:mm:ss", horário de São Paulo); sem ela, usa agora
+  const criada = lerDataHora(body.criadaEm);
+  const ts = (criada ?? new Date()).toISOString();
   // Programa pelo perfil (sexo/idade), não só pelo prefixo do protocolo:
   // mulher = Apolônias do Bem; jovem homem 11–17 = Dentista do Bem
   const idade = calcularIdade(body.dataNasc);
