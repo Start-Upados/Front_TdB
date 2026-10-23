@@ -37,7 +37,7 @@ const PROJECTS = [
     tech:  ['React', 'TypeScript', 'Google Sheets', 'Tailwind'],
     color: '#00D4AA',
     link:  '/dashboard',
-    cta:   'Ver Dashboard',
+    cta:   'Ver Plataforma',
   },
   {
     tag:   'Startup · Desenvolvimento de Soluções',
