@@ -190,11 +190,14 @@ function buscarNaMock(cpf: string): Paciente | null {
 }
 
 function mapearBackend(dados: Record<string, string>): Paciente {
+  // O backend devolve o endereço do CEP em `dto` (ViaCEP). A cidade do paciente
+  // sai daí — sem ela, "Mutirões na sua cidade" filtra por cidade vazia e nunca mostra nada.
+  const endereco = (dados as unknown as { dto?: { localidade?: string } }).dto
   return {
     cpf:          dados.rgCpf       ?? '',
     nome:         dados.nome        ?? '',
     idade:        0,
-    cidade:       '',
+    cidade:       endereco?.localidade ?? '',
     programa:     dados.sexo === 'feminino' ? 'Apolônias do Bem' : 'Dentista do Bem',
     dentista:     'A definir',
     clinica:      'A definir',
@@ -462,8 +465,9 @@ function SecaoMutiroes({ paciente }: { paciente: Paciente }) {
           <h2 className="font-bold text-[#0F172A] text-[16px]">Mutirões na sua cidade</h2>
         </div>
         <p className="text-[#475569] text-[13px]">
-          Nenhum mutirão programado em <span className="font-semibold">{paciente.cidade}</span> no momento.
-          Volte aqui mais tarde para conferir.
+          {paciente.cidade
+            ? <>Nenhum mutirão programado em <span className="font-semibold">{paciente.cidade}</span> no momento. Volte aqui mais tarde para conferir.</>
+            : 'Assim que soubermos a sua cidade, os mutirões da sua região aparecem aqui.'}
         </p>
       </div>
     )

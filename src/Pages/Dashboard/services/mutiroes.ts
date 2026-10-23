@@ -630,8 +630,9 @@ export function extrairCidade(cidadeFull: string): string {
 
 /** Mutirões futuros filtrados pela cidade do usuário (match case-insensitive). */
 export function listarProximosPorCidade(cidade: string): Mutirao[] {
-  const alvo = extrairCidade(cidade).toLowerCase();
-  return listarProximos().filter((m) => m.cidade.toLowerCase() === alvo);
+  const alvo = semAcento(extrairCidade(cidade));
+  if (!alvo) return [];   // sem cidade do usuário não dá pra filtrar — não mostra tudo
+  return listarProximos().filter((m) => semAcento(extrairCidade(m.cidade)) === alvo);
 }
 
 // ─── Pacientes ───
