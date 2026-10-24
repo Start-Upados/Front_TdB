@@ -2,19 +2,20 @@
 
 # 🦷 StartUpados() — Plataforma Turma do Bem
 
-**Sistema full-stack para digitalização e gestão da ONG [Turma do Bem](https://www.turmadobem.org.br/)** — integrando site institucional, portais de atendimento, dashboard executivo, integração via WhatsApp e um modelo de _Machine Learning_ para priorização de pacientes.
+**Sistema full-stack para digitalização e gestão da ONG [Turma do Bem](https://www.turmadobem.org.br/)**: site institucional, solicitação de atendimento online, portais do paciente e do dentista voluntário, dashboard administrativo com dados reais, priorização por _Machine Learning_, match de dentistas por distância, mutirões, mensageria por WhatsApp e Instagram e relatórios de impacto.
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![Quarkus](https://img.shields.io/badge/Quarkus-Backend-4695EB?style=flat-square&logo=quarkus&logoColor=white)](https://quarkus.io/)
 [![Oracle](https://img.shields.io/badge/Oracle-Database-F80000?style=flat-square&logo=oracle&logoColor=white)](https://www.oracle.com/database/)
+[![Python](https://img.shields.io/badge/Python-ML-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
 ### 🔗 Acesso ao Projeto
 
-[**🌐 Aplicação ao vivo**](https://www.startupados.com.br/) &nbsp;•&nbsp; 
+[**🌐 Aplicação ao vivo**](https://www.startupados.com.br/)
 
 </div>
 
@@ -25,16 +26,14 @@
 ## 📑 Sumário
 
 - [Sobre o Projeto](#-sobre-o-projeto)
+- [Jornada do Paciente](#-jornada-do-paciente)
 - [Arquitetura](#-arquitetura)
 - [Stack Tecnológica](#-stack-tecnológica)
 - [Funcionalidades](#-funcionalidades)
 - [Machine Learning](#-machine-learning--priorização-de-atendimentos)
-- [Estrutura de Rotas](#-estrutura-de-rotas)
-- [Estrutura de Arquivos](#-estrutura-de-arquivos)
-- [Integrações & Endpoints](#-integrações--endpoints)
-- [Segurança & Boas Práticas](#-segurança--boas-práticas)
-- [Variáveis de Ambiente](#-variáveis-de-ambiente)
-- [Deploy](#-deploy)
+- [Match de Dentistas](#-match-de-dentistas)
+- [Integrações](#-integrações)
+- [Segurança & Privacidade](#-segurança--privacidade)
 - [Roadmap](#-roadmap)
 - [Equipe](#-equipe)
 - [Licença](#-licença)
@@ -43,53 +42,52 @@
 
 ## 🎯 Sobre o Projeto
 
-A **Turma do Bem** é uma ONG que oferece tratamento odontológico gratuito para dois públicos em situação de vulnerabilidade:
+A **Turma do Bem** é uma ONG que oferece tratamento odontológico gratuito, por meio de dentistas voluntários, para dois públicos em situação de vulnerabilidade:
 
-- **Dentista do Bem** — jovens de 11 a 17 anos em vulnerabilidade social
-- **Apolônias do Bem** — mulheres vítimas de violência com a dentição afetada
+- **Dentista do Bem**: jovens de 11 a 17 anos de famílias de baixa renda
+- **Apolônias do Bem**: mulheres vítimas de violência com a dentição afetada
 
-A plataforma **StartUpados()** foi desenvolvida para digitalizar e otimizar os processos da ONG de ponta a ponta, oferecendo:
+A plataforma **StartUpados()** digitaliza o processo da ONG de ponta a ponta. O pedido chega pelo site, pelo WhatsApp ou pelo Instagram. A IA sugere a prioridade, a equipe aprova e o sistema indica o dentista voluntário mais próximo. O dentista aceita pelo portal, a paciente recebe confirmação e lembretes, e a consulta é validada por QR Code. No fim, cada atendimento concluído vira número nos relatórios de impacto para doadores e parceiros.
 
-- Site institucional acessível com informações sobre os programas
-- Portal público para solicitação de atendimento online
-- Portal do beneficiário para acompanhamento do tratamento
-- Painel do dentista voluntário
-- Dashboard executivo com indicadores em tempo real
-- Validação de pacientes por **QR Code**
-- Cadastro de voluntários, funcionários e mutirões
-- Integração com banco de dados **Oracle** via backend **Java/Quarkus**
-- Integração de mensageria via **WhatsApp Cloud API** (em desenvolvimento)
-- Modelo de **Machine Learning** para priorização inteligente de atendimentos
-
-> O sistema foi desenhado com uma filosofia **backend-first**: o Quarkus concentra toda a regra de negócio e o Oracle é a fonte única da verdade, com o **Google Sheets** atuando como camada de _fallback_ automático para garantir resiliência mesmo se o backend estiver indisponível.
+> **Backend-first:** toda regra de negócio fica no backend Java/Quarkus e o **Oracle** é a fonte única da verdade. O frontend guarda apenas um cache local para abrir rápido e mescla com os dados do banco a cada carga.
 
 ---
 
+## 🧭 Jornada do Paciente
+
+```mermaid
+flowchart LR
+    A["📝 Pedido<br/>site, WhatsApp ou Instagram"] --> B["🤖 Prioridade por IA<br/>Central de canais"]
+    B --> C["✅ Aprovação<br/>fila de Triagens"]
+    C --> D["📍 Match<br/>dentista mais próximo"]
+    D --> E["🤝 Convite aceito<br/>portal do dentista"]
+    E --> F["💬 Confirmação e lembretes<br/>WhatsApp"]
+    F --> G["📷 Consulta validada<br/>QR Code"]
+    G --> H["📊 Impacto<br/>relatórios e ODS"]
+```
+
 ---
-
-
 
 ## 🏛 Arquitetura
 
 ```mermaid
 flowchart LR
-    User([👤 Usuário]) --> FE["⚛️ Frontend React<br/>(Vercel)"]
-    FE -->|REST / JSON| BE["☕ Backend Quarkus<br/>(Render)"]
-    BE -->|JDBC| DB[("🗄️ Oracle Database")]
-    FE -.->|Fallback automático| GS[("📊 Google Sheets")]
-    WA["💬 WhatsApp Cloud API"] <--> N8N["🔁 n8n Gateway"]
-    N8N -->|REST seguro| BE
+    U([👤 Usuários]) --> FE["⚛️ Frontend<br/>React + TypeScript"]
+    FE -->|REST / JSON| BE["☕ Backend<br/>Java + Quarkus"]
+    BE --> DB[("🗄️ Oracle")]
+    FE --> ML["🤖 Serviço de ML<br/>Python"]
+    BE --> GM["🗺️ Google Maps<br/>distâncias"]
+    BE --> VC["📮 ViaCEP<br/>endereços"]
+    META["💬 WhatsApp / Instagram<br/>Meta"] <--> N8N["🔁 n8n<br/>gateway de mensagens"]
+    N8N <--> BE
 ```
 
-**Princípios de arquitetura:**
-
-| Princípio | Implementação |
+| Princípio | Como aparece no projeto |
 |---|---|
-| **Separação de responsabilidades** | Frontend (UI/UX) ↔ Backend (regra de negócio) ↔ Banco (persistência) |
-| **Fonte única da verdade** | Oracle Database, acessado exclusivamente pelo Quarkus |
-| **Resiliência** | _Fallback_ para Google Sheets quando o backend hiberna ou falha |
-| **Gateway stateless** | n8n nunca toca o banco — sempre chama endpoints REST do Quarkus |
-| **Padrão de hidratação** | `persistir()` / `hidratar()` em _localStorage_ + `carregar...Reais()` que busca do Oracle e mescla com o estado local |
+| **Separação de responsabilidades** | Frontend cuida da experiência; backend, da regra de negócio; banco, da persistência |
+| **Fonte única da verdade** | Oracle, acessado somente pelo backend |
+| **Gateway sem estado** | O n8n só entrega mensagens; quem decide o conteúdo e grava no banco é o backend |
+| **Falha visível** | Quando o servidor recusa uma operação, a tela mostra o motivo, em vez de fingir que gravou |
 
 ---
 
@@ -97,331 +95,280 @@ flowchart LR
 
 ### Frontend
 
-| Tecnologia | Versão | Uso |
-|---|---|---|
-| React | 19 | Framework principal |
-| TypeScript | 5+ | Tipagem estática |
-| Vite | 6+ | Build tool e dev server |
-| Tailwind CSS | v4 | Estilização utilitária |
-| React Router DOM | v7 | Roteamento e rotas protegidas |
-| React Hook Form | — | Gerenciamento e validação de formulários |
-| Recharts | — | Gráficos do dashboard |
-| qrcode.react | — | Geração de QR Code |
-| jsPDF | — | Exportação de relatórios em PDF |
+| Tecnologia | Uso |
+|---|---|
+| React 19 + TypeScript 5.9 | Interface e tipagem |
+| Vite 8 | Build e servidor de desenvolvimento |
+| Tailwind CSS 3.4 | Estilização e responsividade |
+| React Router 7 | Roteamento e rotas protegidas por perfil |
+| React Hook Form | Formulários e validação |
+| Recharts | Gráficos do dashboard |
+| qrcode.react + jsQR | Geração e **leitura pela câmera** de QR Code |
+| jsPDF | Relatórios em PDF |
+| Sonner | Notificações (toasts) |
+| Lucide | Ícones |
 
 ### Backend
 
 | Tecnologia | Uso |
 |---|---|
-| Java 21 | Linguagem |
-| Quarkus | Framework |
-| Jakarta REST (JAX-RS) | API REST |
-| JDBC | Conexão com banco |
-| Oracle Database | Banco de dados relacional |
-
-### Integrações & Infraestrutura
-
-| Serviço | Uso |
-|---|---|
-| Vercel | Deploy do frontend (CI/CD automático) |
-| Render.com | Hospedagem do backend Java |
-| Google Sheets | Armazenamento secundário / _fallback_ |
-| Google Apps Script | API intermediária para o Sheets |
-| WhatsApp Cloud API | Canal de mensageria (em desenvolvimento) |
-| n8n Cloud | Orquestração de workflows de mensageria |
-| VLibras | Acessibilidade em Libras |
+| Java 21 + Quarkus | API REST |
+| Jakarta REST (JAX-RS) | Recursos e rotas |
+| JDBC + Oracle Database | Persistência |
+| JWT | Autenticação por perfil |
 
 ### Machine Learning
 
 | Tecnologia | Uso |
 |---|---|
-| Python | Linguagem |
-| Pandas | Manipulação de dados |
-| Scikit-learn | Modelo de classificação |
-| Seaborn / Matplotlib | Visualizações exploratórias |
+| Python + FastAPI | API de previsão |
+| LightGBM / scikit-learn | Modelo de classificação |
+| Pandas, Seaborn, Matplotlib | Dados e análise exploratória |
+
+### Integrações
+
+| Serviço | Uso |
+|---|---|
+| WhatsApp Cloud API (Meta) | Confirmação, lembretes, botões de resposta e mensagens |
+| Instagram (Meta) | DMs recebidas e respondidas na Central de canais |
+| n8n | Orquestração dos fluxos de mensagem |
+| Google Maps (Distance Matrix) | Distância real de carro entre paciente e consultório |
+| ViaCEP | Endereço completo a partir do CEP |
+| VLibras | Acessibilidade em Libras |
 
 ---
 
 ## ✨ Funcionalidades
 
 ### 🏠 Site Institucional
-- Home com carrossel e seções informativas
-- Páginas: Nossos Serviços, Sobre Nós, Integrantes, FAQ, Fale Conosco
-- Acessibilidade completa com **VLibras**
-- Design **totalmente responsivo** (mobile, tablet e desktop)
+- Home com carrossel e seções sobre os programas
+- Páginas: Nossos Serviços, Sobre Nós, Integrantes, FAQ e Fale Conosco
+- Políticas de privacidade da StartUpados e da Turma do Bem
+- Acessibilidade com **VLibras** e layout **responsivo** (celular, tablet e desktop)
 
 ### 📝 Solicitação de Atendimento
-- Seleção entre **Dentista do Bem** (jovens 11–17) e **Apolônias do Bem** (mulheres)
-- Formulário em **3 etapas** para jovens (dados do adolescente, responsável, atendimento)
-- Formulário em **2 etapas** para mulheres (dados pessoais, atendimento)
-- **Máscaras automáticas** de CPF (`000.000.000-00`) e CEP (`00000-000`) em tempo real
-- **Validação de idade** integrada: 11–17 anos para jovens, 18+ para mulheres
-- Geração automática de **protocolo único** (`TDB-2026-XXXX` / `APO-2026-XXXX`)
-- Geração automática de **senha de acesso** e **QR Code único** por paciente
-- Persistência em **Oracle** com _backup_ em Google Sheets
+- Escolha entre **Dentista do Bem** e **Apolônias do Bem**
+- Formulário em **3 etapas** para jovens (adolescente, responsável, atendimento) e em **2 etapas** para mulheres
+- Máscaras de CPF, CEP e telefone, e validação de idade por programa
+- **Protocolo** gerado pelo sistema (`TDB-AAAA-NNNN` / `APO-AAAA-NNNN`), **senha de acesso** e **QR Code** com botão **Baixar QR Code**
+- Autorização opcional para receber lembretes por WhatsApp
 
-### 🔐 Portal do Beneficiário
-- Login por CPF e senha
-- Histórico de consultas e progresso do tratamento
-- Próximos atendimentos
-- Central de Mensagens
-- _Session timeout_ de 30 minutos com aviso prévio
-- Busca no backend Java com _fallback_ para mock
+### 💬 Central de Canais (admin)
+- Solicitações do site e DMs do **Instagram** em um só lugar
+- Ficha do formulário organizada: necessidade, observações, responsável, renda e origem
+- **Classificação de prioridade por IA** (Alta, Média, Baixa) com confiança e botão **Entenda mais**, que explica os fatores da decisão
+- Tempo real na fila desde o cadastro
+- Aprovar (envia para Triagens), recusar com motivo, responder, promover, encaminhar, arquivar e reabrir
+- KPIs: novas hoje, alta prioridade sem resposta, tempo médio de resposta, confiança média do modelo
 
-### 📷 Validação de Paciente (QR Code)
-- Acesso por leitura de **QR Code** ou digitação manual do protocolo
-- Exibição da ficha completa do paciente
-- Histórico de atendimentos em _timeline_
-- Confirmação de atendimento registrada no sistema
+### 🧑‍⚕️ Triagens
+- Fila de pacientes aprovados, com prioridade, idade, programa e tempo de espera
+- **Sugestão de dentistas** ordenada por proximidade real, especialidade e avaliação
+- Convite ao dentista e acompanhamento: aguardando, convite enviado, aceito ou recusado com motivo
+- Criação manual de triagem (escolas, mutirões, atendimento presencial)
 
-### 🦷 Painel do Dentista
-- Login por CRO e senha
-- Agenda de próximos atendimentos
-- Central de Mensagens
-- Acesso rápido à validação de paciente por QR Code
-- _Session timeout_ de 30 minutos
+### 📅 Atendimentos
+- Agenda com o ciclo completo: agendado, confirmado, em andamento, concluído, cancelado e reagendado
+- Detalhes com **local do atendimento** (endereço do consultório)
+- **Contatar paciente** por WhatsApp Web ou e-mail
+- Tratamentos em várias sessões ("sessão 2 de 3")
 
-### 🤝 Cadastro de Voluntário (Dentista)
-- Formulário em **3 etapas** (dados pessoais, profissionais, atuação)
-- Protocolo automático `VOL-2026-XXXX` e senha gerada
-- Integração com backend Java + _backup_ em Google Sheets
+### 📷 Validação por QR Code
+- **Leitura pela câmera** do celular ou do notebook, ou digitação do protocolo
+- Ficha do paciente com linha do tempo das sessões
+- **Confirmar atendimento** registra a sessão como concluída; só o dentista responsável pela consulta consegue confirmar
 
-### 📊 Dashboard Executivo (Admin)
-Painel administrativo com acesso protegido, organizado em módulos:
+### 🦷 Portal do Dentista
+- Convites de pacientes com distância e caso, **Aceitar** escolhendo data e horário, ou **Recusar** com motivo
+- Convites para **mutirões** (aceitar ou recusar)
+- Próximos atendimentos e **histórico de consultas** (as 5 mais recentes e **Ver mais**)
+- Endereço completo do consultório e **Editar endereço** com preenchimento pelo CEP
+- Atalho para validar paciente por QR Code
 
-| Módulo | Descrição |
-|---|---|
-| **Visão Geral** | KPIs consolidados da ONG (pacientes em tratamento, doações, atendimentos no mês) — todos dinâmicos |
-| **Operação / Atendimentos** | Agenda e ciclo de vida completo dos atendimentos (confirmar, iniciar, finalizar, cancelar, reagendar) |
-| **Triagens** | Fila de pacientes com convites a dentistas, tempo médio de espera e alertas de fila +60 dias |
-| **Voluntários** | Rede de dentistas e engajamento |
-| **Impacto Social** | Perfil dos beneficiários e transformação gerada |
-| **Geografia** | Distribuição nacional e cobertura por região |
-| **Financeiro** | Doações, parceiros e indicadores financeiros |
-| **Relatórios** | Exportação em PDF segmentada por público (doador, parceiro, ODS/ESG, interno) |
-| **Central de Mensagens** | Hub de todas as solicitações em tempo real |
-| **Inserir Dados** | Adição manual de registros |
-| **Cadastrar Funcionário** | Registro de funcionários com senha gerada |
-| **Gerenciar Mutirões** | Cadastro e acompanhamento de mutirões de atendimento |
+### 🔐 Portal do Paciente
+- Protocolo(s) no topo, com botão de copiar
+- **QR Code** para mostrar ao dentista, com download
+- Próxima consulta com dentista, data, horário e endereço do consultório
+- Histórico e progresso do tratamento
+- Encerramento automático da sessão por inatividade, com aviso prévio
 
-**Recursos transversais do dashboard:**
-- 🌙 **Dark mode com escopo** — aplicado condicionalmente apenas nas rotas do dashboard
-- 📄 **Exportação PDF** em múltiplas páginas
-- 📈 **KPIs dinâmicos** calculados a partir dos dados reais do Oracle
+### 🤝 Voluntários
+- Cadastro público de dentista em 3 etapas (pessoais, profissionais, atuação)
+- Aprovações pendentes com o **tempo real de espera** desde o cadastro
+- Aprovar, rejeitar, suspender e reativar
+- Perfil do dentista com especialidade, atendimentos e próximos compromissos
+- Contato por WhatsApp e e-mail
 
-### 💬 Central de Mensagens
-- Leitura do backend Java (`GET /solicitacao`) como fonte primária, com _fallback_ para Google Sheets
-- Filtros por tipo (Beneficiário, Voluntário, Doador, Parceiro)
-- Busca por nome, e-mail ou mensagem
-- **Transições de status automáticas** com base no remetente da mensagem
-- Notas internas por solicitação
+### 📣 Mutirões
+- Cadastro de mutirões (triagem em escola ou atendimento em comunidade), com data, horário, local, programa, especialidades e meta
+- **Convocação de dentistas**, que ficam como *Aguardando resposta* até aceitarem no portal (*Confirmado* ou *Recusou*)
+- Mutirão com data passada vira *realizado* e entra nos indicadores
 
-### 📱 Integração WhatsApp
-Integração com a **WhatsApp Cloud API** orquestrada via **n8n**, seguindo arquitetura de _gateway_ stateless (o Quarkus controla a lógica, o n8n apenas entrega):
+### 📊 Visão Geral
+- KPIs com dados reais: consultas concluídas, agendadas, fila de triagem, voluntários
+- Gráfico dos últimos 6 meses e distribuição por programa
+- **Meta anual** de atendimentos ajustável no menu lateral
+- Uma regra única em todo o sistema: atendimento é **consulta concluída**
 
-| Fase | Escopo | Status |
-|---|---|---|
-| **Fase 1** | Recebimento de mensagens de pacientes (_inbound_) com deduplicação por WAMID | ✅ Funcional |
-| **Fase 2** | Lembretes de consulta via _templates_ aprovados pela Meta | ✅ Funcional |
-| **Fase 3** | Disparo em massa / _broadcast_ | ✅ Funcional |
+### 📄 Relatórios e Impacto
+- Página com **dados reais** por período: mês, trimestre, ano ou intervalo personalizado
+- Sorrisos transformados, pacientes atendidos por programa e especialidade, municípios e regiões alcançados, comparecimento, mutirões e meta anual
+- Contribuição para os **ODS 3, 4, 5 e 10**
+- **PDF por público** (doador, parceiro, ODS, interno) e **CSV**, ambos **sem dados pessoais** de pacientes
+- Histórico dos relatórios gerados, com download do mesmo PDF
 
+### ⚙️ Configurações
+- Equipe administrativa com perfis e status
+- Status das integrações (ML, WhatsApp, Instagram, Google, banco de dados)
+- Dados da organização
+
+### 💰 Financeiro *(protótipo)*
+- Doações, despesas, parceiros e indicadores. Ainda usa dados de exemplo; a integração com o banco está no roadmap.
+
+### 🌙 Recursos gerais do dashboard
+- Modo escuro restrito ao dashboard
+- Layout responsivo em todas as telas
+- Mensagens de erro claras, com o motivo vindo do servidor
+
+---
 
 ## 🤖 Machine Learning — Priorização de Atendimentos
 
-Modelo de classificação que prioriza automaticamente as solicitações de atendimento em três níveis — **ALTA**, **MÉDIA** e **BAIXA** — ajudando a ONG a alocar recursos onde o impacto é maior.
+Modelo que classifica cada solicitação em **ALTA**, **MÉDIA** ou **BAIXA** prioridade, para a ONG atender primeiro quem mais precisa. Ele **sugere** a prioridade; quem decide é a equipe, que vê os motivos e pode reclassificar.
+
+| Item | Detalhe |
+|---|---|
+| Modelo | LightGBM |
+| Acurácia | 94,7% |
+| F1 macro | 0,944 (teste 80/20) |
+| Variáveis | programa, sexo, idade, tempo de espera, tipo de violência, vulnerabilidade, dano dentário, tipo de pedido, tipo de tratamento |
+| Servido como | API REST consumida pela Central de canais |
 
 ### Dataset
-
-- **Registros:** 2.638
-- **Features:** `tipo_pedido`, `sexo`, `idade`, `tempo_espera`, `vulnerabilidade`, `tipo_violencia`, `elegivel`, `programa`, `dano_dentario`, `tipo_tratamento`
 
 | Prioridade | Quantidade | % |
 |---|---|---|
 | BAIXA | 1.151 | 44% |
 | MÉDIA | 937 | 35% |
 | ALTA | 550 | 21% |
+| **Total** | **2.638** | |
 
-### Lógica de Priorização
+### Regras de negócio que orientam o modelo
 
 **Apolônias do Bem (mulheres):**
-- `ALTA` → dano grave + violência grave
-- `ALTA` → dano grave + idade ≥ 50
-- `ALTA` → dano moderado + violência grave + idade ≥ 45
+- `ALTA`: dano grave + violência grave
+- `ALTA`: dano grave + idade ≥ 50
+- `ALTA`: dano moderado + violência grave + idade ≥ 45
 
 **Dentista do Bem (jovens 11–17):**
-- `ALTA` → vulnerabilidade alta + tratamento de canal ou extração
-- `ALTA` → vulnerabilidade alta + restauração + tempo de espera > 20 dias
-
-### Modelo
-
-```python
-RandomForestClassifier(
-    n_estimators=200,
-    max_depth=15,
-    min_samples_split=5,
-    class_weight='balanced',
-    random_state=42
-)
-```
-
-> O modelo é treinado de forma reproduzível e empacotado para servir previsões de prioridade às solicitações recebidas pela plataforma.
+- `ALTA`: vulnerabilidade alta + tratamento de canal ou extração
+- `ALTA`: vulnerabilidade alta + restauração + espera > 20 dias
 
 ---
 
-## 🗺 Estrutura de Rotas
+## 📍 Match de Dentistas
 
-```
-/                        → Home (site institucional)
-/NossosServicos          → Nossos Serviços
-/SobreNos                → Sobre Nós
-/Integrantes             → Integrantes
-/FAQ                     → Perguntas Frequentes
-/FaleConosco             → Fale Conosco
-/login                   → Login (4 perfis + doação)
-/solicitar-atendimento   → Solicitação de atendimento
-/validar-paciente        → Validação por QR Code ou protocolo
-/meu-atendimento         → Portal do Beneficiário      🔒 protegido
-/meu-painel              → Painel do Dentista           🔒 protegido
-/cadastrar-voluntario    → Cadastro de dentista voluntário
-/dashboard               → Dashboard Executivo          🔒 protegido (admin)
-*                        → 404 Not Found
-```
+Para cada paciente na fila, o sistema ordena os voluntários ativos por uma pontuação composta:
 
----
-
-## 📂 Estrutura de Arquivos
-
-```
-src/
-├── Components/
-│   ├── Header/
-│   ├── Footer/
-│   ├── Layout/
-│   ├── HeroCarousel/
-│   ├── HomeSections/
-│   ├── ProtectedRoute/
-│   │   ├── ProtectedRoute.tsx
-│   │   ├── ProtectedRoutePaciente.tsx
-│   │   └── ProtectedRouteDentista.tsx
-│   └── SessionWarning/
-├── Pages/
-│   ├── Home/
-│   ├── Login/
-│   ├── Dashboard/
-│   │   ├── Dashboard.tsx
-│   │   └── pages/
-│   │       ├── OverviewPage.tsx
-│   │       ├── OperationsPage.tsx
-│   │       ├── TriagensPage.tsx
-│   │       ├── VolunteersPage.tsx
-│   │       ├── SocialImpactPage.tsx
-│   │       ├── GeographyPage.tsx
-│   │       ├── FinancialPage.tsx
-│   │       ├── RelatoriosPage.tsx
-│   │       ├── DataEntryPage.tsx
-│   │       ├── MessagesPage.tsx
-│   │       ├── CadastrarFuncionario.tsx
-│   │       └── GerenciarMutiroes.tsx
-│   ├── PortalBeneficiario/
-│   ├── PainelDentista/
-│   ├── SolicitarAtendimento/
-│   ├── ValidarPaciente/
-│   ├── CadastrarVoluntario/
-│   ├── NotFound/
-│   ├── FAQ/  FaleConosco/  Integrantes/  NossosServicos/  SobreNos/
-├── Services/
-│   ├── api.ts              # Integração backend Java
-│   └── googleSheets.ts     # Integração Google Sheets (fallback)
-└── Hooks/
-    └── useSessionTimeout.ts
-```
-
----
-
-## 🔌 Integrações & Endpoints
-
-### Backend Java — Principais Endpoints
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/solicitacao` | Cadastrar solicitação de atendimento |
-| `GET` | `/solicitacao` | Listar todas as solicitações |
-| `GET` | `/solicitacao/{rgCpf}` | Buscar solicitação por CPF |
-| `POST` | `/beneficiario` | Cadastrar beneficiário (login do paciente) |
-| `GET` | `/beneficiario/{rgCpf}` | Buscar beneficiário |
-| `POST` | `/dentista` | Cadastrar dentista voluntário |
-| `PUT` | `/dentista/{rgCpf}/addAtendimento` | Registrar atendimento do dentista |
-| `POST` | `/funcionario` | Cadastrar funcionário |
-| `PUT` | `/funcionario/{rgCpf}` | Atualizar funcionário |
-| `POST` | `/campanha` | Cadastrar mutirão |
-| `PUT` | `/campanha/{nome}/addAtendimento` | Adicionar atendimentos ao mutirão |
-
-### Google Sheets — Camada de _Fallback_
-
-Planilha `Turma_Do_Bem`, com abas alimentadas conforme a origem do registro:
-
-| Aba | Alimentada por |
+| Critério | Peso |
 |---|---|
-| Mensagens | Solicitar Atendimento |
-| Pacientes | Solicitar Atendimento |
-| Voluntarios | Cadastrar Voluntário |
-| Funcionarios | Cadastrar Funcionário |
-| Mutiroes | Gerenciar Mutirões |
-| Atendimentos | Validar Paciente |
+| **Proximidade**: distância real de carro entre paciente e consultório | 60% |
+| **Especialidade** compatível com a necessidade | 30% |
+| **Avaliação** do dentista | 10% |
+
+Os endereços são completados automaticamente a partir do CEP.
 
 ---
 
-## 🔒 Segurança & Boas Práticas
+## 🔌 Integrações
 
-A segurança foi tratada como requisito de primeira classe neste projeto:
+### WhatsApp
+O backend decide o conteúdo e o n8n apenas entrega a mensagem pela API oficial da Meta. Só recebe mensagem quem autorizou no cadastro.
 
-- ✅ **Nenhuma credencial no repositório** — todas as chaves e segredos ficam em variáveis de ambiente, fora do controle de versão (`.gitignore`)
-- ✅ **CORS restrito** — o backend libera requisições apenas da origem oficial do frontend
-- ✅ **Rotas protegidas** no frontend por perfil de usuário (beneficiário, dentista, admin)
-- ✅ **_Session timeout_** de 30 minutos nos portais autenticados
-- ✅ **Gateway de mensageria stateless** — o n8n nunca acessa o banco diretamente; toda escrita passa por endpoints REST autenticados do Quarkus (Bearer token interno)
-- ✅ **Normalização e validação de entrada** — máscaras e validação de CPF, CEP, idade e formato de dados antes da persistência
-
-> ⚠️ As credenciais de demonstração estão disponíveis **sob solicitação** e não são versionadas neste repositório.
-
----
-
-
-## 🚀 Deploy
-
-| Camada | Plataforma | Observações |
+| Fluxo | O que faz | Status |
 |---|---|---|
-| **Frontend** | Vercel | Deploy automático a cada `push` na branch `main` |
-| **Backend** | Render.com | Hiberna após 15 min de inatividade |
+| Recebimento | Mensagens de pacientes entram no sistema, sem duplicidade | ✅ |
+| Confirmação | Enviada assim que o dentista aceita o convite | ✅ |
+| Lembretes | Na véspera, no dia e 1 hora antes da consulta | ✅ |
+| Botões de resposta | **Confirmar** ou **Reagendar** mudam o status do atendimento | ✅ |
+| Disparo em massa | Comunicados para pacientes autorizados | ✅ |
 
-> ⚠️ **Cold start:** o backend no plano gratuito do Render hiberna após inatividade — a primeira requisição pode levar até ~60s para "acordar" o serviço. O frontend trata esse cenário com _fallback_ automático para o Google Sheets, garantindo que a aplicação continue funcional.
+### Instagram
+DMs do perfil da ONG aparecem na aba **Instagram** da Central de canais e podem ser respondidas por lá.
 
-**Ambiente de produção:** [www.startupados.com.br](https://www.startupados.com.br/)
+### Google Maps e ViaCEP
+Distâncias reais para o match de dentistas e endereços completos a partir do CEP, no cadastro e na edição do consultório.
+
+---
+
+
+## 🔒 Segurança & Privacidade
+
+- **Nenhuma credencial no repositório**: chaves e segredos ficam em variáveis de ambiente fora do controle de versão
+- **Autenticação por perfil** (administração, dentista e paciente), com o **controle de acesso feito no servidor**: cada perfil só vê e altera o que é seu
+- **Dados mínimos por tela**: o dentista vê apenas os pacientes dele, e só ele valida a consulta
+- **Relatórios, PDFs e CSVs sem dados pessoais** de pacientes
+- **QR Code sem senha**: a foto do comprovante não dá acesso ao portal
+- **WhatsApp apenas com autorização** (opt-in) da paciente ou do responsável
+- **Sessão encerrada por inatividade**, com aviso antes
+- **Validação de entrada** de CPF, CEP, idade e formatos antes de gravar
+- Políticas de privacidade próprias, com a StartUpados como controladora dos dados da plataforma
+
+> ⚠️ Credenciais de demonstração estão disponíveis **sob solicitação** e não são versionadas.
+
+---
+
+## 💻 Como Rodar Localmente
+
+**Pré-requisitos:** Node.js 18 ou mais novo e npm.
+
+```bash
+git clone <url-do-repositório>
+cd Front_TdB
+npm install
+npm run dev
+```
+
+As variáveis de ambiente (endereços da API e dos serviços) são fornecidas pela equipe e ficam em um arquivo `.env` que **não é versionado**.
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npx tsc -b` | Checagem de tipos |
+| `npm run lint` | Lint |
+| `npm run build` | Checagem de tipos + build de produção |
+
+> A câmera do leitor de QR Code só funciona em `localhost` ou em HTTPS.
 
 ---
 
 ## 🔜 Roadmap
 
-- [x] Backend Java + Quarkus com Oracle DB
-- [x] Conexão Frontend → Backend via REST API
-- [x] Persistência de login do beneficiário (tabela dedicada)
-- [x] Máscaras e validações de entrada (CPF, CEP, idade)
-- [x] Ciclo de vida completo de atendimentos e triagens
-- [x] Exportação de relatórios em PDF
-- [x] WhatsApp Cloud API — Fase 1 (_inbound_)
-- [x] WhatsApp Cloud API — Fases 2 e 3 (lembretes e confirmação)
-- [x] Autenticação JWT robusta
-- [x] Servir o modelo de ML como API REST integrada à plataforma
-- [x] Meta Graph API (Instagram e Facebook) na Central de Mensagens
+- [x] Backend Java + Quarkus com Oracle
+- [x] Frontend integrado ao backend via REST
+- [x] Autenticação por perfil com JWT
+- [x] Ciclo completo de solicitações, triagens e atendimentos
+- [x] Modelo de ML servido como API e integrado à Central
+- [x] Match de dentistas por distância real
+- [x] API WhatsApp: recebimento, confirmação, lembretes, botões e disparo
+- [x] API Instagram na Central de canais, recebimento de mensagens e respostas na DM
+- [x] Validação por QR Code com câmera
+- [x] Mutirões com convocação e aceite do dentista e de pacientes/beneficiários
+- [x] Relatórios de impacto em PDF e CSV com dados reais
+- [x] Financeiro integrado ao banco
+- [x] Histórico de relatórios salvo no servidor
+- [x] Sistema em Produção, no ar e funcionando (startupados.com.br)
 
 ---
 
 ## 👥 Equipe
 
-Desenvolvido pelo grupo **StartUpados()** — FIAP 2026.
+Desenvolvido pelo grupo **StartUpados()**, FIAP 2026.
 
-| **Pedro Henrique Falchi**  [LinkedIn](https://www.linkedin.com/in/pedro-henrique-falchi-4ab4b937b) |
-| **Matheus Guimarães**  [LinkedIn](https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b) |
+| Integrante | Atuação | Contato |
+|---|---|---|
+| **Pedro Henrique Falchi** | Front-end, integrações e Machine Learning | [LinkedIn](https://www.linkedin.com/in/pedro-henrique-falchi-4ab4b937b) |
+| **Matheus Guimarães** | Backend e banco de dados | [LinkedIn](https://www.linkedin.com/in/matheus-guimar%C3%A3es-rosa-04522435b) |
 
 📧 **Contato:** startupados@gmail.com
 
@@ -429,7 +376,7 @@ Desenvolvido pelo grupo **StartUpados()** — FIAP 2026.
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a **Licença MIT** — consulte o arquivo [`LICENSE`](LICENSE) para mais detalhes.
+Este projeto está licenciado sob a **Licença MIT**. Consulte o arquivo [`LICENSE`](LICENSE).
 
 ---
 
